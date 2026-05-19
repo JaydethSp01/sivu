@@ -102,6 +102,8 @@ const GROUPS: NavGroup[] = [
 
 interface SidebarProps {
   collapsed: boolean;
+  /** Si true, no aplica sticky/h-screen (se usa dentro de un Sheet drawer). */
+  embedded?: boolean;
 }
 
 function resolveLabel(item: NavItem, roles: Rol[]): string {
@@ -147,7 +149,7 @@ function renderItem(item: NavItem, collapsed: boolean, roles: Rol[]): JSX.Elemen
   );
 }
 
-export function Sidebar({ collapsed }: SidebarProps): JSX.Element {
+export function Sidebar({ collapsed, embedded = false }: SidebarProps): JSX.Element {
   const hasRole = useAuthStore((s) => s.hasRole);
   const usuario = useAuthStore((s) => s.usuario);
   const userRoles: Rol[] = usuario?.roles ?? [];
@@ -157,8 +159,11 @@ export function Sidebar({ collapsed }: SidebarProps): JSX.Element {
   return (
     <aside
       className={cn(
-        "border-r border-border/70 bg-card transition-all duration-200 flex flex-col h-screen sticky top-0",
-        collapsed ? "w-16" : "w-64"
+        "bg-card transition-all duration-200 flex flex-col",
+        embedded
+          ? "h-full w-full"
+          : "border-r border-border/70 h-screen sticky top-0",
+        embedded ? "" : collapsed ? "w-16" : "w-64"
       )}
     >
       <div className="flex items-center gap-3 border-b border-border/70 px-4 h-16">

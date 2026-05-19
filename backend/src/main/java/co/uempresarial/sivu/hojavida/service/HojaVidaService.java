@@ -1,5 +1,9 @@
 package co.uempresarial.sivu.hojavida.service;
 
+import co.uempresarial.sivu.documento.domain.Documento;
+import co.uempresarial.sivu.documento.domain.EstadoDocumento;
+import co.uempresarial.sivu.documento.domain.TipoDocumentoSoporte;
+import co.uempresarial.sivu.documento.persistence.DocumentoRepository;
 import co.uempresarial.sivu.estudiante.domain.Estudiante;
 import co.uempresarial.sivu.estudiante.persistence.EstudianteRepository;
 import co.uempresarial.sivu.hojavida.domain.*;
@@ -25,10 +29,14 @@ import java.util.Optional;
 @Transactional
 public class HojaVidaService {
 
+    /** Marcador para identificar documentos HV generados automáticamente. */
+    public static final String RUTA_HV_GENERADA_PREFIX = "generated://hv/";
+
     private final HojaVidaRepository repository;
     private final EstudianteRepository estudianteRepository;
     private final NotificacionService notificacionService;
     private final CurrentUserService currentUser;
+    private final DocumentoRepository documentoRepository;
 
     @Transactional(readOnly = true)
     public HojaVidaResponse obtener(Long estudianteId) {
@@ -142,7 +150,70 @@ public class HojaVidaService {
         }
 
         HojaVida saved = repository.save(hv);
+        sincronizarDocumentoHv(saved);
         return toResponse(saved);
+    }
+
+    /**
+     * Mantiene un Documento de tipo HOJA_VIDA por estudiante reflejando el
+     * estado de su HV institucional. Se invoca tras guardar la HV.
+     *
+     *   - HV completa  → upsert Documento con estado RECIBIDO (Coformación lo aprobará)
+     *   - HV aprobada  → Documento queda VALIDADO automáticamente
+     *   - HV rechazada → Documento queda RECHAZADO
+     *
+     * La ruta_almacenamiento usa el marcador {@link #RUTA_HV_GENERADA_PREFIX}
+     * para distinguirlo de los uploads manuales; el frontend lo detecta y
+     * descarga el PDF on-demand desde /hoja-vida/{id}/pdf.
+     */
+    private void sincronizarDocumentoHv(HojaVida hv) {
+        Estudiante est = hv.getEstudiante();
+        if (est == null) return;
+        if (!hv.estaCompleta()) return;
+
+        Documento doc = documentoRepository
+            .findFirstByEstudianteIdAndTipoOrderByCreatedAtDesc(est.getId(), TipoDocumentoSoporte.HOJA_VIDA)
+            .orElseGet(() -> Documento.builder()
+                .estudiante(est)
+                .tipo(TipoDocumentoSoporte.HOJA_VIDA)
+                .nombreOriginal("Hoja de vida - " + nombreCompleto(est) + ".pdf")
+                .rutaAlmacenamiento(RUTA_HV_GENERADA_PREFIX + est.getId())
+                .mimeType("application/pdf")
+                .tamanoBytes(0L)
+                .estado(EstadoDocumento.RECIBIDO)
+                .build());
+
+        // Mantener el nombre actualizado (por si cambió el nombre del estudiante)
+        doc.setNombreOriginal("Hoja de vida - " + nombreCompleto(est) + ".pdf");
+        doc.setRutaAlmacenamiento(RUTA_HV_GENERADA_PREFIX + est.getId());
+        doc.setMimeType("application/pdf");
+        doc.setTipo(TipoDocumentoSoporte.HOJA_VIDA);
+
+        switch (hv.getEstado()) {
+            case APROBADA -> {
+                doc.setEstado(EstadoDocumento.VALIDADO);
+                if (doc.getFechaValidacion() == null) {
+                    doc.setFechaValidacion(java.time.OffsetDateTime.now());
+                }
+                doc.setObservacionesValidacion(null);
+            }
+            case RECHAZADA -> {
+                doc.setEstado(EstadoDocumento.RECHAZADO);
+                doc.setObservacionesValidacion(hv.getObservacionesCoformacion());
+            }
+            case BORRADOR, ENVIADA -> {
+                if (doc.getEstado() != EstadoDocumento.VALIDADO) {
+                    doc.setEstado(EstadoDocumento.RECIBIDO);
+                    doc.setObservacionesValidacion(null);
+                }
+            }
+        }
+
+        documentoRepository.save(doc);
+    }
+
+    private String nombreCompleto(Estudiante e) {
+        return (e.getNombres() + " " + e.getApellidos()).trim();
     }
 
     @Transactional(readOnly = true)
@@ -239,6 +310,7 @@ public class HojaVidaService {
             "[SIVU] ¡Tu Hoja de Vida fue aprobada!",
             "Hola " + hv.getEstudiante().getNombres()
                 + ",\n\nLa Oficina de Coformación aprobó tu HV. Ya puedes postularte a vacantes.\n\nEquipo SIVU");
+        sincronizarDocumentoHv(hv);
         return toResponse(hv);
     }
 
@@ -260,6 +332,7 @@ public class HojaVidaService {
                 + ",\n\nLa Oficina de Coformación revisó tu HV y solicitó ajustes:\n\n"
                 + observaciones
                 + "\n\nAjusta y vuelve a enviarla.\n\nEquipo SIVU");
+        sincronizarDocumentoHv(hv);
         return toResponse(hv);
     }
 

@@ -1,10 +1,25 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Check, Eye, FileText, Pencil, Plus, Trash2, X } from "lucide-react";
+import { format, parseISO } from "date-fns";
+import { es } from "date-fns/locale";
+import {
+  Check,
+  Download,
+  Eye,
+  FileText,
+  Image as ImageIcon,
+  Loader2,
+  Pencil,
+  Plus,
+  Sparkles,
+  Trash2,
+  X,
+} from "lucide-react";
 import { PageHeader } from "@/components/page-header";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   AlertDialog,
@@ -18,6 +33,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { DataTable, type DataTableColumn } from "@/components/data-table";
+import { EmptyState } from "@/components/empty-state";
 import { StatusBadge } from "@/components/status-badge";
 import { api, extractApiMessage } from "@/lib/api";
 import { formatBytes } from "@/lib/utils";
@@ -47,6 +63,7 @@ export function DocumentosListPage(): JSX.Element {
   const qc = useQueryClient();
   const hasRole = useAuthStore((s) => s.hasRole);
   const canValidate = hasRole("ADMIN", "COORDINADOR");
+  const isStudentOnly = hasRole("ESTUDIANTE") && !hasRole("ADMIN", "COORDINADOR", "EMPRESA");
 
   const [estado, setEstado] = useState<EstadoDocumento | "ALL">("ALL");
   const [tipo, setTipo] = useState<TipoDocumentoSoporte | "ALL">("ALL");
@@ -158,8 +175,12 @@ export function DocumentosListPage(): JSX.Element {
   return (
     <div className="space-y-5">
       <PageHeader
-        title="Documentos"
-        description="Soportes académicos y de formalización: hojas de vida, certificados, EPS, convenios."
+        title={isStudentOnly ? "Mis documentos" : "Documentos"}
+        description={
+          isStudentOnly
+            ? "Tus soportes: hoja de vida, identificación, EPS, certificados. Tu hoja de vida se sube automáticamente cuando la completas."
+            : "Soportes académicos y de formalización: hojas de vida, certificados, EPS, convenios."
+        }
         icon={FileText}
         actions={
           <Button variant="gradient" onClick={() => navigate("/documentos/new")}>
@@ -169,7 +190,7 @@ export function DocumentosListPage(): JSX.Element {
       />
       <div className="flex flex-wrap gap-2 items-center">
         <Select value={tipo} onValueChange={(v) => { setTipo(v as TipoDocumentoSoporte | "ALL"); setPage(0); }}>
-          <SelectTrigger className="w-56"><SelectValue placeholder="Tipo" /></SelectTrigger>
+          <SelectTrigger className="w-full sm:w-56"><SelectValue placeholder="Tipo" /></SelectTrigger>
           <SelectContent>
             {TIPOS.map((t) => (
               <SelectItem key={t} value={t}>
@@ -179,23 +200,199 @@ export function DocumentosListPage(): JSX.Element {
           </SelectContent>
         </Select>
         <Select value={estado} onValueChange={(v) => { setEstado(v as EstadoDocumento | "ALL"); setPage(0); }}>
-          <SelectTrigger className="w-56"><SelectValue placeholder="Estado" /></SelectTrigger>
+          <SelectTrigger className="w-full sm:w-56"><SelectValue placeholder="Estado" /></SelectTrigger>
           <SelectContent>
-            {ESTADOS.map((e) => <SelectItem key={e} value={e}>{e === "ALL" ? "Todos los estados" : e}</SelectItem>)}
+            {ESTADOS.map((e) => (
+              <SelectItem key={e} value={e}>
+                {e === "ALL" ? "Todos los estados" : e.toLowerCase().replace(/^./, (c) => c.toUpperCase())}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
       </div>
-      <DataTable
-        columns={columns}
-        rows={data?.content}
-        isLoading={isLoading}
-        page={page}
-        totalPages={data?.totalPages ?? 0}
-        totalElements={data?.totalElements ?? 0}
-        onPageChange={setPage}
-        rowKey={(r) => r.id}
-        emptyTitle="No hay documentos"
+      {isStudentOnly ? (
+        <DocumentosGridEstudiante
+          rows={data?.content}
+          isLoading={isLoading}
+          onDelete={(id) => del.mutate(id)}
+        />
+      ) : (
+        <DataTable
+          columns={columns}
+          rows={data?.content}
+          isLoading={isLoading}
+          page={page}
+          totalPages={data?.totalPages ?? 0}
+          totalElements={data?.totalElements ?? 0}
+          onPageChange={setPage}
+          rowKey={(r) => r.id}
+          emptyTitle="No hay documentos"
+        />
+      )}
+    </div>
+  );
+}
+
+function iconForTipoOrMime(d: Documento): JSX.Element {
+  if (d.mimeType?.startsWith("image/")) {
+    return <ImageIcon className="h-6 w-6" />;
+  }
+  return <FileText className="h-6 w-6" />;
+}
+
+interface DocumentosGridEstudianteProps {
+  rows: Documento[] | undefined;
+  isLoading: boolean;
+  onDelete: (id: number) => void;
+}
+
+const HV_GENERATED_PREFIX = "generated://hv/";
+
+function esHvGenerada(d: Documento): boolean {
+  return d.tipo === "HOJA_VIDA" && (d.rutaAlmacenamiento ?? "").startsWith(HV_GENERATED_PREFIX);
+}
+
+async function descargarHvGenerada(d: Documento): Promise<void> {
+  if (!d.estudianteId) return;
+  const res = await api.get(`/hoja-vida/${d.estudianteId}/pdf`, { responseType: "blob" });
+  const blob = new Blob([res.data as BlobPart], { type: "application/pdf" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = d.nombreOriginal || `hv-${d.estudianteId}.pdf`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 60_000);
+}
+
+function DocumentosGridEstudiante({
+  rows,
+  isLoading,
+  onDelete,
+}: DocumentosGridEstudianteProps): JSX.Element {
+  const navigate = useNavigate();
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center rounded-2xl border border-dashed border-border/80 bg-card p-12 text-sm text-muted-foreground">
+        <Loader2 className="mr-2 h-5 w-5 animate-spin text-primary" /> Cargando tus documentos...
+      </div>
+    );
+  }
+  if (!rows || rows.length === 0) {
+    return (
+      <EmptyState
+        title="Aún no has subido documentos"
+        description="Sube tu hoja de vida, EPS y demás soportes para postularte a vacantes."
+        action={
+          <Button variant="gradient" onClick={() => navigate("/documentos/new")}>
+            <Plus className="h-4 w-4" /> Subir tu primer documento
+          </Button>
+        }
       />
+    );
+  }
+  return (
+    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+      {rows.map((d) => {
+        const generada = esHvGenerada(d);
+        return (
+        <Card key={d.id} className="group flex flex-col">
+          <CardContent className="flex flex-col gap-3 p-4 flex-1">
+            <div className="flex items-start gap-3">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary-soft text-primary">
+                {iconForTipoOrMime(d)}
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="font-medium leading-tight truncate" title={d.nombreOriginal}>
+                  {d.nombreOriginal}
+                </p>
+                <p className="text-xs text-muted-foreground mt-0.5 inline-flex items-center gap-1">
+                  {humanize(d.tipo, TIPO_DOCUMENTO_LABELS)}
+                  {generada && (
+                    <span className="inline-flex items-center gap-0.5 rounded-full bg-accent-soft text-accent px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider">
+                      <Sparkles className="h-2.5 w-2.5" /> Auto
+                    </span>
+                  )}
+                </p>
+              </div>
+              <StatusBadge kind="documento" value={d.estado} />
+            </div>
+
+            <div className="text-xs text-muted-foreground space-y-0.5">
+              {generada ? (
+                <div>Generado por SIVU desde tu Hoja de Vida</div>
+              ) : (
+                <div>{formatBytes(d.tamanoBytes)} · {d.mimeType}</div>
+              )}
+              <div>
+                {generada ? "Actualizado" : "Subido"} el {format(parseISO(d.updatedAt), "PP", { locale: es })}
+              </div>
+            </div>
+
+            {d.estado === "RECHAZADO" && d.observacionesValidacion && (
+              <div className="rounded-lg bg-destructive/10 text-destructive text-xs p-2">
+                <strong>Coordinación lo rechazó:</strong> {d.observacionesValidacion}
+              </div>
+            )}
+
+            <div className="flex flex-wrap gap-2 pt-2 mt-auto">
+              {generada ? (
+                <>
+                  <Button
+                    size="sm"
+                    variant="gradient"
+                    onClick={() => descargarHvGenerada(d).catch((e) => toast.error(extractApiMessage(e)))}
+                    className="flex-1 sm:flex-none"
+                  >
+                    <Download className="h-4 w-4" /> Descargar PDF
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => navigate("/mi-hoja-vida")}
+                  >
+                    <Pencil className="h-4 w-4" /> Editar HV
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => navigate(`/documentos/${d.id}`)}
+                    className="flex-1 sm:flex-none"
+                  >
+                    <Eye className="h-4 w-4" /> Ver
+                  </Button>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button size="sm" variant="ghost" aria-label="Eliminar">
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>¿Eliminar este documento?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          "{d.nombreOriginal}" se eliminará y tendrás que volver a subirlo.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => onDelete(d.id)}>
+                          Eliminar
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+        );
+      })}
     </div>
   );
 }

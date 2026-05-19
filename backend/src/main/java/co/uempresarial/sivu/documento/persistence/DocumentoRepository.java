@@ -43,4 +43,11 @@ public interface DocumentoRepository extends JpaRepository<Documento, Long> {
 
     /** Documentos asociados directamente a una empresa (RUT, cámara, etc.). */
     List<Documento> findByEmpresaIdOrderByCreatedAtDesc(Long empresaId);
+
+    /**
+     * Primer documento de un estudiante de cierto tipo (útil para upsert
+     * automático, p. ej. la HV generada por el sistema).
+     */
+    java.util.Optional<Documento> findFirstByEstudianteIdAndTipoOrderByCreatedAtDesc(
+        Long estudianteId, TipoDocumentoSoporte tipo);
 }
