@@ -143,7 +143,7 @@ export function EvaluacionTutorPage(): JSX.Element {
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <div>
-            <h1 className="text-2xl font-bold">Evaluación del Tutor (GAC-FM-007)</h1>
+            <h1 className="text-2xl font-bold">Evaluación del Tutor (GAC-FM-9)</h1>
             <p className="text-sm text-muted-foreground">
               Pesos: Capacidades 40% · Actitudes 40% · Aplicación 20% (10/5/5)
             </p>
