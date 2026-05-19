@@ -142,6 +142,19 @@ public class NotificacionService {
         enviar(destinatario, asunto, cuerpo);
     }
 
+    /**
+     * Envío genérico para features que no tienen una plantilla específica
+     * (ej. entrevista programada, HV aprobada, carta de presentación).
+     */
+    @Async("notificacionExecutor")
+    public void enviarTexto(String destinatario, String asunto, String cuerpo) {
+        if (!enabled) {
+            log.info("[NOTIFICACIONES DESHABILITADAS] No se envía email a {}", destinatario);
+            return;
+        }
+        enviar(destinatario, asunto, cuerpo);
+    }
+
     private void enviar(String to, String subject, String body) {
         try {
             SimpleMailMessage msg = new SimpleMailMessage();

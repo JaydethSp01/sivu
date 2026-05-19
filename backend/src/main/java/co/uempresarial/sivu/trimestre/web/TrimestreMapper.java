@@ -105,6 +105,9 @@ public class TrimestreMapper {
             pm.getActividades(),
             pm.getIndicadores(),
             pm.getEstado(),
+            pm.getEsOpcionDeGrado(),
+            pm.getNumeroPaginas(),
+            pm.getNotaFinal(),
             pm.getDocumentoPdf() != null ? pm.getDocumentoPdf().getId() : null,
             pm.getCreatedAt(), pm.getUpdatedAt()
         );

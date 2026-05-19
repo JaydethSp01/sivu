@@ -50,6 +50,14 @@ public class ActaReunion extends BaseEntity {
     @Builder.Default
     private TipoReunion tipoReunion = TipoReunion.SEGUIMIENTO;
 
+    /**
+     * Momento del proceso de coformación: INICIO, MITAD o CIERRE.
+     * Según la guía Uniempresarial son las 3 reuniones obligatorias por convenio.
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "momento_proceso", length = 10)
+    private MomentoProceso momentoProceso;
+
     @Column(name = "asistentes_json", columnDefinition = "TEXT")
     private String asistentesJson;
 

@@ -3,9 +3,13 @@ package co.uempresarial.sivu.hojavida.service;
 import co.uempresarial.sivu.estudiante.domain.Estudiante;
 import co.uempresarial.sivu.estudiante.persistence.EstudianteRepository;
 import co.uempresarial.sivu.hojavida.domain.*;
+import co.uempresarial.sivu.hojavida.domain.EstadoHojaVida;
 import co.uempresarial.sivu.hojavida.persistence.HojaVidaRepository;
 import co.uempresarial.sivu.hojavida.web.dto.HojaVidaRequest;
 import co.uempresarial.sivu.hojavida.web.dto.HojaVidaResponse;
+import co.uempresarial.sivu.automatizacion.service.NotificacionService;
+import co.uempresarial.sivu.security.service.CurrentUserService;
+import co.uempresarial.sivu.shared.exception.BusinessException;
 import co.uempresarial.sivu.shared.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -23,6 +27,8 @@ public class HojaVidaService {
 
     private final HojaVidaRepository repository;
     private final EstudianteRepository estudianteRepository;
+    private final NotificacionService notificacionService;
+    private final CurrentUserService currentUser;
 
     @Transactional(readOnly = true)
     public HojaVidaResponse obtener(Long estudianteId) {
@@ -174,8 +180,97 @@ public class HojaVidaService {
             hv.getDireccion(), hv.getTelefonoContacto(), hv.getCiudad(), hv.getFotoPath(),
             hv.getPerfilSaber(), hv.getPerfilHacer(), hv.getPerfilSer(),
             hv.estaCompleta(),
+            hv.getEstado(),
+            hv.getObservacionesCoformacion(),
+            hv.getEnviadaAt(),
+            hv.getAprobadaAt(),
+            hv.getAprobadaPorCoordNombre(),
             hv.getUltimaActualizacion(),
             hv.getCreatedAt(), hv.getUpdatedAt(),
             hab, idi, edu, exF, exL);
+    }
+
+    /* ============================================================
+       Flujo Coformación — F7 #52
+       BORRADOR → ENVIADA → APROBADA o RECHAZADA → (BORRADOR para reenviar)
+       ============================================================ */
+
+    public HojaVidaResponse enviarACoformacion(Long estudianteId) {
+        HojaVida hv = obtenerEntidad(estudianteId);
+        if (!hv.estaCompleta()) {
+            throw new BusinessException(
+                "La Hoja de Vida no está completa. Llena perfil SABER/HACER/SER, al menos 1 habilidad, 1 idioma y 1 educación.");
+        }
+        if (hv.getEstado() != EstadoHojaVida.BORRADOR && hv.getEstado() != EstadoHojaVida.RECHAZADA) {
+            throw new BusinessException(
+                "Solo se puede enviar a Coformación desde BORRADOR o RECHAZADA (actual: " + hv.getEstado() + ")");
+        }
+        hv.setEstado(EstadoHojaVida.ENVIADA);
+        hv.setEnviadaAt(OffsetDateTime.now());
+        hv.setObservacionesCoformacion(null);
+        hv.setAprobadaAt(null);
+        hv.setAprobadaPorCoordMongoId(null);
+        hv.setAprobadaPorCoordNombre(null);
+
+        notificacionService.enviarTexto(
+            hv.getEstudiante().getEmail(),
+            "[SIVU] Tu Hoja de Vida fue enviada a Coformación",
+            "Hola " + hv.getEstudiante().getNombres()
+                + ",\n\nTu HV está en revisión por la Oficina de Coformación de Uniempresarial."
+                + " Te notificaremos el resultado.\n\nEquipo SIVU");
+
+        return toResponse(hv);
+    }
+
+    public HojaVidaResponse aprobar(Long hvId) {
+        HojaVida hv = repository.findById(hvId)
+            .orElseThrow(() -> new ResourceNotFoundException("HojaVida", hvId));
+        if (hv.getEstado() != EstadoHojaVida.ENVIADA) {
+            throw new BusinessException("Solo se pueden aprobar HVs ENVIADAS (actual: " + hv.getEstado() + ")");
+        }
+        hv.setEstado(EstadoHojaVida.APROBADA);
+        hv.setAprobadaAt(OffsetDateTime.now());
+        currentUser.current().ifPresent(u -> {
+            hv.setAprobadaPorCoordMongoId(u.getId());
+            hv.setAprobadaPorCoordNombre(u.getNombres() + " " + u.getApellidos());
+        });
+        notificacionService.enviarTexto(
+            hv.getEstudiante().getEmail(),
+            "[SIVU] ¡Tu Hoja de Vida fue aprobada!",
+            "Hola " + hv.getEstudiante().getNombres()
+                + ",\n\nLa Oficina de Coformación aprobó tu HV. Ya puedes postularte a vacantes.\n\nEquipo SIVU");
+        return toResponse(hv);
+    }
+
+    public HojaVidaResponse rechazar(Long hvId, String observaciones) {
+        HojaVida hv = repository.findById(hvId)
+            .orElseThrow(() -> new ResourceNotFoundException("HojaVida", hvId));
+        if (hv.getEstado() != EstadoHojaVida.ENVIADA) {
+            throw new BusinessException("Solo se pueden rechazar HVs ENVIADAS (actual: " + hv.getEstado() + ")");
+        }
+        if (observaciones == null || observaciones.isBlank()) {
+            throw new BusinessException("Debes indicar observaciones al rechazar una HV");
+        }
+        hv.setEstado(EstadoHojaVida.RECHAZADA);
+        hv.setObservacionesCoformacion(observaciones);
+        notificacionService.enviarTexto(
+            hv.getEstudiante().getEmail(),
+            "[SIVU] Tu Hoja de Vida requiere ajustes",
+            "Hola " + hv.getEstudiante().getNombres()
+                + ",\n\nLa Oficina de Coformación revisó tu HV y solicitó ajustes:\n\n"
+                + observaciones
+                + "\n\nAjusta y vuelve a enviarla.\n\nEquipo SIVU");
+        return toResponse(hv);
+    }
+
+    @Transactional(readOnly = true)
+    public List<HojaVidaResponse> listarPorEstado(EstadoHojaVida estado) {
+        return repository.findByEstadoOrderByEnviadaAtAsc(estado).stream()
+            .map(this::toResponse).toList();
+    }
+
+    @Transactional(readOnly = true)
+    public boolean estudianteTieneHvAprobada(Long estudianteId) {
+        return repository.existsByEstudianteIdAndEstado(estudianteId, EstadoHojaVida.APROBADA);
     }
 }

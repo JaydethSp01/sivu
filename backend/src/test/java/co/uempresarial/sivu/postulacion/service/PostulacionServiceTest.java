@@ -2,7 +2,10 @@ package co.uempresarial.sivu.postulacion.service;
 
 import co.uempresarial.sivu.automatizacion.service.MatchingService;
 import co.uempresarial.sivu.automatizacion.service.NotificacionService;
+import co.uempresarial.sivu.cartapresentacion.service.CartaPresentacionService;
 import co.uempresarial.sivu.empresa.domain.Empresa;
+import co.uempresarial.sivu.hojavida.service.HojaVidaService;
+import co.uempresarial.sivu.security.service.CurrentUserService;
 import co.uempresarial.sivu.estudiante.domain.EstadoEstudiante;
 import co.uempresarial.sivu.estudiante.domain.Estudiante;
 import co.uempresarial.sivu.estudiante.domain.TipoDocumento;
@@ -46,6 +49,9 @@ class PostulacionServiceTest {
     @Mock private VacanteRepository vacanteRepository;
     @Mock private MatchingService matchingService;
     @Mock private NotificacionService notificacionService;
+    @Mock private HojaVidaService hojaVidaService;
+    @Mock private CartaPresentacionService cartaPresentacionService;
+    @Mock private CurrentUserService currentUser;
     @Mock private PostulacionMapper mapper;
 
     @InjectMocks private PostulacionService service;
@@ -77,6 +83,7 @@ class PostulacionServiceTest {
     void crearOk() {
         when(estudianteRepository.findById(1L)).thenReturn(Optional.of(estudiante()));
         when(vacanteRepository.findById(10L)).thenReturn(Optional.of(vacante(EstadoVacante.PUBLICADA)));
+        when(hojaVidaService.estudianteTieneHvAprobada(1L)).thenReturn(true);
         when(postulacionRepository.findByEstudianteIdAndVacanteId(1L, 10L)).thenReturn(Optional.empty());
         when(matchingService.calcular(any(), any())).thenReturn(
             new MatchingService.ResultadoMatching(
@@ -111,6 +118,7 @@ class PostulacionServiceTest {
     void postulacionDuplicada() {
         when(estudianteRepository.findById(1L)).thenReturn(Optional.of(estudiante()));
         when(vacanteRepository.findById(10L)).thenReturn(Optional.of(vacante(EstadoVacante.PUBLICADA)));
+        when(hojaVidaService.estudianteTieneHvAprobada(1L)).thenReturn(true);
         when(postulacionRepository.findByEstudianteIdAndVacanteId(1L, 10L))
             .thenReturn(Optional.of(Postulacion.builder().id(99L).build()));
 

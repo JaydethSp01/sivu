@@ -3,8 +3,12 @@ package co.uempresarial.sivu.trimestre.service;
 import co.uempresarial.sivu.shared.exception.BusinessException;
 import co.uempresarial.sivu.shared.exception.ResourceNotFoundException;
 import co.uempresarial.sivu.trimestre.domain.EstadoPlanMejora;
+import co.uempresarial.sivu.trimestre.domain.EvaluacionProfesorTrimestre;
+import co.uempresarial.sivu.trimestre.domain.EvaluacionTutorTrimestre;
 import co.uempresarial.sivu.trimestre.domain.PlanMejora;
 import co.uempresarial.sivu.trimestre.domain.Trimestre;
+import co.uempresarial.sivu.trimestre.persistence.EvaluacionProfesorTrimestreRepository;
+import co.uempresarial.sivu.trimestre.persistence.EvaluacionTutorTrimestreRepository;
 import co.uempresarial.sivu.trimestre.persistence.PlanMejoraRepository;
 import co.uempresarial.sivu.trimestre.persistence.TrimestreRepository;
 import co.uempresarial.sivu.trimestre.web.TrimestreMapper;
@@ -14,6 +18,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.List;
 
 @Service
@@ -21,8 +27,13 @@ import java.util.List;
 @Transactional
 public class PlanMejoraService {
 
+    private static final BigDecimal NOTA_MINIMA_APROBACION = new BigDecimal("3.00");
+    private static final int PAGINAS_MAX = 15;
+
     private final PlanMejoraRepository repository;
     private final TrimestreRepository trimestreRepository;
+    private final EvaluacionTutorTrimestreRepository evalTutorRepository;
+    private final EvaluacionProfesorTrimestreRepository evalProfRepository;
     private final TrimestreMapper mapper;
 
     @Transactional(readOnly = true)
@@ -87,5 +98,54 @@ public class PlanMejoraService {
             throw new ResourceNotFoundException("PlanMejora", id);
         }
         repository.deleteById(id);
+    }
+
+    /* ============================================================
+       F7 #54 — Aprobación PM con validación de nota ≥ 3.0
+                + flag opción de grado + páginas ≤ 15
+       ============================================================ */
+
+    public PlanMejoraResponse aprobar(Long id) {
+        PlanMejora pm = obtenerEntidad(id);
+        if (pm.getEstado() == EstadoPlanMejora.APROBADO) {
+            throw new BusinessException("El PM ya está APROBADO");
+        }
+        if (pm.getNumeroPaginas() != null && pm.getNumeroPaginas() > PAGINAS_MAX) {
+            throw new BusinessException("El PM excede el máximo de " + PAGINAS_MAX
+                + " páginas (actual: " + pm.getNumeroPaginas() + ")");
+        }
+        BigDecimal promedio = calcularNotaPromedio(pm.getTrimestre().getId());
+        if (promedio.compareTo(NOTA_MINIMA_APROBACION) < 0) {
+            throw new BusinessException("Nota promedio insuficiente para aprobar el PM (mínimo "
+                + NOTA_MINIMA_APROBACION + ", actual: " + promedio + ")");
+        }
+        pm.setEstado(EstadoPlanMejora.APROBADO);
+        pm.setNotaFinal(promedio);
+        return mapper.toResponse(pm);
+    }
+
+    public PlanMejoraResponse marcarComoOpcionDeGrado(Long id, boolean esOpcion) {
+        PlanMejora pm = obtenerEntidad(id);
+        if (esOpcion && pm.getEstado() != EstadoPlanMejora.APROBADO) {
+            throw new BusinessException(
+                "Solo un PM APROBADO puede marcarse como opción de grado (actual: " + pm.getEstado() + ")");
+        }
+        pm.setEsOpcionDeGrado(esOpcion);
+        return mapper.toResponse(pm);
+    }
+
+    private BigDecimal calcularNotaPromedio(Long trimestreId) {
+        BigDecimal notaTutor = evalTutorRepository.findByTrimestreId(trimestreId)
+            .map(EvaluacionTutorTrimestre::getNotaPonderada)
+            .orElse(BigDecimal.ZERO);
+        BigDecimal notaProf = evalProfRepository.findByTrimestreId(trimestreId)
+            .map(EvaluacionProfesorTrimestre::getNotaPonderada)
+            .orElse(BigDecimal.ZERO);
+        if (notaTutor.signum() == 0 && notaProf.signum() == 0) {
+            throw new BusinessException(
+                "No hay evaluaciones registradas del Tutor ni del Profesor para este trimestre");
+        }
+        int divisor = (notaTutor.signum() > 0 ? 1 : 0) + (notaProf.signum() > 0 ? 1 : 0);
+        return notaTutor.add(notaProf).divide(BigDecimal.valueOf(divisor), 2, RoundingMode.HALF_UP);
     }
 }

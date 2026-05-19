@@ -22,4 +22,7 @@ public interface ActaReunionRepository extends JpaRepository<ActaReunion, Long> 
     boolean existsByTrimestreIdAndNumero(Long trimestreId, Short numero);
 
     long countByTrimestreId(Long trimestreId);
+
+    boolean existsByTrimestreIdAndMomentoProceso(Long trimestreId,
+        co.uempresarial.sivu.trimestre.domain.MomentoProceso momento);
 }

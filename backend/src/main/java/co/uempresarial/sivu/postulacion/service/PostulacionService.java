@@ -2,8 +2,10 @@ package co.uempresarial.sivu.postulacion.service;
 
 import co.uempresarial.sivu.automatizacion.service.MatchingService;
 import co.uempresarial.sivu.automatizacion.service.NotificacionService;
+import co.uempresarial.sivu.cartapresentacion.service.CartaPresentacionService;
 import co.uempresarial.sivu.estudiante.domain.Estudiante;
 import co.uempresarial.sivu.estudiante.persistence.EstudianteRepository;
+import co.uempresarial.sivu.hojavida.service.HojaVidaService;
 import co.uempresarial.sivu.postulacion.domain.EstadoPostulacion;
 import co.uempresarial.sivu.postulacion.domain.Postulacion;
 import co.uempresarial.sivu.postulacion.domain.PostulacionEvento;
@@ -40,6 +42,8 @@ public class PostulacionService {
     private final VacanteRepository vacanteRepository;
     private final MatchingService matchingService;
     private final NotificacionService notificacionService;
+    private final HojaVidaService hojaVidaService;
+    private final CartaPresentacionService cartaPresentacionService;
     private final PostulacionMapper mapper;
     private final CurrentUserService currentUser;
 
@@ -61,6 +65,10 @@ public class PostulacionService {
 
         if (vacante.getEstado() != EstadoVacante.PUBLICADA) {
             throw new BusinessException("La vacante no está publicada (estado actual: " + vacante.getEstado() + ")");
+        }
+        if (!hojaVidaService.estudianteTieneHvAprobada(estudiante.getId())) {
+            throw new BusinessException(
+                "No puedes postularte: tu Hoja de Vida debe estar APROBADA por la Oficina de Coformación.");
         }
         postulacionRepository.findByEstudianteIdAndVacanteId(estudiante.getId(), vacante.getId())
             .ifPresent(p -> { throw new BusinessException("El estudiante ya se postuló a esta vacante"); });
@@ -113,6 +121,15 @@ public class PostulacionService {
         p.setObservacionesEmpresa(request.observaciones());
         if (nuevo == EstadoPostulacion.ACEPTADA || nuevo == EstadoPostulacion.RECHAZADA) {
             p.setFechaDecision(OffsetDateTime.now());
+        }
+
+        // F7 #51 — Auto-generar Carta de Presentación al aceptar la postulación
+        if (nuevo == EstadoPostulacion.ACEPTADA) {
+            try {
+                cartaPresentacionService.generarParaPostulacion(p.getId(), null);
+            } catch (Exception ex) {
+                // No interrumpir el cambio de estado por un fallo en la carta
+            }
         }
 
         registrarEvento(p, "CAMBIO_ESTADO", anterior, nuevo, request.observaciones(), actor);

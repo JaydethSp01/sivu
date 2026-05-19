@@ -4,9 +4,12 @@ import co.uempresarial.sivu.convenio.domain.Convenio;
 import co.uempresarial.sivu.convenio.persistence.ConvenioRepository;
 import co.uempresarial.sivu.shared.exception.BusinessException;
 import co.uempresarial.sivu.shared.exception.ResourceNotFoundException;
+import co.uempresarial.sivu.trimestre.domain.ActaReunion;
 import co.uempresarial.sivu.trimestre.domain.EstadoPlanActividades;
 import co.uempresarial.sivu.trimestre.domain.EstadoTrimestre;
+import co.uempresarial.sivu.trimestre.domain.MomentoProceso;
 import co.uempresarial.sivu.trimestre.domain.PlanActividades;
+import co.uempresarial.sivu.trimestre.domain.TipoReunion;
 import co.uempresarial.sivu.trimestre.domain.Trimestre;
 import co.uempresarial.sivu.trimestre.persistence.*;
 import co.uempresarial.sivu.trimestre.web.TrimestreMapper;
@@ -16,6 +19,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @Service
@@ -58,7 +62,39 @@ public class TrimestreService {
             planActividadesRepository.save(pa);
         }
 
+        // F7 #56 — Auto-crear las 3 actas predefinidas (INICIO/MITAD/CIERRE)
+        // según la guía Uniempresarial. Se crean en BORRADOR para que tutor
+        // empresarial y estudiante las completen llegado el momento.
+        autoGenerar3Actas(saved);
+
         return toResponse(saved);
+    }
+
+    private void autoGenerar3Actas(Trimestre t) {
+        short numero = 1;
+        for (MomentoProceso momento : MomentoProceso.values()) {
+            if (actaRepository.existsByTrimestreIdAndMomentoProceso(t.getId(), momento)) {
+                continue;
+            }
+            String asunto = switch (momento) {
+                case INICIO -> "Reunión de inicio del período";
+                case MITAD  -> "Reunión de seguimiento de mitad de período";
+                case CIERRE -> "Reunión de cierre del período";
+            };
+            TipoReunion tipo = switch (momento) {
+                case INICIO -> TipoReunion.INICIAL;
+                case MITAD  -> TipoReunion.SEGUIMIENTO;
+                case CIERRE -> TipoReunion.EVALUACION_FINAL;
+            };
+            actaRepository.save(ActaReunion.builder()
+                .trimestre(t)
+                .numero(numero++)
+                .fecha(t.getFechaInicio() != null ? t.getFechaInicio() : LocalDate.now())
+                .asunto(asunto)
+                .tipoReunion(tipo)
+                .momentoProceso(momento)
+                .build());
+        }
     }
 
     public TrimestreResponse actualizar(Long id, TrimestreRequest request) {

@@ -60,4 +60,19 @@ public class PlanMejoraController {
         service.eliminar(id);
         return ResponseEntity.noContent().build();
     }
+
+    @PostMapping("/api/v1/planes-mejora/{id}/aprobar")
+    @PreAuthorize("hasAnyRole('COORDINADOR','ADMIN')")
+    @Operation(summary = "Aprobar el PM (valida nota ≥ 3.0 y páginas ≤ 15)")
+    public ResponseEntity<PlanMejoraResponse> aprobar(@PathVariable Long id) {
+        return ResponseEntity.ok(service.aprobar(id));
+    }
+
+    @PatchMapping("/api/v1/planes-mejora/{id}/opcion-grado")
+    @PreAuthorize("hasAnyRole('COORDINADOR','ADMIN')")
+    @Operation(summary = "Marcar/desmarcar el PM como opción de grado (solo si está APROBADO)")
+    public ResponseEntity<PlanMejoraResponse> marcarComoOpcionDeGrado(@PathVariable Long id,
+                                                                       @RequestParam(defaultValue = "true") boolean esOpcion) {
+        return ResponseEntity.ok(service.marcarComoOpcionDeGrado(id, esOpcion));
+    }
 }

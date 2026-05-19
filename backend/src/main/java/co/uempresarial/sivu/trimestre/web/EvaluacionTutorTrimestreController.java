@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/v1/trimestres/{trimestreId}/evaluacion-tutor")
 @RequiredArgsConstructor
-@Tag(name = "Evaluación del Tutor (GAC-FM-007)",
+@Tag(name = "Evaluación del Tutor (GAC-FM-9)",
     description = "Evaluación del tutor empresarial al estudiante por trimestre. Pesos: Capacidades 40%, Actitudes 40%, Aplicación 20% (10/5/5). La nota ponderada se calcula automáticamente.")
 public class EvaluacionTutorTrimestreController {
 
@@ -50,7 +50,7 @@ public class EvaluacionTutorTrimestreController {
 
     @GetMapping("/pdf")
     @PreAuthorize("isAuthenticated()")
-    @Operation(summary = "Descargar la ET en PDF con formato Uniempresarial (GAC-FM-007)")
+    @Operation(summary = "Descargar la ET en PDF con formato Uniempresarial (GAC-FM-9)")
     public ResponseEntity<byte[]> descargarPdf(@PathVariable Long trimestreId) {
         byte[] pdf = pdfGenerator.generar(service.obtenerEntidad(trimestreId));
         return ResponseEntity.ok()

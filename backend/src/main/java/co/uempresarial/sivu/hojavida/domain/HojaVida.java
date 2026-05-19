@@ -51,6 +51,26 @@ public class HojaVida extends BaseEntity {
     @Builder.Default
     private OffsetDateTime ultimaActualizacion = OffsetDateTime.now();
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "estado", nullable = false, length = 20)
+    @Builder.Default
+    private EstadoHojaVida estado = EstadoHojaVida.BORRADOR;
+
+    @Column(name = "observaciones_coformacion", columnDefinition = "TEXT")
+    private String observacionesCoformacion;
+
+    @Column(name = "enviada_at")
+    private OffsetDateTime enviadaAt;
+
+    @Column(name = "aprobada_at")
+    private OffsetDateTime aprobadaAt;
+
+    @Column(name = "aprobada_por_coord_mongo_id", length = 36)
+    private String aprobadaPorCoordMongoId;
+
+    @Column(name = "aprobada_por_coord_nombre", length = 160)
+    private String aprobadaPorCoordNombre;
+
     @OneToMany(mappedBy = "hojaVida", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @OrderBy("orden ASC")
     @Builder.Default

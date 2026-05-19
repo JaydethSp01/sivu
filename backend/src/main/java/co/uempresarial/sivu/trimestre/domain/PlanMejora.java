@@ -6,6 +6,8 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 import lombok.*;
 
+import java.math.BigDecimal;
+
 @Getter
 @Setter
 @NoArgsConstructor
@@ -52,4 +54,14 @@ public class PlanMejora extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "documento_pdf_id")
     private Documento documentoPdf;
+
+    @Column(name = "es_opcion_de_grado", nullable = false)
+    @Builder.Default
+    private Boolean esOpcionDeGrado = false;
+
+    @Column(name = "numero_paginas")
+    private Short numeroPaginas;
+
+    @Column(name = "nota_final", precision = 3, scale = 2)
+    private BigDecimal notaFinal;
 }

@@ -1,6 +1,7 @@
 package co.uempresarial.sivu.hojavida.web.dto;
 
 import co.uempresarial.sivu.hojavida.domain.CategoriaHabilidad;
+import co.uempresarial.sivu.hojavida.domain.EstadoHojaVida;
 import co.uempresarial.sivu.hojavida.domain.NivelIdioma;
 
 import java.time.LocalDate;
@@ -22,6 +23,11 @@ public record HojaVidaResponse(
     String perfilHacer,
     String perfilSer,
     boolean completa,
+    EstadoHojaVida estado,
+    String observacionesCoformacion,
+    OffsetDateTime enviadaAt,
+    OffsetDateTime aprobadaAt,
+    String aprobadaPorCoordNombre,
     OffsetDateTime ultimaActualizacion,
     OffsetDateTime createdAt,
     OffsetDateTime updatedAt,
