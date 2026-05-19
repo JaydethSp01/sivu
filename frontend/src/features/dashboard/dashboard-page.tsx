@@ -517,35 +517,89 @@ function EstudianteDashboard(): JSX.Element {
 
       <Card>
         <CardHeader>
-          <CardTitle>Vacantes recomendadas para ti</CardTitle>
-          <CardDescription>
-            Score calculado automáticamente con base en tu programa, promedio y créditos.
-          </CardDescription>
+          <div className="flex flex-wrap items-start justify-between gap-2">
+            <div>
+              <CardTitle>Vacantes recomendadas para ti</CardTitle>
+              <CardDescription>
+                Calculadas por tu programa, promedio y créditos. Postúlate con un clic.
+              </CardDescription>
+            </div>
+            <Button asChild variant="outline" size="sm">
+              <Link to="/vacantes">Ver todas</Link>
+            </Button>
+          </div>
         </CardHeader>
-        <CardContent className="space-y-3">
-          {(vacantes.data ?? []).length === 0 && (
-            <p className="text-sm text-muted-foreground">No hay vacantes publicadas aún.</p>
-          )}
-          {matchings.map((m, i) => {
-            const v = vacantes.data?.[i];
-            if (!v) return null;
-            const score = Number(m.data?.matching.score ?? 0);
-            return (
-              <div key={v.id} className="rounded-md border p-3 space-y-2">
-                <div className="flex items-start justify-between gap-2">
-                  <div>
-                    <div className="font-medium">{v.titulo}</div>
-                    <div className="text-xs text-muted-foreground">
-                      {v.empresa?.razonSocial} · {v.ciudad} · {v.modalidad}
+        <CardContent>
+          {(vacantes.data ?? []).length === 0 ? (
+            <EmptyState
+              title="Aún no hay vacantes publicadas"
+              description="Vuelve pronto. En cuanto las empresas publiquen, aparecerán aquí."
+            />
+          ) : (
+            <div className="grid gap-3 sm:grid-cols-2">
+              {matchings.map((m, i) => {
+                const v = vacantes.data?.[i];
+                if (!v) return null;
+                const score = Number(m.data?.matching.score ?? 0);
+                const recomendado = m.data?.matching.recomendado;
+                return (
+                  <article
+                    key={v.id}
+                    className="group relative flex flex-col gap-3 rounded-2xl border border-border/70 bg-card p-4 shadow-xs hover:shadow-md hover:border-primary/30 transition-all"
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <div className="font-display text-base font-semibold tracking-tight line-clamp-2">
+                          {v.titulo}
+                        </div>
+                        <div className="text-xs text-muted-foreground mt-1 truncate">
+                          {v.empresa?.razonSocial ?? "Empresa"}
+                        </div>
+                      </div>
+                      {recomendado && (
+                        <Badge variant="success" className="shrink-0">
+                          <Sparkles className="h-3 w-3 mr-0.5" /> Recomendado
+                        </Badge>
+                      )}
                     </div>
-                  </div>
-                  {m.data?.matching.recomendado && <Badge variant="success">Recomendado</Badge>}
-                </div>
-                <Progress value={score} />
-                <div className="text-xs text-muted-foreground">Score: {score.toFixed(0)}/100</div>
-              </div>
-            );
-          })}
+
+                    <div className="flex flex-wrap gap-1.5">
+                      <Badge variant="muted" className="font-normal">
+                        {v.ciudad}
+                      </Badge>
+                      <Badge variant="muted" className="font-normal">
+                        {v.modalidad?.toLowerCase().replace(/^./, (c) => c.toUpperCase())}
+                      </Badge>
+                    </div>
+
+                    <div className="space-y-1">
+                      <div className="flex items-baseline justify-between text-xs">
+                        <span className="text-muted-foreground">Compatibilidad</span>
+                        <span className="font-bold text-foreground">{score.toFixed(0)}%</span>
+                      </div>
+                      <Progress value={score} />
+                    </div>
+
+                    <div className="flex gap-2 pt-1 mt-auto">
+                      <Button
+                        asChild
+                        size="sm"
+                        variant="gradient"
+                        className="flex-1"
+                      >
+                        <Link to={`/postulaciones/new?vacanteId=${v.id}`}>
+                          <Send className="h-4 w-4" /> Postularme
+                        </Link>
+                      </Button>
+                      <Button asChild size="sm" variant="outline">
+                        <Link to={`/vacantes/${v.id}`}>Detalle</Link>
+                      </Button>
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
