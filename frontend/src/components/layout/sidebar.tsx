@@ -116,16 +116,32 @@ function renderItem(item: NavItem, collapsed: boolean, roles: Rol[]): JSX.Elemen
       end={item.to === "/"}
       className={({ isActive }) =>
         cn(
-          "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+          "group relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-150",
           isActive
-            ? "bg-primary text-primary-foreground"
-            : "text-muted-foreground hover:bg-accent hover:text-foreground"
+            ? "bg-primary-soft text-primary shadow-xs"
+            : "text-muted-foreground hover:bg-muted hover:text-foreground"
         )
       }
       title={collapsed ? label : undefined}
     >
-      <item.icon className="h-4 w-4 shrink-0" />
-      {!collapsed && <span>{label}</span>}
+      {({ isActive }) => (
+        <>
+          <span
+            className={cn(
+              "absolute left-0 top-1.5 bottom-1.5 w-1 rounded-r-full transition-all",
+              isActive ? "bg-primary" : "bg-transparent"
+            )}
+            aria-hidden
+          />
+          <item.icon
+            className={cn(
+              "h-4 w-4 shrink-0 transition-colors",
+              isActive ? "text-primary" : "text-muted-foreground group-hover:text-foreground"
+            )}
+          />
+          {!collapsed && <span className="truncate">{label}</span>}
+        </>
+      )}
     </NavLink>
   );
 }
@@ -140,25 +156,37 @@ export function Sidebar({ collapsed }: SidebarProps): JSX.Element {
   return (
     <aside
       className={cn(
-        "border-r bg-card transition-all duration-200 flex flex-col h-screen sticky top-0",
+        "border-r border-border/70 bg-card transition-all duration-200 flex flex-col h-screen sticky top-0",
         collapsed ? "w-16" : "w-64"
       )}
     >
-      <div className="flex items-center gap-2 border-b px-4 h-14">
-        <GraduationCap className="h-6 w-6 text-primary shrink-0" />
+      <div className="flex items-center gap-3 border-b border-border/70 px-4 h-16">
+        <div className="relative shrink-0">
+          <div className="absolute inset-0 -m-1 rounded-xl bg-uni-gradient opacity-20 blur-md" />
+          <div className="relative flex h-9 w-9 items-center justify-center rounded-xl bg-uni-gradient text-primary-foreground shadow-md">
+            <GraduationCap className="h-5 w-5" />
+          </div>
+        </div>
         {!collapsed && (
           <div className="leading-tight">
-            <div className="font-bold text-sm">SIVU</div>
-            <div className="text-[10px] text-muted-foreground">Vinculación U.</div>
+            <div className="font-display text-base font-bold tracking-tight">SIVU</div>
+            <div className="text-[10px] uppercase tracking-widest text-muted-foreground">
+              Uniempresarial
+            </div>
           </div>
         )}
       </div>
-      <nav className="flex-1 overflow-y-auto py-3 space-y-1 px-2">
+      <nav className="flex-1 overflow-y-auto py-4 space-y-1 px-2">
+        {!collapsed && (
+          <div className="px-3 pb-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/80">
+            Menú principal
+          </div>
+        )}
         {items.map((item) => renderItem(item, collapsed, userRoles))}
         {groups.map((group) => (
-          <div key={group.label} className="pt-3">
+          <div key={group.label} className="pt-4">
             {!collapsed && (
-              <div className="px-3 pb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+              <div className="px-3 pb-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/80">
                 {group.label}
               </div>
             )}
@@ -168,8 +196,17 @@ export function Sidebar({ collapsed }: SidebarProps): JSX.Element {
           </div>
         ))}
       </nav>
-      <div className="border-t p-3 text-[10px] text-muted-foreground">
-        {!collapsed && <span>v0.1.0 · académico</span>}
+      <div className="border-t border-border/70 p-3 text-[10px] text-muted-foreground flex items-center justify-between">
+        {!collapsed ? (
+          <>
+            <span className="font-medium">v0.1.0</span>
+            <span className="rounded-full bg-secondary-soft px-2 py-0.5 text-secondary-foreground font-semibold">
+              ACADÉMICO
+            </span>
+          </>
+        ) : (
+          <span className="mx-auto h-2 w-2 rounded-full bg-secondary" />
+        )}
       </div>
     </aside>
   );
