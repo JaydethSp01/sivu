@@ -13,6 +13,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { PageHeader } from "@/components/page-header";
 import { api, extractApiMessage } from "@/lib/api";
 
 interface ResultadoVinculacion {
@@ -48,27 +49,22 @@ export function FabricaSolucionesPage(): JSX.Element {
   });
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
-            <Factory className="h-6 w-6 text-primary" />
-            Fábrica de Soluciones
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            Programa interno que vincula estudiantes con HV aprobada cuando no encuentran
-            cupo en empresas externas.
-          </p>
-        </div>
-        <Button onClick={() => ejecutar.mutate()} disabled={ejecutar.isPending}>
-          {ejecutar.isPending ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <PlayCircle className="h-4 w-4" />
-          )}{" "}
-          Ejecutar matching ahora
-        </Button>
-      </div>
+    <div className="space-y-5">
+      <PageHeader
+        title="Programa interno"
+        description="Asignación automática para estudiantes con HV aprobada que aún no encuentran cupo externo."
+        icon={Factory}
+        actions={
+          <Button variant="gradient" onClick={() => ejecutar.mutate()} disabled={ejecutar.isPending}>
+            {ejecutar.isPending ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <PlayCircle className="h-4 w-4" />
+            )}{" "}
+            Ejecutar asignación ahora
+          </Button>
+        }
+      />
 
       <Card>
         <CardHeader>

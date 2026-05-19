@@ -4,7 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { ArrowLeft, Briefcase, Info, Loader2 } from "lucide-react";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,6 +13,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Combobox } from "@/components/combobox";
+import { PageHeader } from "@/components/page-header";
 import { api, extractApiMessage } from "@/lib/api";
 import { useAuthStore } from "@/lib/auth-store";
 import {
@@ -59,6 +60,10 @@ export function VacanteFormPage(): JSX.Element {
   const navigate = useNavigate();
   const qc = useQueryClient();
   const usuario = useAuthStore((s) => s.usuario);
+  const hasRole = useAuthStore((s) => s.hasRole);
+  // Créditos mínimos y promedio mínimo son criterios académicos: los define
+  // Coformación (coord/admin), no la empresa.
+  const canEditAcademicReqs = hasRole("ADMIN", "COORDINADOR");
 
   const empresas = useQuery({
     queryKey: ["/empresas", "for-vacante"],
@@ -143,11 +148,21 @@ export function VacanteFormPage(): JSX.Element {
   });
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center gap-2">
-        <Button variant="ghost" size="icon" onClick={() => navigate(-1)}><ArrowLeft className="h-4 w-4" /></Button>
-        <h1 className="text-2xl font-bold">{isEdit ? "Editar" : "Nueva"} vacante</h1>
-      </div>
+    <div className="space-y-5">
+      <PageHeader
+        title={isEdit ? "Editar vacante" : "Nueva vacante"}
+        description={
+          canEditAcademicReqs
+            ? "Define los datos de la vacante y los requisitos académicos exigibles."
+            : "Define los datos de tu vacante. Los requisitos académicos los configura Coformación."
+        }
+        icon={Briefcase}
+        actions={
+          <Button variant="outline" onClick={() => navigate(-1)}>
+            <ArrowLeft className="h-4 w-4" /> Volver
+          </Button>
+        }
+      />
       <Card>
         <CardHeader><CardTitle>Datos de la vacante</CardTitle></CardHeader>
         <CardContent>
@@ -222,9 +237,9 @@ export function VacanteFormPage(): JSX.Element {
               </div>
               <FormField control={form.control} name="requisitosKeywords" render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Requisitos (keywords)</FormLabel>
-                  <FormControl><Input placeholder="java, sql, react" {...field} /></FormControl>
-                  <FormDescription>Separados por coma.</FormDescription>
+                  <FormLabel>Requisitos técnicos</FormLabel>
+                  <FormControl><Input placeholder="Ej: Java, SQL, React" {...field} /></FormControl>
+                  <FormDescription>Sepáralos con comas.</FormDescription>
                   <FormMessage />
                 </FormItem>
               )} />
@@ -236,13 +251,26 @@ export function VacanteFormPage(): JSX.Element {
                   <FormMessage />
                 </FormItem>
               )} />
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <FormField control={form.control} name="creditosMinimos" render={({ field }) => (
-                  <FormItem><FormLabel>Créditos mín.</FormLabel><FormControl><Input type="number" min={0} {...field} /></FormControl><FormMessage /></FormItem>
-                )} />
-                <FormField control={form.control} name="promedioMinimo" render={({ field }) => (
-                  <FormItem><FormLabel>Promedio mín.</FormLabel><FormControl><Input type="number" step="0.1" min={0} max={5} {...field} /></FormControl><FormMessage /></FormItem>
-                )} />
+              {canEditAcademicReqs && (
+                <div className="rounded-xl border border-border/60 bg-primary-soft/40 p-4 space-y-3">
+                  <div className="flex items-start gap-2 text-xs text-muted-foreground">
+                    <Info className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+                    <span>
+                      <strong className="text-primary">Requisitos académicos</strong> —
+                      definidos por Coformación. La empresa no los edita.
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <FormField control={form.control} name="creditosMinimos" render={({ field }) => (
+                      <FormItem><FormLabel>Créditos mín.</FormLabel><FormControl><Input type="number" min={0} {...field} /></FormControl><FormMessage /></FormItem>
+                    )} />
+                    <FormField control={form.control} name="promedioMinimo" render={({ field }) => (
+                      <FormItem><FormLabel>Promedio mín.</FormLabel><FormControl><Input type="number" step="0.1" min={0} max={5} {...field} /></FormControl><FormMessage /></FormItem>
+                    )} />
+                  </div>
+                </div>
+              )}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField control={form.control} name="duracionMeses" render={({ field }) => (
                   <FormItem><FormLabel>Duración (meses)</FormLabel><FormControl><Input type="number" min={1} {...field} /></FormControl><FormMessage /></FormItem>
                 )} />

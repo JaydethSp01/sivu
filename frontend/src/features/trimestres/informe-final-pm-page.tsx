@@ -368,12 +368,12 @@ export function InformeFinalPmPage(): JSX.Element {
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <div>
-            <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
+            <h1 className="font-display text-2xl font-bold tracking-tight flex items-center gap-2 uni-accent">
               <FileText className="h-6 w-6 text-primary" />
-              Informe Final del PM (GTC-FM-16)
+              Informe final del plan de mejora
             </h1>
             <p className="text-sm text-muted-foreground">
-              12 secciones académicas, máximo 15 páginas. Plan de Mejora #{pmId}.
+              Llena cada sección del informe. Hasta 15 páginas. Plan #{pmId}.
             </p>
           </div>
         </div>

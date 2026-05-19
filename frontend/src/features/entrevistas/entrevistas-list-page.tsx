@@ -7,6 +7,7 @@ import { es } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { PageHeader } from "@/components/page-header";
 import {
   Select,
   SelectContent,
@@ -60,37 +61,32 @@ export function EntrevistasListPage(): JSX.Element {
   }, [lista.data, resultado]);
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
-            <CalendarClock className="h-6 w-6 text-primary" />
-            Entrevistas
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            Auto-scope por rol: estudiante ve las suyas, empresa las de sus vacantes, coord/admin ve todas.
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-muted-foreground">Resultado</span>
-          <Select
-            value={resultado}
-            onValueChange={(v) => setResultado(v as ResultadoEntrevista | "TODAS")}
-          >
-            <SelectTrigger className="w-[180px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {RESULTADOS.map((r) => (
-                <SelectItem key={r} value={r}>
-                  {r === "TODAS" ? "Todas" : RESULTADO_ENTREVISTA_LABELS[r]}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Badge variant="muted">{filtradas.length}</Badge>
-        </div>
-      </div>
+    <div className="space-y-5">
+      <PageHeader
+        title="Entrevistas"
+        description="Entrevistas entre empresa y candidato. Cada rol ve las que le corresponden."
+        icon={CalendarClock}
+        actions={
+          <div className="flex items-center gap-2">
+            <Select
+              value={resultado}
+              onValueChange={(v) => setResultado(v as ResultadoEntrevista | "TODAS")}
+            >
+              <SelectTrigger className="w-[200px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {RESULTADOS.map((r) => (
+                  <SelectItem key={r} value={r}>
+                    {r === "TODAS" ? "Todas" : RESULTADO_ENTREVISTA_LABELS[r]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Badge variant="muted">{filtradas.length}</Badge>
+          </div>
+        }
+      />
 
       <Card>
         <CardContent className="pt-4">

@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { Eye } from "lucide-react";
+import { Eye, FileSignature } from "lucide-react";
+import { PageHeader } from "@/components/page-header";
 import { format, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
@@ -80,12 +81,13 @@ export function ConveniosListPage(): JSX.Element {
   ];
 
   return (
-    <div className="space-y-4">
-      <div>
-        <h1 className="text-2xl font-bold">{esCoordOAdmin ? "Prácticas" : "Mis prácticas"}</h1>
-        <p className="text-sm text-muted-foreground">Convenios de práctica formalizados entre estudiante, empresa y universidad.</p>
-      </div>
-      <div className="flex flex-wrap gap-2">
+    <div className="space-y-5">
+      <PageHeader
+        title={esCoordOAdmin ? "Prácticas" : "Mis prácticas"}
+        description="Convenios de práctica firmados entre estudiante, empresa y universidad."
+        icon={FileSignature}
+      />
+      <div className="flex flex-wrap gap-2 items-center">
         <Select value={estado} onValueChange={(v) => { setEstado(v as EstadoConvenio | "ALL"); setPage(0); }}>
           <SelectTrigger className="w-72"><SelectValue placeholder="Estado" /></SelectTrigger>
           <SelectContent>

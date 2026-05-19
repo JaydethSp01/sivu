@@ -14,6 +14,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
+import { PageHeader } from "@/components/page-header";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
@@ -103,35 +104,29 @@ export function BandejaHvPage(): JSX.Element {
   const contador = useMemo(() => items.length, [items]);
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
-            <Inbox className="h-6 w-6 text-primary" />
-            Bandeja Hoja de Vida — Coformación
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            Revisa las hojas de vida enviadas por estudiantes, apruébalas para habilitar
-            postulación o devuélvelas con observaciones.
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-muted-foreground">Filtrar por estado</span>
-          <Select value={estado} onValueChange={(v) => setEstado(v as EstadoHojaVida)}>
-            <SelectTrigger className="w-[220px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {ESTADOS.map((e) => (
-                <SelectItem key={e} value={e}>
-                  {ESTADO_HOJA_VIDA_LABELS[e]}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Badge variant="muted">{contador}</Badge>
-        </div>
-      </div>
+    <div className="space-y-5">
+      <PageHeader
+        title="Hojas de vida por revisar"
+        description="Apruébalas para que el estudiante pueda postularse, o devuélvelas con observaciones."
+        icon={Inbox}
+        actions={
+          <div className="flex items-center gap-2">
+            <Select value={estado} onValueChange={(v) => setEstado(v as EstadoHojaVida)}>
+              <SelectTrigger className="w-[220px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {ESTADOS.map((e) => (
+                  <SelectItem key={e} value={e}>
+                    {ESTADO_HOJA_VIDA_LABELS[e]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Badge variant="muted">{contador}</Badge>
+          </div>
+        }
+      />
 
       <Card>
         <CardContent className="pt-4">

@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Eye, Pencil, Plus, Search, Trash2 } from "lucide-react";
+import { Eye, Pencil, Plus, Search, Trash2, UserCog } from "lucide-react";
+import { PageHeader } from "@/components/page-header";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -152,26 +153,25 @@ export function TutoresListPage(): JSX.Element {
   ];
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">Tutores</h1>
-          <p className="text-sm text-muted-foreground">
-            Tutores académicos y empresariales que acompañan a los practicantes.
-          </p>
-        </div>
-        {canEdit && (
-          <Button onClick={() => navigate("/tutores/new")}>
-            <Plus className="h-4 w-4" /> Nuevo
-          </Button>
-        )}
-      </div>
-      <div className="flex flex-wrap gap-2">
+    <div className="space-y-5">
+      <PageHeader
+        title="Tutores"
+        description="Tutores académicos y empresariales que acompañan a los practicantes durante el proceso."
+        icon={UserCog}
+        actions={
+          canEdit ? (
+            <Button variant="gradient" onClick={() => navigate("/tutores/new")}>
+              <Plus className="h-4 w-4" /> Nuevo tutor
+            </Button>
+          ) : null
+        }
+      />
+      <div className="flex flex-wrap gap-2 items-center">
         <div className="relative flex-1 min-w-[240px]">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Buscar por nombre, email o cargo..."
-            className="pl-8"
+            className="pl-9"
             value={q}
             onChange={(e) => { setQ(e.target.value); setPage(0); }}
           />

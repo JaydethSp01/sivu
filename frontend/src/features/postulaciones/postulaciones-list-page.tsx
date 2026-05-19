@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Eye, Plus, Trash2 } from "lucide-react";
+import { Eye, Plus, Send, Trash2 } from "lucide-react";
+import { PageHeader } from "@/components/page-header";
 import { toast } from "sonner";
 import { format, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
@@ -137,23 +138,28 @@ export function PostulacionesListPage(): JSX.Element {
   ];
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">Postulaciones</h1>
-          <p className="text-sm text-muted-foreground">Seguimiento de las postulaciones del flujo.</p>
-        </div>
-        {hasRole("ESTUDIANTE", "ADMIN", "COORDINADOR") && (
-          <Button onClick={() => navigate("/postulaciones/new")}>
-            <Plus className="h-4 w-4" /> Nueva
-          </Button>
-        )}
-      </div>
-      <div className="flex flex-wrap gap-2">
+    <div className="space-y-5">
+      <PageHeader
+        title="Postulaciones"
+        description="Sigue el avance de cada postulación: en revisión, entrevista, preselección y aceptación."
+        icon={Send}
+        actions={
+          hasRole("ESTUDIANTE", "ADMIN", "COORDINADOR") ? (
+            <Button variant="gradient" onClick={() => navigate("/postulaciones/new")}>
+              <Plus className="h-4 w-4" /> Nueva postulación
+            </Button>
+          ) : null
+        }
+      />
+      <div className="flex flex-wrap gap-2 items-center">
         <Select value={estado} onValueChange={(v) => { setEstado(v as EstadoPostulacion | "ALL"); setPage(0); }}>
           <SelectTrigger className="w-56"><SelectValue placeholder="Estado" /></SelectTrigger>
           <SelectContent>
-            {ESTADOS.map((e) => <SelectItem key={e} value={e}>{e === "ALL" ? "Todos los estados" : e}</SelectItem>)}
+            {ESTADOS.map((e) => (
+              <SelectItem key={e} value={e}>
+                {e === "ALL" ? "Todos los estados" : e.replaceAll("_", " ").toLowerCase().replace(/^./, (c) => c.toUpperCase())}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
       </div>

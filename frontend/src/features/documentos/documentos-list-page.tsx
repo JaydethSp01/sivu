@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Check, Eye, Pencil, Plus, Trash2, X } from "lucide-react";
+import { Check, Eye, FileText, Pencil, Plus, Trash2, X } from "lucide-react";
+import { PageHeader } from "@/components/page-header";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -155,17 +156,18 @@ export function DocumentosListPage(): JSX.Element {
   ];
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">Documentos</h1>
-          <p className="text-sm text-muted-foreground">Soportes académicos y de formalización.</p>
-        </div>
-        <Button onClick={() => navigate("/documentos/new")}>
-          <Plus className="h-4 w-4" /> Nuevo
-        </Button>
-      </div>
-      <div className="flex flex-wrap gap-2">
+    <div className="space-y-5">
+      <PageHeader
+        title="Documentos"
+        description="Soportes académicos y de formalización: hojas de vida, certificados, EPS, convenios."
+        icon={FileText}
+        actions={
+          <Button variant="gradient" onClick={() => navigate("/documentos/new")}>
+            <Plus className="h-4 w-4" /> Subir documento
+          </Button>
+        }
+      />
+      <div className="flex flex-wrap gap-2 items-center">
         <Select value={tipo} onValueChange={(v) => { setTipo(v as TipoDocumentoSoporte | "ALL"); setPage(0); }}>
           <SelectTrigger className="w-56"><SelectValue placeholder="Tipo" /></SelectTrigger>
           <SelectContent>

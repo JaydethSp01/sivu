@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Eye, Pencil, Plus, Search, Trash2 } from "lucide-react";
+import { Eye, Pencil, Plus, Search, Trash2, Users } from "lucide-react";
+import { PageHeader } from "@/components/page-header";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -131,25 +132,26 @@ export function EstudiantesListPage(): JSX.Element {
   ];
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">Estudiantes</h1>
-          <p className="text-sm text-muted-foreground">Gestiona los estudiantes habilitados para prácticas.</p>
-        </div>
-        {canEdit && (
-          <Button onClick={() => navigate("/estudiantes/new")}>
-            <Plus className="h-4 w-4" /> Nuevo
-          </Button>
-        )}
-      </div>
+    <div className="space-y-5">
+      <PageHeader
+        title="Estudiantes"
+        description="Gestiona los estudiantes habilitados para iniciar su práctica profesional."
+        icon={Users}
+        actions={
+          canEdit ? (
+            <Button variant="gradient" onClick={() => navigate("/estudiantes/new")}>
+              <Plus className="h-4 w-4" /> Nuevo estudiante
+            </Button>
+          ) : null
+        }
+      />
 
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap gap-2 items-center">
         <div className="relative flex-1 min-w-[240px]">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Buscar por nombre, email, documento..."
-            className="pl-8"
+            placeholder="Buscar por nombre, email o documento..."
+            className="pl-9"
             value={q}
             onChange={(e) => {
               setQ(e.target.value);
@@ -158,7 +160,7 @@ export function EstudiantesListPage(): JSX.Element {
           />
         </div>
         <Select value={estado} onValueChange={(v) => { setEstado(v as EstadoEstudiante | "ALL"); setPage(0); }}>
-          <SelectTrigger className="w-48">
+          <SelectTrigger className="w-56">
             <SelectValue placeholder="Estado" />
           </SelectTrigger>
           <SelectContent>

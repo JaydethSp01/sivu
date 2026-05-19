@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -8,8 +8,10 @@ import {
   ArrowRight,
   GraduationCap,
   Loader2,
+  Moon,
   ShieldCheck,
   Sparkles,
+  Sun,
   UsersRound,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -18,6 +20,7 @@ import { Card } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { api, extractApiMessage } from "@/lib/api";
 import { useAuthStore } from "@/lib/auth-store";
+import { applyTheme, getStoredTheme, type Theme } from "@/lib/theme";
 import type { AuthResponse } from "@/lib/types";
 
 const schema = z.object({
@@ -45,6 +48,11 @@ export function LoginPage(): JSX.Element {
   const navigate = useNavigate();
   const setSession = useAuthStore((s) => s.setSession);
   const [seeding, setSeeding] = useState(false);
+  const [theme, setTheme] = useState<Theme>(() => getStoredTheme());
+
+  useEffect(() => {
+    applyTheme(theme);
+  }, [theme]);
 
   const form = useForm<LoginValues>({
     resolver: zodResolver(schema),
@@ -80,7 +88,18 @@ export function LoginPage(): JSX.Element {
   };
 
   return (
-    <div className="min-h-screen grid lg:grid-cols-[1.05fr_1fr]">
+    <div className="min-h-screen grid lg:grid-cols-[1.05fr_1fr] relative">
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon"
+        aria-label={`Cambiar a tema ${theme === "dark" ? "claro" : "oscuro"}`}
+        aria-pressed={theme === "dark"}
+        onClick={() => setTheme((t) => (t === "dark" ? "light" : "dark"))}
+        className="absolute top-4 right-4 z-50 rounded-full bg-card/80 backdrop-blur ring-1 ring-border/60 hover:bg-card"
+      >
+        {theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+      </Button>
       {/* Hero institucional */}
       <aside className="relative hidden lg:flex flex-col justify-between overflow-hidden bg-uni-gradient text-primary-foreground p-12">
         <div
