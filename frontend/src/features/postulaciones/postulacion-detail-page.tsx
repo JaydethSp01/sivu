@@ -31,6 +31,7 @@ import type {
   PostulacionEvento,
 } from "@/lib/types";
 import { EntrevistaPanel } from "@/features/entrevistas/entrevista-panel";
+import { CartaPresentacionPanel } from "./carta-presentacion-panel";
 
 const TRANSICIONES: Record<EstadoPostulacion, EstadoPostulacion[]> = {
   POSTULADA: ["EN_REVISION", "RECHAZADA", "RETIRADA"],
@@ -263,6 +264,8 @@ export function PostulacionDetailPage(): JSX.Element {
       </div>
 
       <EntrevistaPanel postulacionId={data.id} postulacionEstado={data.estado} />
+
+      <CartaPresentacionPanel postulacionId={data.id} postulacionEstado={data.estado} />
     </div>
   );
 }
