@@ -35,7 +35,9 @@ import { Progress } from "@/components/ui/progress";
 import { StatusBadge } from "@/components/status-badge";
 import { EmptyState } from "@/components/empty-state";
 import { api } from "@/lib/api";
+import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/lib/auth-store";
+import { PageHeader } from "@/components/page-header";
 import type {
   Convenio,
   Documento,
@@ -63,18 +65,44 @@ interface KpiProps {
   value: number | string;
   hint?: string;
   icon: React.ComponentType<{ className?: string }>;
+  tone?: "primary" | "secondary" | "accent" | "success" | "warning";
 }
 
-function Kpi({ label, value, hint, icon: Icon }: KpiProps): JSX.Element {
+const TONE_BG: Record<NonNullable<KpiProps["tone"]>, string> = {
+  primary: "bg-primary-soft text-primary",
+  secondary: "bg-secondary-soft text-secondary-foreground",
+  accent: "bg-accent-soft text-accent",
+  success: "bg-success-soft text-success",
+  warning: "bg-warning-soft text-warning",
+};
+
+function Kpi({ label, value, hint, icon: Icon, tone = "primary" }: KpiProps): JSX.Element {
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between pb-2">
-        <CardTitle className="text-sm font-medium text-muted-foreground">{label}</CardTitle>
-        <Icon className="h-4 w-4 text-muted-foreground" />
-      </CardHeader>
-      <CardContent>
-        <div className="text-3xl font-bold">{value}</div>
-        {hint && <p className="text-xs text-muted-foreground mt-1">{hint}</p>}
+    <Card className="relative overflow-hidden">
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -top-10 -right-10 h-32 w-32 rounded-full bg-uni-gradient opacity-[0.04] blur-2xl"
+      />
+      <CardContent className="relative p-5">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+              {label}
+            </p>
+            <p className="mt-2 font-display text-3xl font-bold tracking-tight">{value}</p>
+            {hint && (
+              <p className="mt-1 text-xs text-muted-foreground line-clamp-2">{hint}</p>
+            )}
+          </div>
+          <div
+            className={cn(
+              "flex h-11 w-11 shrink-0 items-center justify-center rounded-xl shadow-xs",
+              TONE_BG[tone]
+            )}
+          >
+            <Icon className="h-5 w-5" />
+          </div>
+        </div>
       </CardContent>
     </Card>
   );
@@ -151,23 +179,24 @@ function AdminDashboard(): JSX.Element {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Panel de coordinación</h1>
-        <p className="text-sm text-muted-foreground">Resumen general del sistema.</p>
-      </div>
+      <PageHeader
+        title="Panel de coordinación"
+        description="Resumen general del sistema: estudiantes, empresas, vacantes y convenios en curso."
+        icon={GraduationCap}
+      />
 
       <CoordinadorBanners />
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Kpi label="Estudiantes" value={estudiantes.data ?? "—"} icon={Users} />
-        <Kpi label="Empresas aliadas" value={empresas.data ?? "—"} icon={Building2} />
-        <Kpi label="Vacantes publicadas" value={vacantesPublicadas.data ?? "—"} icon={Briefcase} />
-        <Kpi label="Prácticas (convenios)" value={convenios.data ?? "—"} icon={GraduationCap} />
+        <Kpi label="Estudiantes" value={estudiantes.data ?? "—"} icon={Users} tone="primary" />
+        <Kpi label="Empresas aliadas" value={empresas.data ?? "—"} icon={Building2} tone="accent" />
+        <Kpi label="Vacantes publicadas" value={vacantesPublicadas.data ?? "—"} icon={Briefcase} tone="success" />
+        <Kpi label="Prácticas (convenios)" value={convenios.data ?? "—"} icon={GraduationCap} tone="secondary" />
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-2">
-        <Kpi label="Tutores activos" value={tutoresActivos.data ?? "—"} icon={UserCog} />
-        <Kpi label="Convenios activos" value={conveniosActivos.data ?? "—"} icon={GraduationCap} hint="Estado ACTIVO" />
+        <Kpi label="Tutores activos" value={tutoresActivos.data ?? "—"} icon={UserCog} tone="accent" />
+        <Kpi label="Convenios activos" value={conveniosActivos.data ?? "—"} icon={GraduationCap} hint="Estado ACTIVO" tone="primary" />
       </div>
 
       <Card>
@@ -334,10 +363,11 @@ function EstudianteDashboard(): JSX.Element {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Mi panel</h1>
-        <p className="text-sm text-muted-foreground">Tus postulaciones, documentos y vacantes recomendadas.</p>
-      </div>
+      <PageHeader
+        title="Mi panel"
+        description="Tus postulaciones, documentos, vacantes recomendadas y avance de tu Hoja de Vida."
+        icon={FileUser}
+      />
 
       {convenioFuturo.data && (
         <Alert variant="warning">
@@ -383,15 +413,16 @@ function EstudianteDashboard(): JSX.Element {
       })()}
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Kpi label="Mis postulaciones" value={misPostulaciones.data?.totalElements ?? "—"} icon={Send} />
+        <Kpi label="Mis postulaciones" value={misPostulaciones.data?.totalElements ?? "—"} icon={Send} tone="primary" />
         <Kpi
           label="Match promedio"
           value={promMatch !== null ? `${promMatch.toFixed(0)}%` : "—"}
           icon={Sparkles}
           hint="Top 6 vacantes publicadas"
+          tone="accent"
         />
-        <Kpi label="Documentos pendientes" value={pendientes} icon={FileText} hint="En estado RECIBIDO" />
-        <Kpi label="Vacantes recomendadas" value={vacantes.data?.length ?? "—"} icon={Briefcase} />
+        <Kpi label="Documentos pendientes" value={pendientes} icon={FileText} hint="En estado RECIBIDO" tone="warning" />
+        <Kpi label="Vacantes recomendadas" value={vacantes.data?.length ?? "—"} icon={Briefcase} tone="success" />
       </div>
 
       <Card>
@@ -587,10 +618,11 @@ function EmpresaDashboard(): JSX.Element {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Panel de empresa</h1>
-        <p className="text-sm text-muted-foreground">Resumen de tus vacantes y postulaciones.</p>
-      </div>
+      <PageHeader
+        title="Panel de empresa"
+        description="Resumen de tus vacantes activas, postulaciones recibidas y convenios en curso."
+        icon={Building2}
+      />
       {empresaNoAprobada && (
         <Alert variant="destructive">
           <AlertTriangle className="h-4 w-4" />
@@ -607,9 +639,9 @@ function EmpresaDashboard(): JSX.Element {
         </Alert>
       )}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <Kpi label="Vacantes activas" value={activasCount} icon={Briefcase} hint="Estado PUBLICADA" />
-        <Kpi label="Total de postulaciones" value={todas.length} icon={Send} />
-        <Kpi label="Pendientes de revisar" value={pendientes} icon={FileText} hint="POSTULADA o EN_REVISION" />
+        <Kpi label="Vacantes activas" value={activasCount} icon={Briefcase} hint="Estado PUBLICADA" tone="success" />
+        <Kpi label="Total de postulaciones" value={todas.length} icon={Send} tone="primary" />
+        <Kpi label="Pendientes de revisar" value={pendientes} icon={FileText} hint="POSTULADA o EN_REVISION" tone="warning" />
       </div>
       <div className="grid gap-4 sm:grid-cols-1">
         <Kpi
@@ -617,6 +649,7 @@ function EmpresaDashboard(): JSX.Element {
           value={evaluacionesPendientes}
           icon={ClipboardList}
           hint="Convenios activos sin evaluación final"
+          tone="accent"
         />
       </div>
     </div>

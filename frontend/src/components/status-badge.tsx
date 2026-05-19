@@ -1,5 +1,6 @@
 import { Badge } from "./ui/badge";
 import type { ComponentProps } from "react";
+import { cn } from "@/lib/utils";
 
 type BadgeVariant = NonNullable<ComponentProps<typeof Badge>["variant"]>;
 
@@ -71,19 +72,43 @@ const MAPS = {
   entrevista: ENTREVISTA_MAP,
 } as const;
 
+const DOT_BY_VARIANT: Record<BadgeVariant, string> = {
+  default: "bg-primary",
+  secondary: "bg-secondary",
+  accent: "bg-accent",
+  destructive: "bg-destructive",
+  success: "bg-success",
+  warning: "bg-warning",
+  muted: "bg-muted-foreground/50",
+  outline: "bg-foreground/40",
+};
+
 type Kind = keyof typeof MAPS;
 
 interface StatusBadgeProps {
   kind: Kind;
   value: string;
   className?: string;
+  /** Mostrar el punto a la izquierda del label (default true). */
+  dot?: boolean;
 }
 
-export function StatusBadge({ kind, value, className }: StatusBadgeProps): JSX.Element {
+export function StatusBadge({
+  kind,
+  value,
+  className,
+  dot = true,
+}: StatusBadgeProps): JSX.Element {
   const map = MAPS[kind];
   const entry = map[value] ?? { label: value, variant: "outline" as BadgeVariant };
   return (
     <Badge variant={entry.variant} className={className}>
+      {dot && (
+        <span
+          aria-hidden
+          className={cn("h-1.5 w-1.5 rounded-full", DOT_BY_VARIANT[entry.variant])}
+        />
+      )}
       {entry.label}
     </Badge>
   );

@@ -40,9 +40,9 @@ export function DataTable<T>({
 }: DataTableProps<T>): JSX.Element {
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center p-12 text-muted-foreground">
-        <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-        Cargando...
+      <div className="flex items-center justify-center rounded-2xl border border-dashed border-border/80 bg-card p-16 text-sm text-muted-foreground">
+        <Loader2 className="mr-2 h-5 w-5 animate-spin text-primary" />
+        Cargando registros...
       </div>
     );
   }
@@ -50,8 +50,8 @@ export function DataTable<T>({
     return <EmptyState title={emptyTitle} description={emptyDescription} />;
   }
   return (
-    <div className="space-y-3">
-      <div className="rounded-md border">
+    <div className="space-y-4">
+      <div className="overflow-hidden rounded-2xl border border-border/70 bg-card shadow-sm">
         <Table>
           <TableHeader>
             <TableRow>
@@ -79,9 +79,11 @@ export function DataTable<T>({
           </TableBody>
         </Table>
       </div>
-      <div className="flex items-center justify-between text-sm text-muted-foreground">
+      <div className="flex flex-wrap items-center justify-between gap-3 text-sm text-muted-foreground">
         <span>
-          Página {page + 1} de {Math.max(totalPages, 1)} · {totalElements} registro
+          Página <span className="font-semibold text-foreground">{page + 1}</span> de{" "}
+          <span className="font-semibold text-foreground">{Math.max(totalPages, 1)}</span> ·{" "}
+          <span className="font-semibold text-foreground">{totalElements}</span> registro
           {totalElements === 1 ? "" : "s"}
         </span>
         <div className="flex items-center gap-2">

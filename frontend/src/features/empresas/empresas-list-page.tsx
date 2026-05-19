@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Eye, Pencil, Plus, Search, Trash2 } from "lucide-react";
+import { Building2, Eye, Pencil, Plus, Search, Trash2 } from "lucide-react";
+import { PageHeader } from "@/components/page-header";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -125,30 +126,31 @@ export function EmpresasListPage(): JSX.Element {
   ];
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">Empresas</h1>
-          <p className="text-sm text-muted-foreground">Empresas aliadas que reciben practicantes.</p>
-        </div>
-        {canCreate && (
-          <Button onClick={() => navigate("/empresas/new")}>
-            <Plus className="h-4 w-4" /> Nueva
-          </Button>
-        )}
-      </div>
-      <div className="flex flex-wrap gap-2">
+    <div className="space-y-5">
+      <PageHeader
+        title="Empresas"
+        description="Empresas aliadas que reciben practicantes en el programa Coformación Empresarial."
+        icon={Building2}
+        actions={
+          canCreate ? (
+            <Button variant="gradient" onClick={() => navigate("/empresas/new")}>
+              <Plus className="h-4 w-4" /> Nueva empresa
+            </Button>
+          ) : null
+        }
+      />
+      <div className="flex flex-wrap gap-2 items-center">
         <div className="relative flex-1 min-w-[240px]">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Buscar por razón social, NIT, ciudad..."
-            className="pl-8"
+            className="pl-9"
             value={q}
             onChange={(e) => { setQ(e.target.value); setPage(0); }}
           />
         </div>
         <Select value={estado} onValueChange={(v) => { setEstado(v as EstadoEmpresa | "ALL"); setPage(0); }}>
-          <SelectTrigger className="w-48">
+          <SelectTrigger className="w-56">
             <SelectValue placeholder="Estado" />
           </SelectTrigger>
           <SelectContent>

@@ -42,13 +42,6 @@ export function Topbar({ onToggleSidebar }: TopbarProps): JSX.Element {
         <Menu className="h-5 w-5" />
       </Button>
 
-      <div className="hidden md:flex items-center gap-2 text-sm text-muted-foreground">
-        <span className="h-1.5 w-1.5 rounded-full bg-secondary animate-pulse" />
-        <span className="text-xs font-medium uppercase tracking-wider">
-          Sistema en línea
-        </span>
-      </div>
-
       <div className="flex-1" />
 
       <Button
