@@ -1,0 +1,12 @@
+{
+  "name": "sivu-k6",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Scripts de carga y stress (k6) contra el backend SIVU. Los scripts se ejecutan con el binario k6 o el contenedor grafana/k6; este package.json es solo metadata.",
+  "scripts": {
+    "login": "echo 'Usar: docker run --rm -i --network host -v $PWD:/scripts grafana/k6 run /scripts/login-load.js'",
+    "vacantes": "echo 'Usar: docker run --rm -i --network host -v $PWD:/scripts grafana/k6 run /scripts/vacantes-stress.js'",
+    "postulaciones": "echo 'Usar: docker run --rm -i --network host -v $PWD:/scripts grafana/k6 run /scripts/postulaciones-load.js'"
+  },
+  "keywords": ["k6", "load-testing", "sivu", "performance"]
+}

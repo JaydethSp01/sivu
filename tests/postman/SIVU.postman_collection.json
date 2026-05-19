@@ -1,0 +1,1412 @@
+{
+  "info": {
+    "_postman_id": "6f0c1b2a-2d4e-4d8a-8f12-9a4f0a7c1e10",
+    "name": "SIVU API",
+    "description": "Colección de pruebas del backend SIVU (Sistema de Vinculación Universidad-Empresa). Cubre auth, estudiantes, empresas, vacantes, postulaciones, documentos, convenios, automatización y admin. Ejecutar contra http://localhost:8080/api/v1 con el environment SIVU.local.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "sivu-tests"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{accessToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Genera un sufijo aleatorio para evitar colisiones de email en cada corrida",
+          "if (!pm.environment.get('randomEmailSuffix') || pm.info.requestName === 'Seed datos demo') {",
+          "    pm.environment.set('randomEmailSuffix', Date.now().toString(36));",
+          "}"
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Validaciones globales: tiempo de respuesta razonable",
+          "pm.test('Tiempo de respuesta < 3s', function () {",
+          "    pm.expect(pm.response.responseTime).to.be.below(3000);",
+          "});"
+        ]
+      }
+    }
+  ],
+  "item": [
+    {
+      "name": "Admin",
+      "description": "Operaciones administrativas y de seed.",
+      "item": [
+        {
+          "name": "Seed datos demo",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/seed",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "seed"]
+            },
+            "description": "Carga los datos demo (usuarios, estudiantes, empresas, vacantes). Idempotente."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Content-Type JSON', () => pm.expect(pm.response.headers.get('Content-Type')).to.include('application/json'));",
+                  "const json = pm.response.json();",
+                  "pm.test('Respuesta ok=true', () => pm.expect(json.ok).to.eql(true));",
+                  "pm.test('Incluye credencialesDemo', () => pm.expect(json.credencialesDemo).to.be.an('object'));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Auth",
+      "description": "Login, register, refresh, me y casos de error.",
+      "item": [
+        {
+          "name": "Login admin",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@uempresarial.edu.co\",\n  \"password\": \"Admin123*\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "login"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Content-Type JSON', () => pm.expect(pm.response.headers.get('Content-Type')).to.include('application/json'));",
+                  "const json = pm.response.json();",
+                  "pm.test('accessToken presente', () => pm.expect(json.accessToken).to.be.a('string').and.have.length.greaterThan(20));",
+                  "pm.test('refreshToken presente', () => pm.expect(json.refreshToken).to.be.a('string'));",
+                  "pm.test('tokenType es Bearer', () => pm.expect(json.tokenType).to.eql('Bearer'));",
+                  "pm.test('Usuario incluye rol ADMIN', () => pm.expect(json.usuario.roles).to.include('ADMIN'));",
+                  "pm.environment.set('accessToken', json.accessToken);",
+                  "pm.environment.set('refreshToken', json.refreshToken);",
+                  "pm.environment.set('adminToken', json.accessToken);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login coordinador",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"coord@uempresarial.edu.co\",\n  \"password\": \"Coord123*\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "login"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test('Usuario tiene rol COORDINADOR', () => pm.expect(json.usuario.roles).to.include('COORDINADOR'));",
+                  "pm.environment.set('coordToken', json.accessToken);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login estudiante",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"kelly@est.uempresarial.edu.co\",\n  \"password\": \"Estudiante123*\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "login"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test('Usuario tiene rol ESTUDIANTE', () => pm.expect(json.usuario.roles).to.include('ESTUDIANTE'));",
+                  "pm.environment.set('estudianteToken', json.accessToken);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login empresa",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"rrhh@coally.com\",\n  \"password\": \"Empresa123*\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "login"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test('Usuario tiene rol EMPRESA', () => pm.expect(json.usuario.roles).to.include('EMPRESA'));",
+                  "pm.environment.set('empresaToken', json.accessToken);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login credenciales inválidas (espera 401)",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@uempresarial.edu.co\",\n  \"password\": \"contrasena-incorrecta\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "login"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 401', () => pm.response.to.have.status(401));",
+                  "pm.test('No retorna accessToken', () => {",
+                  "    try { const json = pm.response.json(); pm.expect(json.accessToken).to.be.undefined; } catch(e) {}",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Register nuevo estudiante",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"nuevo+{{randomEmailSuffix}}@uempresarial.edu.co\",\n  \"password\": \"Password123*\",\n  \"nombres\": \"Nuevo\",\n  \"apellidos\": \"Usuario\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "register"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test('Retorna accessToken para usuario nuevo', () => pm.expect(json.accessToken).to.be.a('string'));",
+                  "pm.test('Por defecto rol ESTUDIANTE', () => pm.expect(json.usuario.roles).to.include('ESTUDIANTE'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Refresh token",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/refresh",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "refresh"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test('Nuevo accessToken emitido', () => pm.expect(json.accessToken).to.be.a('string'));",
+                  "pm.environment.set('accessToken', json.accessToken);",
+                  "pm.environment.set('adminToken', json.accessToken);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Me (usuario actual)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "me"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test('Email del admin', () => pm.expect(json.email).to.eql('admin@uempresarial.edu.co'));",
+                  "pm.test('Roles contiene ADMIN', () => pm.expect(json.roles).to.include('ADMIN'));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Estudiantes",
+      "description": "CRUD de estudiantes y casos de error (duplicados).",
+      "item": [
+        {
+          "name": "Crear estudiante",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tipoDocumento\": \"CC\",\n  \"numeroDocumento\": \"2{{$timestamp}}\",\n  \"nombres\": \"Estudiante\",\n  \"apellidos\": \"De Pruebas\",\n  \"email\": \"prueba+{{randomEmailSuffix}}@est.uempresarial.edu.co\",\n  \"telefono\": \"+57 3000000000\",\n  \"programaAcademico\": \"Ingeniería de Sistemas\",\n  \"semestre\": 8,\n  \"creditosAprobados\": 130,\n  \"promedioAcumulado\": 4.10,\n  \"estado\": \"ACTIVO\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/estudiantes",
+              "host": ["{{baseUrl}}"],
+              "path": ["estudiantes"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 201', () => pm.response.to.have.status(201));",
+                  "pm.test('Content-Type JSON', () => pm.expect(pm.response.headers.get('Content-Type')).to.include('application/json'));",
+                  "const json = pm.response.json();",
+                  "pm.test('id presente', () => pm.expect(json.id).to.be.a('number'));",
+                  "pm.test('Email retornado coincide', () => pm.expect(json.email).to.include('prueba+'));",
+                  "pm.environment.set('estudianteId', json.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Listar estudiantes (paginado)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/estudiantes?page=0&size=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["estudiantes"],
+              "query": [
+                { "key": "page", "value": "0" },
+                { "key": "size", "value": "10" }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test('Respuesta paginada (content)', () => pm.expect(json.content).to.be.an('array'));",
+                  "pm.test('Tiene totalElements', () => pm.expect(json.totalElements).to.be.a('number'));",
+                  "pm.test('Hay al menos 1 estudiante', () => pm.expect(json.content.length).to.be.greaterThan(0));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Obtener estudiante por id",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/estudiantes/{{estudianteId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["estudiantes", "{{estudianteId}}"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test('id coincide con env', () => pm.expect(String(json.id)).to.eql(String(pm.environment.get('estudianteId'))));",
+                  "pm.test('Tiene programaAcademico', () => pm.expect(json.programaAcademico).to.be.a('string'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Actualizar estudiante",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tipoDocumento\": \"CC\",\n  \"numeroDocumento\": \"2{{$timestamp}}\",\n  \"nombres\": \"Estudiante\",\n  \"apellidos\": \"Actualizado\",\n  \"email\": \"prueba+{{randomEmailSuffix}}@est.uempresarial.edu.co\",\n  \"telefono\": \"+57 3001112233\",\n  \"programaAcademico\": \"Ingeniería de Sistemas\",\n  \"semestre\": 9,\n  \"creditosAprobados\": 145,\n  \"promedioAcumulado\": 4.20,\n  \"estado\": \"ACTIVO\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/estudiantes/{{estudianteId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["estudiantes", "{{estudianteId}}"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test('Apellido actualizado', () => pm.expect(json.apellidos).to.eql('Actualizado'));",
+                  "pm.test('Semestre actualizado', () => pm.expect(json.semestre).to.eql(9));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Crear estudiante con email duplicado (espera 422)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tipoDocumento\": \"CC\",\n  \"numeroDocumento\": \"3{{$timestamp}}\",\n  \"nombres\": \"Duplicado\",\n  \"apellidos\": \"Email\",\n  \"email\": \"kelly@est.uempresarial.edu.co\",\n  \"programaAcademico\": \"Ingeniería de Sistemas\",\n  \"semestre\": 8,\n  \"creditosAprobados\": 130,\n  \"promedioAcumulado\": 4.10\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/estudiantes",
+              "host": ["{{baseUrl}}"],
+              "path": ["estudiantes"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 422 (regla de negocio violada)', () => pm.response.to.have.status(422));",
+                  "pm.test('Body indica error', () => {",
+                  "    try { const j = pm.response.json(); pm.expect(j).to.be.an('object'); } catch(e) {}",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Eliminar estudiante",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/estudiantes/{{estudianteId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["estudiantes", "{{estudianteId}}"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 204', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Empresas",
+      "description": "CRUD básico de empresas aliadas.",
+      "item": [
+        {
+          "name": "Crear empresa",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nit\": \"900{{$timestamp}}-1\",\n  \"razonSocial\": \"Empresa de Pruebas SAS\",\n  \"nombreComercial\": \"PruebasCo\",\n  \"sector\": \"Tecnología\",\n  \"ciudad\": \"Bogotá\",\n  \"direccion\": \"Calle 123\",\n  \"emailContacto\": \"contacto+{{randomEmailSuffix}}@pruebas.co\",\n  \"telefonoContacto\": \"+57 6010001122\",\n  \"contactoNombre\": \"Ana Tester\",\n  \"contactoCargo\": \"Talent\",\n  \"estado\": \"ACTIVA\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/empresas",
+              "host": ["{{baseUrl}}"],
+              "path": ["empresas"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 201', () => pm.response.to.have.status(201));",
+                  "const json = pm.response.json();",
+                  "pm.test('id presente', () => pm.expect(json.id).to.be.a('number'));",
+                  "pm.environment.set('empresaId', json.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Listar empresas",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/empresas?page=0&size=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["empresas"],
+              "query": [
+                { "key": "page", "value": "0" },
+                { "key": "size", "value": "10" }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test('content es array', () => pm.expect(json.content).to.be.an('array'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Obtener empresa por id",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/empresas/{{empresaId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["empresas", "{{empresaId}}"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test('razonSocial presente', () => pm.expect(json.razonSocial).to.be.a('string'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Actualizar empresa",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nit\": \"900{{$timestamp}}-1\",\n  \"razonSocial\": \"Empresa de Pruebas SAS\",\n  \"nombreComercial\": \"PruebasCo Renovada\",\n  \"sector\": \"Tecnología\",\n  \"ciudad\": \"Medellín\",\n  \"direccion\": \"Cra 50\",\n  \"emailContacto\": \"contacto+{{randomEmailSuffix}}@pruebas.co\",\n  \"telefonoContacto\": \"+57 6044443322\",\n  \"contactoNombre\": \"Ana Tester\",\n  \"contactoCargo\": \"Head of Talent\",\n  \"estado\": \"ACTIVA\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/empresas/{{empresaId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["empresas", "{{empresaId}}"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test('Ciudad actualizada', () => pm.expect(json.ciudad).to.eql('Medellín'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Eliminar empresa",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/empresas/{{empresaId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["empresas", "{{empresaId}}"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 204', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Vacantes",
+      "description": "CRUD y filtro por estado=PUBLICADA.",
+      "item": [
+        {
+          "name": "Crear vacante (BORRADOR)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"empresaId\": {{empresaSeedId}},\n  \"titulo\": \"Vacante de pruebas - borrador\",\n  \"descripcion\": \"Vacante usada por la colección Postman para validar que postularse a una BORRADOR retorna 422.\",\n  \"areaPractica\": \"DESARROLLO_SW\",\n  \"modalidad\": \"HIBRIDO\",\n  \"ciudad\": \"Bogotá\",\n  \"requisitosKeywords\": [\"java\", \"spring\"],\n  \"creditosMinimos\": 100,\n  \"promedioMinimo\": 3.50,\n  \"programasDirigidos\": [\"Ingeniería de Sistemas\"],\n  \"duracionMeses\": 6,\n  \"cuposDisponibles\": 1,\n  \"fechaInicio\": \"2026-08-01\",\n  \"fechaCierrePostulaciones\": \"2026-07-15\",\n  \"estado\": \"BORRADOR\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/vacantes",
+              "host": ["{{baseUrl}}"],
+              "path": ["vacantes"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 201', () => pm.response.to.have.status(201));",
+                  "const json = pm.response.json();",
+                  "pm.test('Estado BORRADOR', () => pm.expect(json.estado).to.eql('BORRADOR'));",
+                  "pm.environment.set('vacanteBorradorId', json.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Crear vacante (PUBLICADA)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"empresaId\": {{empresaSeedId}},\n  \"titulo\": \"Practicante QA Automation\",\n  \"descripcion\": \"Apoyo en automatización de pruebas con Cypress, Newman y k6.\",\n  \"areaPractica\": \"DESARROLLO_SW\",\n  \"modalidad\": \"REMOTO\",\n  \"ciudad\": \"Bogotá\",\n  \"requisitosKeywords\": [\"cypress\", \"newman\", \"k6\", \"qa\", \"sistemas\"],\n  \"creditosMinimos\": 100,\n  \"promedioMinimo\": 3.50,\n  \"programasDirigidos\": [\"Ingeniería de Sistemas\"],\n  \"duracionMeses\": 6,\n  \"cuposDisponibles\": 2,\n  \"fechaInicio\": \"2026-09-01\",\n  \"fechaCierrePostulaciones\": \"2026-08-15\",\n  \"estado\": \"PUBLICADA\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/vacantes",
+              "host": ["{{baseUrl}}"],
+              "path": ["vacantes"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 201', () => pm.response.to.have.status(201));",
+                  "const json = pm.response.json();",
+                  "pm.test('Estado PUBLICADA', () => pm.expect(json.estado).to.eql('PUBLICADA'));",
+                  "pm.environment.set('vacanteId', json.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Listar vacantes publicadas",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/vacantes?estado=PUBLICADA&page=0&size=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["vacantes"],
+              "query": [
+                { "key": "estado", "value": "PUBLICADA" },
+                { "key": "page", "value": "0" },
+                { "key": "size", "value": "20" }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test('Todas las vacantes están PUBLICADAS', () => {",
+                  "    json.content.forEach(v => pm.expect(v.estado).to.eql('PUBLICADA'));",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Obtener vacante por id",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/vacantes/{{vacanteId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["vacantes", "{{vacanteId}}"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test('titulo presente', () => pm.expect(json.titulo).to.be.a('string'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Actualizar vacante",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"empresaId\": {{empresaSeedId}},\n  \"titulo\": \"Practicante QA Automation (actualizado)\",\n  \"descripcion\": \"Descripción actualizada por Newman.\",\n  \"areaPractica\": \"DESARROLLO_SW\",\n  \"modalidad\": \"REMOTO\",\n  \"ciudad\": \"Bogotá\",\n  \"requisitosKeywords\": [\"cypress\", \"newman\", \"k6\"],\n  \"creditosMinimos\": 100,\n  \"promedioMinimo\": 3.50,\n  \"programasDirigidos\": [\"Ingeniería de Sistemas\"],\n  \"duracionMeses\": 6,\n  \"cuposDisponibles\": 3,\n  \"fechaInicio\": \"2026-09-01\",\n  \"fechaCierrePostulaciones\": \"2026-08-15\",\n  \"estado\": \"PUBLICADA\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/vacantes/{{vacanteId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["vacantes", "{{vacanteId}}"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test('Cupos actualizados a 3', () => pm.expect(json.cuposDisponibles).to.eql(3));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Postulaciones",
+      "description": "Flujo principal: postular, ver historial, cambiar estado y casos de error.",
+      "item": [
+        {
+          "name": "Crear postulación (estudiante seed → vacante test)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"estudianteId\": {{estudianteSeedId}},\n  \"vacanteId\": {{vacanteId}},\n  \"mensajeEstudiante\": \"Me postulo desde Newman para validar el flujo completo.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/postulaciones",
+              "host": ["{{baseUrl}}"],
+              "path": ["postulaciones"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 201', () => pm.response.to.have.status(201));",
+                  "const json = pm.response.json();",
+                  "pm.test('id presente', () => pm.expect(json.id).to.be.a('number'));",
+                  "pm.test('scoreMatching numérico entre 0 y 100', () => pm.expect(parseFloat(json.scoreMatching)).to.be.within(0, 100));",
+                  "pm.test('Estado inicial POSTULADA', () => pm.expect(json.estado).to.eql('POSTULADA'));",
+                  "pm.environment.set('postulacionId', json.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Listar postulaciones por estudiante",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/postulaciones?estudianteId={{estudianteSeedId}}&page=0&size=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["postulaciones"],
+              "query": [
+                { "key": "estudianteId", "value": "{{estudianteSeedId}}" },
+                { "key": "page", "value": "0" },
+                { "key": "size", "value": "10" }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test('Todas pertenecen al estudiante consultado', () => {",
+                  "    json.content.forEach(p => pm.expect(String(p.estudianteId)).to.eql(pm.environment.get('estudianteSeedId')));",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Crear postulación duplicada (espera 422)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"estudianteId\": {{estudianteSeedId}},\n  \"vacanteId\": {{vacanteId}},\n  \"mensajeEstudiante\": \"Intento duplicado.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/postulaciones",
+              "host": ["{{baseUrl}}"],
+              "path": ["postulaciones"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 422', () => pm.response.to.have.status(422));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Crear postulación sobre vacante BORRADOR (espera 422)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"estudianteId\": {{estudianteSeedId}},\n  \"vacanteId\": {{vacanteBorradorId}},\n  \"mensajeEstudiante\": \"Intento postular a una vacante BORRADOR.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/postulaciones",
+              "host": ["{{baseUrl}}"],
+              "path": ["postulaciones"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 422 (vacante no publicada)', () => pm.response.to.have.status(422));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cambiar estado → EN_REVISION",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{coordToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nuevoEstado\": \"EN_REVISION\",\n  \"observaciones\": \"Postulación en revisión por coordinación.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/postulaciones/{{postulacionId}}/estado",
+              "host": ["{{baseUrl}}"],
+              "path": ["postulaciones", "{{postulacionId}}", "estado"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test('Estado actualizado a EN_REVISION', () => pm.expect(json.estado).to.eql('EN_REVISION'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cambiar estado → PRESELECCIONADA",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{coordToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nuevoEstado\": \"PRESELECCIONADA\",\n  \"observaciones\": \"Preselección coordinación.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/postulaciones/{{postulacionId}}/estado",
+              "host": ["{{baseUrl}}"],
+              "path": ["postulaciones", "{{postulacionId}}", "estado"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Estado actualizado a PRESELECCIONADA', () => pm.expect(pm.response.json().estado).to.eql('PRESELECCIONADA'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cambiar estado → ACEPTADA",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{coordToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nuevoEstado\": \"ACEPTADA\",\n  \"observaciones\": \"Aprobado para formalizar convenio.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/postulaciones/{{postulacionId}}/estado",
+              "host": ["{{baseUrl}}"],
+              "path": ["postulaciones", "{{postulacionId}}", "estado"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test('Estado actualizado a ACEPTADA', () => pm.expect(json.estado).to.eql('ACEPTADA'));",
+                  "pm.environment.set('postulacionAceptadaId', json.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Historial de postulación",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/postulaciones/{{postulacionId}}/historial",
+              "host": ["{{baseUrl}}"],
+              "path": ["postulaciones", "{{postulacionId}}", "historial"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test('Historial es array', () => pm.expect(json).to.be.an('array'));",
+                  "pm.test('Historial tiene al menos 3 eventos (POSTULADA + 3 transiciones)', () => pm.expect(json.length).to.be.greaterThan(2));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Documentos",
+      "description": "Metadata de documentos soporte.",
+      "item": [
+        {
+          "name": "Crear documento (metadata HOJA_VIDA)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"estudianteId\": {{estudianteSeedId}},\n  \"tipo\": \"HOJA_VIDA\",\n  \"nombreOriginal\": \"hoja-vida-test.pdf\",\n  \"rutaAlmacenamiento\": \"/uploads/test/hoja-vida.pdf\",\n  \"mimeType\": \"application/pdf\",\n  \"tamanoBytes\": 102400\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/documentos",
+              "host": ["{{baseUrl}}"],
+              "path": ["documentos"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 201', () => pm.response.to.have.status(201));",
+                  "const json = pm.response.json();",
+                  "pm.test('id presente', () => pm.expect(json.id).to.be.a('number'));",
+                  "pm.environment.set('documentoId', json.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Listar documentos",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/documentos?page=0&size=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["documentos"],
+              "query": [
+                { "key": "page", "value": "0" },
+                { "key": "size", "value": "10" }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('content es array', () => pm.expect(pm.response.json().content).to.be.an('array'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Validar documento",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{coordToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"validar\": true,\n  \"observaciones\": \"Documento aprobado por coordinación.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/documentos/{{documentoId}}/validar",
+              "host": ["{{baseUrl}}"],
+              "path": ["documentos", "{{documentoId}}", "validar"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test('Estado del documento actualizado', () => pm.expect(json.estado).to.be.a('string'));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Convenios",
+      "description": "Lectura de convenios.",
+      "item": [
+        {
+          "name": "Listar convenios",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/convenios?page=0&size=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["convenios"],
+              "query": [
+                { "key": "page", "value": "0" },
+                { "key": "size", "value": "10" }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('content es array', () => pm.expect(pm.response.json().content).to.be.an('array'));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Automatizacion",
+      "description": "Matching, validación académica y formalización.",
+      "item": [
+        {
+          "name": "Info algoritmo",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/automatizacion/info",
+              "host": ["{{baseUrl}}"],
+              "path": ["automatizacion", "info"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Incluye descripción de matching', () => pm.expect(pm.response.json().matching).to.exist);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Matching estudiante-vacante",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/automatizacion/matching?estudianteId={{estudianteSeedId}}&vacanteId={{vacanteSeedId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["automatizacion", "matching"],
+              "query": [
+                { "key": "estudianteId", "value": "{{estudianteSeedId}}" },
+                { "key": "vacanteId", "value": "{{vacanteSeedId}}" }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test('Tiene score numérico', () => pm.expect(parseFloat(json.score)).to.be.within(0, 100));",
+                  "pm.test('Justificación presente', () => pm.expect(json.justificacion).to.be.a('string'));",
+                  "pm.test('Campo recomendado boolean', () => pm.expect(json.recomendado).to.be.a('boolean'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Validar académico (estudiante seed)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/automatizacion/validar-academico/{{estudianteSeedId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["automatizacion", "validar-academico", "{{estudianteSeedId}}"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test('Body es objeto', () => pm.expect(json).to.be.an('object'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Formalizar postulación ACEPTADA",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{coordToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/automatizacion/formalizar/{{postulacionAceptadaId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["automatizacion", "formalizar", "{{postulacionAceptadaId}}"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test('Retorna convenioId', () => pm.expect(json.convenioId).to.be.a('number'));",
+                  "pm.test('Retorna numeroConvenio', () => pm.expect(json.numeroConvenio).to.be.a('string'));",
+                  "pm.environment.set('convenioId', json.convenioId);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Descargar PDF convenio",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/automatizacion/convenios/{{convenioId}}/pdf",
+              "host": ["{{baseUrl}}"],
+              "path": ["automatizacion", "convenios", "{{convenioId}}", "pdf"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Content-Type application/pdf', () => pm.expect(pm.response.headers.get('Content-Type')).to.include('application/pdf'));",
+                  "pm.test('Body no vacío', () => pm.expect(pm.response.responseSize).to.be.greaterThan(0));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

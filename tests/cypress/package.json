@@ -1,0 +1,17 @@
+{
+  "name": "sivu-cypress",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Tests E2E del frontend SIVU (Vite/React) con Cypress. Requiere el frontend en http://localhost:5173 y el backend en http://localhost:8080.",
+  "scripts": {
+    "open": "cypress open",
+    "test": "cypress run",
+    "test:chrome": "cypress run --browser chrome --headless",
+    "seed": "curl -X POST http://localhost:8080/api/v1/admin/seed"
+  },
+  "devDependencies": {
+    "cypress": "^13.13.0",
+    "typescript": "^5.4.5",
+    "@types/node": "^20.12.7"
+  }
+}

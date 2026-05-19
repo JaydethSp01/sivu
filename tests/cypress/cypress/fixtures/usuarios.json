@@ -1,0 +1,34 @@
+{
+  "admin": {
+    "email": "admin@uempresarial.edu.co",
+    "password": "Admin123*",
+    "rol": "ADMIN"
+  },
+  "coordinador": {
+    "email": "coord@uempresarial.edu.co",
+    "password": "Coord123*",
+    "rol": "COORDINADOR"
+  },
+  "estudiante": {
+    "email": "kelly@est.uempresarial.edu.co",
+    "password": "Estudiante123*",
+    "rol": "ESTUDIANTE"
+  },
+  "empresa": {
+    "email": "rrhh@coally.com",
+    "password": "Empresa123*",
+    "rol": "EMPRESA"
+  },
+  "mcpAgent": {
+    "email": "mcp_agent@sivu.uempresarial.edu.co",
+    "password": "Mcp_Agent123*",
+    "rol": "MCP_AGENT"
+  },
+  "registroNuevo": {
+    "emailPrefix": "qa+cypress-",
+    "emailDomain": "@uempresarial.edu.co",
+    "password": "Password123*",
+    "nombres": "QA",
+    "apellidos": "Cypress"
+  }
+}

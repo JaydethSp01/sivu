@@ -1,0 +1,69 @@
+spring:
+  application:
+    name: sivu-backend
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:dev}
+  jpa:
+    open-in-view: false
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+    time-zone: ${APP_TIMEZONE:America/Bogota}
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 20MB
+  mail:
+    host: ${SPRING_MAIL_HOST:localhost}
+    port: ${SPRING_MAIL_PORT:1025}
+    username: ${SPRING_MAIL_USERNAME:}
+    password: ${SPRING_MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: false
+          starttls:
+            enable: false
+
+server:
+  port: 8080
+  error:
+    # Mensajes detallados solo en dev/docker. En producción mejor 'never'/'on_param'.
+    include-message: on_param
+    include-binding-errors: on_param
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: when_authorized
+      probes:
+        enabled: true
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operationsSorter: alpha
+    tagsSorter: alpha
+    persistAuthorization: true
+
+app:
+  security:
+    jwt:
+      secret: ${JWT_SECRET:please_change_me_to_something_at_least_64_chars_long_so_hs512_is_happy_okay}
+      access-token-expiration-minutes: ${JWT_EXPIRATION_MINUTES:60}
+      refresh-token-expiration-days: ${JWT_REFRESH_EXPIRATION_DAYS:7}
+  mail:
+    from: ${APP_MAIL_FROM:no-reply@sivu.uempresarial.edu.co}
+    enabled: true
+  universidad:
+    api-base: ${APP_UNIVERSIDAD_API_BASE:http://localhost:8080/api/v1/mock-universidad}
+    creditos-minimos: 120
+    promedio-minimo: 3.5
+  matching:
+    score-minimo-recomendacion: 70

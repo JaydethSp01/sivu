@@ -1,0 +1,48 @@
+name: sivu-dev
+
+# Solo dependencias externas (BBDD + Mail) para desarrollo con hot-reload.
+# Backend y frontend se ejecutan en el host.
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: sivu-postgres-dev
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-sivu}
+      POSTGRES_USER: ${POSTGRES_USER:-sivu}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-sivu_dev_password}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - sivu_postgres_dev:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-sivu}"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  mongo:
+    image: mongo:7
+    container_name: sivu-mongo-dev
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME:-sivu_admin}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD:-mongo_dev_password}
+      MONGO_INITDB_DATABASE: ${MONGO_INITDB_DATABASE:-sivu_users}
+    ports:
+      - "${MONGO_PORT:-27017}:27017"
+    volumes:
+      - sivu_mongo_dev:/data/db
+
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: sivu-mailhog-dev
+    restart: unless-stopped
+    ports:
+      - "1025:1025"
+      - "${MAILHOG_UI_PORT:-8025}:8025"
+
+volumes:
+  sivu_postgres_dev:
+  sivu_mongo_dev:

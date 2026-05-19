@@ -1,0 +1,370 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  JAVA_VERSION: "21"
+  NODE_VERSION: "20"
+
+jobs:
+  # =========================================================
+  # Backend: build + unit tests + JaCoCo + SonarCloud
+  # =========================================================
+  backend:
+    name: Backend (build + test + sonar)
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: sivu
+          POSTGRES_USER: sivu
+          POSTGRES_PASSWORD: sivu_dev_password
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 20
+      mongo:
+        image: mongo:7
+        env:
+          MONGO_INITDB_ROOT_USERNAME: sivu_admin
+          MONGO_INITDB_ROOT_PASSWORD: mongo_dev_password
+          MONGO_INITDB_DATABASE: sivu_users
+        ports: ["27017:27017"]
+        options: >-
+          --health-cmd "mongosh --quiet --eval 'db.runCommand({ping:1}).ok'"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Sonar necesita historial
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+          cache: maven
+
+      - name: Cache SonarCloud packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.sonar/cache
+          key: ${{ runner.os }}-sonar
+          restore-keys: ${{ runner.os }}-sonar
+
+      - name: Compile and test
+        working-directory: backend
+        run: mvn -B -ntp clean verify
+
+      - name: Upload JaCoCo report
+        uses: actions/upload-artifact@v4
+        with:
+          name: jacoco-report
+          path: backend/target/site/jacoco/
+
+      - name: Upload backend jar
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-jar
+          path: backend/target/sivu-backend.jar
+
+      - name: SonarCloud Scan
+        if: env.SONAR_TOKEN != ''
+        working-directory: backend
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: |
+          mvn -B -ntp sonar:sonar \
+            -Dsonar.projectKey=sivu \
+            -Dsonar.organization=uempresarial \
+            -Dsonar.host.url=https://sonarcloud.io \
+            -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
+
+  # =========================================================
+  # Frontend: install + lint (si hay) + build
+  # =========================================================
+  frontend:
+    name: Frontend (build)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install
+        working-directory: frontend
+        run: npm ci || npm install
+
+      - name: Build
+        working-directory: frontend
+        env:
+          VITE_API_BASE_URL: http://localhost:8080/api/v1
+        run: npm run build
+
+      - name: Upload frontend dist
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-dist
+          path: frontend/dist
+
+  # =========================================================
+  # MCP server: install + build
+  # =========================================================
+  mcp:
+    name: MCP server (build)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: mcp-server/package-lock.json
+
+      - name: Install
+        working-directory: mcp-server
+        run: npm ci || npm install
+
+      - name: Build
+        working-directory: mcp-server
+        run: npm run build
+
+  # =========================================================
+  # API contract tests con Newman contra backend levantado
+  # =========================================================
+  api-contract:
+    name: API contract (Newman)
+    runs-on: ubuntu-latest
+    needs: [backend]
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: sivu
+          POSTGRES_USER: sivu
+          POSTGRES_PASSWORD: sivu_dev_password
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s --health-timeout 3s --health-retries 20
+      mongo:
+        image: mongo:7
+        env:
+          MONGO_INITDB_ROOT_USERNAME: sivu_admin
+          MONGO_INITDB_ROOT_PASSWORD: mongo_dev_password
+          MONGO_INITDB_DATABASE: sivu_users
+        ports: ["27017:27017"]
+        options: >-
+          --health-cmd "mongosh --quiet --eval 'db.runCommand({ping:1}).ok'"
+          --health-interval 5s --health-timeout 3s --health-retries 20
+      mailhog:
+        image: mailhog/mailhog:latest
+        ports: ["1025:1025", "8025:8025"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+          cache: maven
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Download backend jar
+        uses: actions/download-artifact@v4
+        with:
+          name: backend-jar
+          path: backend/target
+
+      - name: Start backend
+        env:
+          SPRING_PROFILES_ACTIVE: docker
+          SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/sivu
+          SPRING_DATASOURCE_USERNAME: sivu
+          SPRING_DATASOURCE_PASSWORD: sivu_dev_password
+          SPRING_DATA_MONGODB_URI: mongodb://sivu_admin:mongo_dev_password@localhost:27017/sivu_users?authSource=admin
+          SPRING_MAIL_HOST: localhost
+          JWT_SECRET: ci_secret_ci_secret_ci_secret_ci_secret_ci_secret_ci_secret_ci_secret_xxx
+        run: |
+          nohup java -jar backend/target/sivu-backend.jar > backend.log 2>&1 &
+          for i in {1..60}; do
+            if curl -fsS http://localhost:8080/actuator/health >/dev/null 2>&1; then
+              echo "Backend listo"; exit 0;
+            fi
+            sleep 2
+          done
+          echo "Backend NO arrancó. Log:"; cat backend.log; exit 1
+
+      - name: Seed
+        run: curl -fsS -X POST http://localhost:8080/api/v1/admin/seed
+
+      - name: Newman
+        working-directory: tests/newman
+        run: |
+          npm install
+          mkdir -p reports
+          npx newman run ../postman/SIVU.postman_collection.json \
+            -e ../postman/SIVU.local.postman_environment.json \
+            --reporters cli,htmlextra \
+            --reporter-htmlextra-export reports/sivu-report.html
+
+      - name: Upload Newman report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: newman-report
+          path: tests/newman/reports/
+
+  # =========================================================
+  # E2E Cypress contra frontend + backend
+  # =========================================================
+  e2e:
+    name: E2E (Cypress)
+    runs-on: ubuntu-latest
+    needs: [backend, frontend]
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: sivu
+          POSTGRES_USER: sivu
+          POSTGRES_PASSWORD: sivu_dev_password
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s --health-timeout 3s --health-retries 20
+      mongo:
+        image: mongo:7
+        env:
+          MONGO_INITDB_ROOT_USERNAME: sivu_admin
+          MONGO_INITDB_ROOT_PASSWORD: mongo_dev_password
+          MONGO_INITDB_DATABASE: sivu_users
+        ports: ["27017:27017"]
+        options: >-
+          --health-cmd "mongosh --quiet --eval 'db.runCommand({ping:1}).ok'"
+          --health-interval 5s --health-timeout 3s --health-retries 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Download backend jar
+        uses: actions/download-artifact@v4
+        with:
+          name: backend-jar
+          path: backend/target
+
+      - name: Download frontend dist
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-dist
+          path: frontend/dist
+
+      - name: Start backend
+        env:
+          SPRING_PROFILES_ACTIVE: docker
+          SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/sivu
+          SPRING_DATASOURCE_USERNAME: sivu
+          SPRING_DATASOURCE_PASSWORD: sivu_dev_password
+          SPRING_DATA_MONGODB_URI: mongodb://sivu_admin:mongo_dev_password@localhost:27017/sivu_users?authSource=admin
+          JWT_SECRET: ci_secret_ci_secret_ci_secret_ci_secret_ci_secret_ci_secret_ci_secret_xxx
+          SPRING_MAIL_HOST: localhost
+        run: |
+          nohup java -jar backend/target/sivu-backend.jar > backend.log 2>&1 &
+          for i in {1..60}; do
+            curl -fsS http://localhost:8080/actuator/health >/dev/null && break || sleep 2
+          done
+          curl -fsS -X POST http://localhost:8080/api/v1/admin/seed
+
+      - name: Serve frontend dist
+        run: |
+          npx -y serve -s frontend/dist -l 5173 &
+          for i in {1..30}; do
+            curl -fsS http://localhost:5173 >/dev/null && break || sleep 1
+          done
+
+      - name: Run Cypress
+        working-directory: tests/cypress
+        run: |
+          npm install
+          npx cypress run --browser chrome
+
+      - name: Upload Cypress artifacts
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cypress-artifacts
+          path: |
+            tests/cypress/cypress/screenshots
+            tests/cypress/cypress/videos
+
+  # =========================================================
+  # Build de imágenes Docker (sólo en push a main)
+  # =========================================================
+  docker:
+    name: Docker images
+    runs-on: ubuntu-latest
+    needs: [backend, frontend, mcp]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Login GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build & push backend
+        uses: docker/build-push-action@v5
+        with:
+          context: ./backend
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository }}/backend:latest
+            ghcr.io/${{ github.repository }}/backend:${{ github.sha }}
+
+      - name: Build & push frontend
+        uses: docker/build-push-action@v5
+        with:
+          context: ./frontend
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository }}/frontend:latest
+            ghcr.io/${{ github.repository }}/frontend:${{ github.sha }}
+
+      - name: Build & push mcp
+        uses: docker/build-push-action@v5
+        with:
+          context: ./mcp-server
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository }}/mcp:latest
+            ghcr.io/${{ github.repository }}/mcp:${{ github.sha }}

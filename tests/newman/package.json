@@ -1,0 +1,14 @@
+{
+  "name": "sivu-newman",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Runner CLI Newman para la colección Postman del backend SIVU.",
+  "scripts": {
+    "test": "newman run ../postman/SIVU.postman_collection.json -e ../postman/SIVU.local.postman_environment.json --reporters cli,htmlextra --reporter-htmlextra-export reports/sivu-report.html --reporter-htmlextra-title \"SIVU API Tests\"",
+    "test:cli": "newman run ../postman/SIVU.postman_collection.json -e ../postman/SIVU.local.postman_environment.json"
+  },
+  "devDependencies": {
+    "newman": "^6.2.1",
+    "newman-reporter-htmlextra": "^1.23.1"
+  }
+}
