@@ -46,6 +46,7 @@ import { PlanActividadesPage } from "@/features/trimestres/plan-actividades-page
 import { ActasListPage } from "@/features/trimestres/actas-list-page";
 import { ActaFormPage } from "@/features/trimestres/acta-form-page";
 import { PlanesMejoraPage } from "@/features/trimestres/planes-mejora-page";
+import { InformeFinalPmPage } from "@/features/trimestres/informe-final-pm-page";
 import { EvaluacionTutorPage } from "@/features/trimestres/evaluacion-tutor-page";
 import { EvaluacionProfesorPage } from "@/features/trimestres/evaluacion-profesor-page";
 import { NotFoundPage } from "@/pages/not-found";
@@ -109,6 +110,7 @@ export function App(): JSX.Element {
               <Route path="convenios/:convenioId/trimestres/:trimestreId/actas/new" element={<ActaFormPage />} />
               <Route path="convenios/:convenioId/trimestres/:trimestreId/actas/:id" element={<ActaFormPage />} />
               <Route path="convenios/:convenioId/trimestres/:trimestreId/planes-mejora" element={<PlanesMejoraPage />} />
+              <Route path="convenios/:convenioId/trimestres/:trimestreId/planes-mejora/:planMejoraId/informe-final" element={<InformeFinalPmPage />} />
               <Route path="convenios/:convenioId/trimestres/:trimestreId/evaluacion-tutor" element={<EvaluacionTutorPage />} />
               <Route path="convenios/:convenioId/trimestres/:trimestreId/evaluacion-profesor" element={<EvaluacionProfesorPage />} />
 

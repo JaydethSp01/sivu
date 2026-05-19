@@ -126,6 +126,23 @@ export const TIPO_REUNION_LABELS: Record<TipoReunion, string> = {
   OTRO: "Otro",
 };
 
+export const ESTADO_INFORME_FINAL_LABELS: Record<string, string> = {
+  BORRADOR: "Borrador",
+  ENTREGADO: "Entregado — en revisión",
+  APROBADO: "Aprobado",
+  RECHAZADO: "Rechazado",
+};
+
+export const ESTADO_INFORME_FINAL_VARIANT: Record<
+  string,
+  "muted" | "warning" | "success" | "destructive"
+> = {
+  BORRADOR: "muted",
+  ENTREGADO: "warning",
+  APROBADO: "success",
+  RECHAZADO: "destructive",
+};
+
 export const MODALIDAD_ENTREVISTA_LABELS: Record<string, string> = {
   PRESENCIAL: "Presencial",
   VIRTUAL: "Virtual",

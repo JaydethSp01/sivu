@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { ArrowLeft, Loader2, Plus, Save, Trash2 } from "lucide-react";
+import { ArrowLeft, FileText, Loader2, Plus, Save, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -144,6 +144,17 @@ export function PlanesMejoraPage(): JSX.Element {
                   )}
                 </div>
                 <div className="flex gap-1">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() =>
+                      navigate(
+                        `/convenios/${convenioId}/trimestres/${trimestreId}/planes-mejora/${p.id}/informe-final`
+                      )
+                    }
+                  >
+                    <FileText className="h-4 w-4" /> Informe Final
+                  </Button>
                   {canEdit && <Button size="sm" variant="outline" onClick={() => startEdit(p)}>Editar</Button>}
                   {canDelete && (
                     <AlertDialog>

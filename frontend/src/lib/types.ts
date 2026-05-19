@@ -255,6 +255,52 @@ export interface EntrevistaResponse {
   updatedAt: string;
 }
 
+export type EstadoInformeFinalPm = "BORRADOR" | "ENTREGADO" | "APROBADO" | "RECHAZADO";
+
+export interface InformeFinalPmResponse {
+  id: number;
+  planMejoraId: number | null;
+  resumenEjecutivo?: string | null;
+  contextualizacion?: string | null;
+  planteamientoProblema?: string | null;
+  marcoTeorico?: string | null;
+  objetivoGeneral?: string | null;
+  objetivosEspecificos?: string | null;
+  diagnostico?: string | null;
+  metodologia?: string | null;
+  propuestaSolucion?: string | null;
+  factibilidad?: string | null;
+  conclusiones?: string | null;
+  anexos?: string | null;
+  numeroPaginas?: number | null;
+  estado: EstadoInformeFinalPm;
+  fechaEntrega?: string | null;
+  fechaRevision?: string | null;
+  revisadoPorNombre?: string | null;
+  observacionesRevisor?: string | null;
+  firmadoEstudiante: boolean;
+  firmadoTutorAcad: boolean;
+  firmadoTutorEmp: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface InformeFinalPmRequest {
+  resumenEjecutivo?: string | null;
+  contextualizacion?: string | null;
+  planteamientoProblema?: string | null;
+  marcoTeorico?: string | null;
+  objetivoGeneral?: string | null;
+  objetivosEspecificos?: string | null;
+  diagnostico?: string | null;
+  metodologia?: string | null;
+  propuestaSolucion?: string | null;
+  factibilidad?: string | null;
+  conclusiones?: string | null;
+  anexos?: string | null;
+  numeroPaginas?: number | null;
+}
+
 export interface EntrevistaRequest {
   postulacionId: number;
   fechaProgramada: string;
