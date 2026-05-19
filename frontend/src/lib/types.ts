@@ -854,14 +854,28 @@ export interface EvaluacionTutorRequest {
 export interface EvaluacionProfesorResponse {
   id: number;
   trimestreId: number;
+  // Corte 1
   capacidades: number | string | null;
   actitudes: number | string | null;
   aplicacionDesempeno: number | string | null;
   aplicacionElaboracionPem: number | string | null;
   aplicacionSustentacionPem: number | string | null;
   notaPonderada: number | string | null;
+  observacionesC1: string | null;
+  fechaC1: string | null;
+  // Corte 2
+  capacidadesC2: number | string | null;
+  actitudesC2: number | string | null;
+  aplicacionDesempenoC2: number | string | null;
+  aplicacionElaboracionPemC2: number | string | null;
+  aplicacionSustentacionPemC2: number | string | null;
+  notaPonderadaC2: number | string | null;
+  observacionesC2: string | null;
+  fechaC2: string | null;
+  // Legacy combined
   observaciones: string | null;
   fechaElaboracion: string | null;
+  // Estado
   firmadoProfesor: boolean;
   firmadoEstudiante: boolean;
   documentoPdfId: number | null;
@@ -870,11 +884,23 @@ export interface EvaluacionProfesorResponse {
 }
 
 export interface EvaluacionProfesorRequest {
+  // Corte 1
   capacidades?: number | null;
   actitudes?: number | null;
   aplicacionDesempeno?: number | null;
   aplicacionElaboracionPem?: number | null;
   aplicacionSustentacionPem?: number | null;
+  observacionesC1?: string | null;
+  fechaC1?: string | null;
+  // Corte 2
+  capacidadesC2?: number | null;
+  actitudesC2?: number | null;
+  aplicacionDesempenoC2?: number | null;
+  aplicacionElaboracionPemC2?: number | null;
+  aplicacionSustentacionPemC2?: number | null;
+  observacionesC2?: string | null;
+  fechaC2?: string | null;
+  // Legacy
   observaciones?: string | null;
   fechaElaboracion?: string | null;
 }

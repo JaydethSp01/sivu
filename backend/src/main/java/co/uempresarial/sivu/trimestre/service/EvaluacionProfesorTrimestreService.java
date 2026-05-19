@@ -44,17 +44,44 @@ public class EvaluacionProfesorTrimestreService {
         EvaluacionProfesorTrimestre e = repository.findByTrimestreId(trimestreId)
             .orElseGet(() -> EvaluacionProfesorTrimestre.builder().trimestre(trimestre).build());
 
+        // Corte 1 (campos sin sufijo)
         e.setCapacidades(request.capacidades());
         e.setActitudes(request.actitudes());
         e.setAplicacionDesempeno(request.aplicacionDesempeno());
         e.setAplicacionElaboracionPem(request.aplicacionElaboracionPem());
         e.setAplicacionSustentacionPem(request.aplicacionSustentacionPem());
-        e.setObservaciones(request.observaciones());
-        e.setFechaElaboracion(request.fechaElaboracion());
+        e.setNotaPonderada(calcularNotaPonderadaCorte1(request));
+        // Observaciones/fecha de corte 1 priorizan el nuevo campo; cae al legacy.
+        e.setObservacionesC1(
+            request.observacionesC1() != null ? request.observacionesC1() : request.observaciones());
+        e.setFechaC1(
+            request.fechaC1() != null ? request.fechaC1() : request.fechaElaboracion());
 
-        e.setNotaPonderada(calcularNotaPonderada(request));
+        // Corte 2
+        e.setCapacidadesC2(request.capacidadesC2());
+        e.setActitudesC2(request.actitudesC2());
+        e.setAplicacionDesempenoC2(request.aplicacionDesempenoC2());
+        e.setAplicacionElaboracionPemC2(request.aplicacionElaboracionPemC2());
+        e.setAplicacionSustentacionPemC2(request.aplicacionSustentacionPemC2());
+        e.setNotaPonderadaC2(calcularNotaPonderadaCorte2(request));
+        e.setObservacionesC2(request.observacionesC2());
+        e.setFechaC2(request.fechaC2());
+
+        // Campos legacy combinados (para retrocompatibilidad en lecturas):
+        // observaciones = corte1 + "\n\n" + corte2; fechaElaboracion = corte2 ?? corte1
+        e.setObservaciones(combinarObservaciones(e.getObservacionesC1(), e.getObservacionesC2()));
+        e.setFechaElaboracion(e.getFechaC2() != null ? e.getFechaC2() : e.getFechaC1());
 
         return mapper.toResponse(repository.save(e));
+    }
+
+    private static String combinarObservaciones(String c1, String c2) {
+        boolean hasC1 = c1 != null && !c1.isBlank();
+        boolean hasC2 = c2 != null && !c2.isBlank();
+        if (hasC1 && hasC2) return "[1° corte] " + c1 + "\n\n[2° corte] " + c2;
+        if (hasC1) return c1;
+        if (hasC2) return c2;
+        return null;
     }
 
     public EvaluacionProfesorResponse firmar(Long trimestreId, ParteFirmaTrimestre parte) {
@@ -78,14 +105,35 @@ public class EvaluacionProfesorTrimestreService {
         return mapper.toResponse(e);
     }
 
-    /** Capacidades*0.10 + Actitudes*0.10 + (Desemp*0.20 + ElabPEM*0.50 + SustPEM*0.10). */
-    static BigDecimal calcularNotaPonderada(EvaluacionProfesorRequest r) {
+    /** Corte 1 — Capacidades*0.10 + Actitudes*0.10 + (Desemp*0.20 + ElabPEM*0.50 + SustPEM*0.10). */
+    static BigDecimal calcularNotaPonderadaCorte1(EvaluacionProfesorRequest r) {
+        if (r.capacidades() == null && r.actitudes() == null
+            && r.aplicacionDesempeno() == null && r.aplicacionElaboracionPem() == null
+            && r.aplicacionSustentacionPem() == null) {
+            return null;
+        }
         BigDecimal total = BigDecimal.ZERO;
         total = total.add(mul(r.capacidades(), "0.10"));
         total = total.add(mul(r.actitudes(), "0.10"));
         total = total.add(mul(r.aplicacionDesempeno(), "0.20"));
         total = total.add(mul(r.aplicacionElaboracionPem(), "0.50"));
         total = total.add(mul(r.aplicacionSustentacionPem(), "0.10"));
+        return total.setScale(2, RoundingMode.HALF_UP);
+    }
+
+    /** Corte 2 — mismas ponderaciones que corte 1, sobre los campos *C2. */
+    static BigDecimal calcularNotaPonderadaCorte2(EvaluacionProfesorRequest r) {
+        if (r.capacidadesC2() == null && r.actitudesC2() == null
+            && r.aplicacionDesempenoC2() == null && r.aplicacionElaboracionPemC2() == null
+            && r.aplicacionSustentacionPemC2() == null) {
+            return null;
+        }
+        BigDecimal total = BigDecimal.ZERO;
+        total = total.add(mul(r.capacidadesC2(), "0.10"));
+        total = total.add(mul(r.actitudesC2(), "0.10"));
+        total = total.add(mul(r.aplicacionDesempenoC2(), "0.20"));
+        total = total.add(mul(r.aplicacionElaboracionPemC2(), "0.50"));
+        total = total.add(mul(r.aplicacionSustentacionPemC2(), "0.10"));
         return total.setScale(2, RoundingMode.HALF_UP);
     }
 

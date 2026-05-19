@@ -51,11 +51,50 @@ public class EvaluacionProfesorTrimestre extends BaseEntity {
     @DecimalMin("0.0") @DecimalMax("5.0")
     private BigDecimal notaPonderada;
 
+    // ----- Corte 2 (V11): GAC-FM-1 v3 evalúa al estudiante en dos cortes,
+    // cada uno vale 25% del total del proceso. Los campos sin sufijo
+    // representan el corte 1 por compatibilidad. -----
+    @Column(name = "capacidades_c2", precision = 3, scale = 2)
+    @DecimalMin("0.0") @DecimalMax("5.0")
+    private BigDecimal capacidadesC2;
+
+    @Column(name = "actitudes_c2", precision = 3, scale = 2)
+    @DecimalMin("0.0") @DecimalMax("5.0")
+    private BigDecimal actitudesC2;
+
+    @Column(name = "aplicacion_desempeno_c2", precision = 3, scale = 2)
+    @DecimalMin("0.0") @DecimalMax("5.0")
+    private BigDecimal aplicacionDesempenoC2;
+
+    @Column(name = "aplicacion_elaboracion_pem_c2", precision = 3, scale = 2)
+    @DecimalMin("0.0") @DecimalMax("5.0")
+    private BigDecimal aplicacionElaboracionPemC2;
+
+    @Column(name = "aplicacion_sustentacion_pem_c2", precision = 3, scale = 2)
+    @DecimalMin("0.0") @DecimalMax("5.0")
+    private BigDecimal aplicacionSustentacionPemC2;
+
+    @Column(name = "nota_ponderada_c2", precision = 3, scale = 2)
+    @DecimalMin("0.0") @DecimalMax("5.0")
+    private BigDecimal notaPonderadaC2;
+
     @Column(columnDefinition = "TEXT")
     private String observaciones;
 
+    @Column(name = "observaciones_c1", columnDefinition = "TEXT")
+    private String observacionesC1;
+
+    @Column(name = "observaciones_c2", columnDefinition = "TEXT")
+    private String observacionesC2;
+
     @Column(name = "fecha_elaboracion")
     private LocalDate fechaElaboracion;
+
+    @Column(name = "fecha_c1")
+    private LocalDate fechaC1;
+
+    @Column(name = "fecha_c2")
+    private LocalDate fechaC2;
 
     @Column(name = "firmado_profesor", nullable = false)
     @Builder.Default

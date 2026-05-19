@@ -134,11 +134,22 @@ public class TrimestreMapper {
         return new EvaluacionProfesorResponse(
             e.getId(),
             e.getTrimestre() != null ? e.getTrimestre().getId() : null,
+            // Corte 1
             e.getCapacidades(), e.getActitudes(),
             e.getAplicacionDesempeno(), e.getAplicacionElaboracionPem(), e.getAplicacionSustentacionPem(),
             e.getNotaPonderada(),
+            e.getObservacionesC1(),
+            e.getFechaC1(),
+            // Corte 2
+            e.getCapacidadesC2(), e.getActitudesC2(),
+            e.getAplicacionDesempenoC2(), e.getAplicacionElaboracionPemC2(), e.getAplicacionSustentacionPemC2(),
+            e.getNotaPonderadaC2(),
+            e.getObservacionesC2(),
+            e.getFechaC2(),
+            // Legacy combinados
             e.getObservaciones(),
             e.getFechaElaboracion(),
+            // Estado
             Boolean.TRUE.equals(e.getFirmadoProfesor()),
             Boolean.TRUE.equals(e.getFirmadoEstudiante()),
             e.getDocumentoPdf() != null ? e.getDocumentoPdf().getId() : null,

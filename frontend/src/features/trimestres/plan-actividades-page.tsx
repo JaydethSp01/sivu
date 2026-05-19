@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { ArrowLeft, Download, Loader2, PenLine, Plus, Save, Trash2 } from "lucide-react";
+import { AlertTriangle, ArrowLeft, Download, Loader2, PenLine, Plus, Save, Sparkles, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -38,6 +38,30 @@ function downloadPdf(url: string, filename: string): Promise<void> {
 const MESES_LABELS: Record<number, string> = {
   1: "Mes 1", 2: "Mes 2", 3: "Mes 3", 4: "Mes 4", 5: "Mes 5", 6: "Mes 6",
 };
+
+/**
+ * Objetivos de aprendizaje predefinidos por programa académico.
+ * Tomados del formato GAC-FM-10 v2.0 — Ingeniería de Software.
+ * Si Coformación abre el formato a otros programas, se agregan aquí
+ * o se migra a un catálogo configurable en backend.
+ */
+const OBJETIVOS_PREDEFINIDOS_ING_SW: { escenario: string; descripcion: string }[] = [
+  { escenario: "Área de IT", descripcion: "Diseñar una web estática mediante el uso de las herramientas básicas." },
+  { escenario: "Área de IT", descripcion: "Aplicar los requerimientos funcionales y no funcionales al diseño de la interfaz de usuario y la interactividad del mismo." },
+  { escenario: "Área de IT", descripcion: "Conocer y aplicar los procesos básicos de diseño UI/UX." },
+  { escenario: "Área de IT", descripcion: "Conocer las diferencias básicas entre los diferentes sistemas operativos y sus implicaciones de diseño y desarrollo." },
+  { escenario: "Área de IT", descripcion: "Desarrollar pruebas de software al interior de su entorno empresarial." },
+  { escenario: "Área de IT", descripcion: "Diseñar y desarrollar videojuegos funcionales y escalables aplicando principios de programación, diseño centrado en el usuario y estándares de la industria." },
+  { escenario: "Área de IT", descripcion: "Implementar gráficos, modelado y mecánicas innovadoras utilizando herramientas y motores de desarrollo especializados." },
+  { escenario: "Área de IT", descripcion: "Gestionar proyectos de videojuegos en equipos interdisciplinarios mediante metodologías ágiles, desde la conceptualización hasta la implementación." },
+  { escenario: "Área de IT", descripcion: "Optimizar la experiencia del usuario y el rendimiento técnico mediante pruebas funcionales, retroalimentación iterativa y el uso de inteligencia artificial." },
+];
+
+const DISCLAIMER_ACTIVIDADES_NO_PERMITIDAS =
+  "Dentro de los objetivos de aprendizaje no se contemplan actividades como mensajería, " +
+  "consignaciones, actividades de aseo y servicios generales, favores personales y " +
+  "actividades de seguridad del establecimiento de comercio. Por tal razón, le solicitamos " +
+  "abstenerse de asignar estas responsabilidades al estudiante.";
 
 export function PlanActividadesPage(): JSX.Element {
   const { trimestreId, convenioId } = useParams();
@@ -133,6 +157,16 @@ export function PlanActividadesPage(): JSX.Element {
   const updateObjetivo = (idx: number, patch: Partial<PlanActividadesObjetivo>) =>
     setObjetivos((p) => p.map((o, i) => (i === idx ? { ...o, ...patch } : o)));
   const removeObjetivo = (idx: number) => setObjetivos((p) => p.filter((_, i) => i !== idx));
+  const cargarObjetivosPredefinidos = () => {
+    // Si ya hay objetivos, los conserva y agrega los predefinidos que no estén
+    setObjetivos((prev) => {
+      const yaPresentes = new Set(prev.map((o) => o.descripcion.trim().toLowerCase()));
+      const nuevos = OBJETIVOS_PREDEFINIDOS_ING_SW.filter(
+        (p) => !yaPresentes.has(p.descripcion.trim().toLowerCase())
+      ).map((p) => ({ ...p, seleccionado: false }));
+      return [...prev, ...nuevos];
+    });
+  };
 
   const addMes = () => {
     const usados = new Set(meses.map((m) => m.mes));
@@ -200,18 +234,30 @@ export function PlanActividadesPage(): JSX.Element {
 
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle>Objetivos de aprendizaje</CardTitle>
+          <div className="flex flex-wrap items-start justify-between gap-2">
+            <div>
+              <CardTitle>Objetivos de aprendizaje fase empresarial</CardTitle>
+              <CardDescription>
+                Selecciona los objetivos del programa que aplicarán a tu práctica. Puedes agregar otros propios si la empresa lo requiere.
+              </CardDescription>
+            </div>
             {canEdit && (
-              <Button size="sm" onClick={addObjetivo}>
-                <Plus className="h-4 w-4" /> Agregar objetivo
-              </Button>
+              <div className="flex flex-wrap gap-2">
+                <Button size="sm" variant="outline" onClick={cargarObjetivosPredefinidos} title="Carga los 9 objetivos del programa Ingeniería de Software del formato GAC-FM-10">
+                  <Sparkles className="h-4 w-4" /> Cargar objetivos del programa
+                </Button>
+                <Button size="sm" onClick={addObjetivo}>
+                  <Plus className="h-4 w-4" /> Agregar uno
+                </Button>
+              </div>
             )}
           </div>
         </CardHeader>
         <CardContent className="space-y-2">
           {objetivos.length === 0 && (
-            <p className="text-sm text-muted-foreground">Sin objetivos.</p>
+            <p className="text-sm text-muted-foreground">
+              Sin objetivos. Empieza con "Cargar objetivos del programa" para tener el checklist completo y marcar los que aplican.
+            </p>
           )}
           {objetivos.map((o, idx) => (
             <div key={idx} className="rounded-md border p-3 space-y-2">
@@ -247,6 +293,14 @@ export function PlanActividadesPage(): JSX.Element {
               </div>
             </div>
           ))}
+
+          <div className="mt-4 rounded-lg border border-warning/40 bg-warning-soft p-3 text-xs flex items-start gap-2">
+            <AlertTriangle className="h-4 w-4 text-warning shrink-0 mt-0.5" />
+            <div>
+              <strong className="text-warning">Información importante:</strong>{" "}
+              {DISCLAIMER_ACTIVIDADES_NO_PERMITIDAS}
+            </div>
+          </div>
         </CardContent>
       </Card>
 
