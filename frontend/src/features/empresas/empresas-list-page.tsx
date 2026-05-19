@@ -129,7 +129,7 @@ export function EmpresasListPage(): JSX.Element {
     <div className="space-y-5">
       <PageHeader
         title="Empresas"
-        description="Empresas aliadas que reciben practicantes en el programa Coformación Empresarial."
+        description="Empresas aliadas que abren cupos de práctica para nuestros estudiantes."
         icon={Building2}
         actions={
           canCreate ? (

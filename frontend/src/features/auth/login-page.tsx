@@ -37,7 +37,7 @@ const DEMO_CREDS = [
 const ROL_COLOR: Record<string, string> = {
   ADMIN: "bg-accent-soft text-accent",
   COORDINADOR: "bg-primary-soft text-primary",
-  ESTUDIANTE: "bg-secondary-soft text-secondary-foreground",
+  ESTUDIANTE: "bg-secondary-soft text-secondary-foreground dark:text-secondary",
   EMPRESA: "bg-warning-soft text-warning",
 };
 
@@ -104,38 +104,38 @@ export function LoginPage(): JSX.Element {
         </div>
 
         <div className="relative z-10 space-y-6 max-w-md">
-          <div className="inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-xs font-semibold uppercase tracking-wider backdrop-blur ring-1 ring-white/20">
-            <Sparkles className="h-3.5 w-3.5" /> Sistema institucional
+          <div className="inline-flex items-center gap-2 rounded-full bg-white/25 px-3.5 py-1.5 text-xs font-semibold uppercase tracking-wider backdrop-blur ring-1 ring-white/40">
+            <Sparkles className="h-3.5 w-3.5" /> Plataforma oficial
           </div>
-          <h1 className="font-display text-4xl xl:text-5xl font-bold leading-tight tracking-tight">
-            Vinculación de prácticas, simple y trazable.
+          <h1 className="font-display text-4xl xl:text-5xl font-bold leading-tight tracking-tight text-white drop-shadow-sm">
+            Tus prácticas profesionales, claras de principio a fin.
           </h1>
-          <p className="text-white/85 text-lg">
-            Coordina estudiantes, empresas y convenios desde un solo lugar.
-            Conformamos el Coformación Empresarial en cada paso del proceso.
+          <p className="text-white text-lg leading-relaxed">
+            Acompañamos a estudiantes, empresas y a la universidad en cada paso —
+            desde la postulación hasta el cierre de la práctica.
           </p>
 
           <div className="grid grid-cols-1 gap-3 pt-4">
             <FeatureRow
               icon={UsersRound}
-              title="6 roles, un solo flujo"
-              text="Estudiante, coordinador, empresa, tutor académico, empresarial y MCP."
+              title="Todos en sintonía"
+              text="Estudiantes, empresas y universidad trabajan en el mismo espacio."
             />
             <FeatureRow
               icon={ShieldCheck}
-              title="Trazabilidad GTC-FM"
-              text="Actas, planes, evaluaciones e informes con firmas y PDFs oficiales."
+              title="Tu historial siempre claro"
+              text="Cada paso queda registrado; nada se pierde en el camino."
             />
             <FeatureRow
               icon={Sparkles}
-              title="Automatización inteligente"
-              text="Validación documental, matching y Fábrica de Soluciones."
+              title="Menos papeleo, más práctica"
+              text="El sistema valida, conecta y te ayuda a avanzar más rápido."
             />
           </div>
         </div>
 
-        <div className="relative z-10 text-xs text-white/70">
-          © {new Date().getFullYear()} Fundación Universitaria Empresarial — Demo académica
+        <div className="relative z-10 text-xs text-white/80">
+          © {new Date().getFullYear()} Fundación Universitaria Empresarial — Uniempresarial
         </div>
       </aside>
 
@@ -286,13 +286,13 @@ interface FeatureRowProps {
 
 function FeatureRow({ icon: Icon, title, text }: FeatureRowProps): JSX.Element {
   return (
-    <div className="flex items-start gap-3 rounded-xl bg-white/10 p-3 ring-1 ring-white/15 backdrop-blur-sm">
-      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white/15 text-white">
+    <div className="flex items-start gap-3 rounded-xl bg-white/15 p-3.5 ring-1 ring-white/30 backdrop-blur-sm">
+      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white/25 text-white ring-1 ring-white/30">
         <Icon className="h-4 w-4" />
       </div>
       <div className="min-w-0">
-        <div className="text-sm font-semibold">{title}</div>
-        <div className="text-xs text-white/75">{text}</div>
+        <div className="text-sm font-semibold text-white">{title}</div>
+        <div className="text-xs text-white/85 mt-0.5">{text}</div>
       </div>
     </div>
   );

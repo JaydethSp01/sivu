@@ -181,7 +181,7 @@ function AdminDashboard(): JSX.Element {
     <div className="space-y-6">
       <PageHeader
         title="Panel de coordinación"
-        description="Resumen general del sistema: estudiantes, empresas, vacantes y convenios en curso."
+        description="Una mirada rápida a cómo va el programa: estudiantes, empresas, vacantes y prácticas en curso."
         icon={GraduationCap}
       />
 
@@ -196,7 +196,7 @@ function AdminDashboard(): JSX.Element {
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-2">
         <Kpi label="Tutores activos" value={tutoresActivos.data ?? "—"} icon={UserCog} tone="accent" />
-        <Kpi label="Convenios activos" value={conveniosActivos.data ?? "—"} icon={GraduationCap} hint="Estado ACTIVO" tone="primary" />
+        <Kpi label="Convenios activos" value={conveniosActivos.data ?? "—"} icon={GraduationCap} hint="Prácticas en curso" tone="primary" />
       </div>
 
       <Card>
@@ -365,7 +365,7 @@ function EstudianteDashboard(): JSX.Element {
     <div className="space-y-6">
       <PageHeader
         title="Mi panel"
-        description="Tus postulaciones, documentos, vacantes recomendadas y avance de tu Hoja de Vida."
+        description="Tus postulaciones, documentos y vacantes recomendadas. Todo lo que necesitas para tu práctica."
         icon={FileUser}
       />
 
@@ -418,10 +418,10 @@ function EstudianteDashboard(): JSX.Element {
           label="Match promedio"
           value={promMatch !== null ? `${promMatch.toFixed(0)}%` : "—"}
           icon={Sparkles}
-          hint="Top 6 vacantes publicadas"
+          hint="De las vacantes más recientes"
           tone="accent"
         />
-        <Kpi label="Documentos pendientes" value={pendientes} icon={FileText} hint="En estado RECIBIDO" tone="warning" />
+        <Kpi label="Documentos pendientes" value={pendientes} icon={FileText} hint="Por validar" tone="warning" />
         <Kpi label="Vacantes recomendadas" value={vacantes.data?.length ?? "—"} icon={Briefcase} tone="success" />
       </div>
 
@@ -620,7 +620,7 @@ function EmpresaDashboard(): JSX.Element {
     <div className="space-y-6">
       <PageHeader
         title="Panel de empresa"
-        description="Resumen de tus vacantes activas, postulaciones recibidas y convenios en curso."
+        description="Tus vacantes activas, postulaciones recibidas y prácticas en curso, todo en un solo lugar."
         icon={Building2}
       />
       {empresaNoAprobada && (
@@ -639,16 +639,16 @@ function EmpresaDashboard(): JSX.Element {
         </Alert>
       )}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <Kpi label="Vacantes activas" value={activasCount} icon={Briefcase} hint="Estado PUBLICADA" tone="success" />
+        <Kpi label="Vacantes activas" value={activasCount} icon={Briefcase} hint="Disponibles para postular" tone="success" />
         <Kpi label="Total de postulaciones" value={todas.length} icon={Send} tone="primary" />
-        <Kpi label="Pendientes de revisar" value={pendientes} icon={FileText} hint="POSTULADA o EN_REVISION" tone="warning" />
+        <Kpi label="Pendientes de revisar" value={pendientes} icon={FileText} hint="Esperando tu respuesta" tone="warning" />
       </div>
       <div className="grid gap-4 sm:grid-cols-1">
         <Kpi
           label="Evaluaciones por registrar"
           value={evaluacionesPendientes}
           icon={ClipboardList}
-          hint="Convenios activos sin evaluación final"
+          hint="Prácticas activas sin cierre de evaluación"
           tone="accent"
         />
       </div>

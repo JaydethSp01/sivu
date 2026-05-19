@@ -75,7 +75,7 @@ const MAIN_ITEMS: NavItem[] = [
   // propuesta en "Empresas" (filtro estado=EN_REVISION) para aprobar/rechazar.
   { to: "/empresas/proponer", label: "Proponer empresa", icon: Building2, roles: ["ESTUDIANTE"] },
   { to: "/mi-hoja-vida", label: "Mi Hoja de Vida", icon: FileUser, roles: ["ESTUDIANTE"] },
-  { to: "/hoja-vida/bandeja", label: "Bandeja HV (Coformación)", icon: Inbox, roles: ["ADMIN", "COORDINADOR"] },
+  { to: "/hoja-vida/bandeja", label: "Hojas de vida por revisar", icon: Inbox, roles: ["ADMIN", "COORDINADOR"] },
   { to: "/vacantes", label: labelVacantes, icon: Briefcase },
   { to: "/postulaciones", label: "Postulaciones", icon: Send },
   { to: "/entrevistas", label: "Entrevistas", icon: CalendarClock },
@@ -83,8 +83,8 @@ const MAIN_ITEMS: NavItem[] = [
   { to: "/convenios", label: labelPracticas, icon: FileSignature },
   { to: "/tutores", label: labelTutores, icon: UserCog, roles: ["ADMIN", "COORDINADOR", "EMPRESA", "MCP_AGENT"] },
   { to: "/evaluaciones/new", label: "Evaluaciones", icon: ClipboardList, roles: ["ADMIN", "COORDINADOR", "EMPRESA"] },
-  { to: "/matching", label: "Matching", icon: Sparkles, roles: ["ADMIN", "COORDINADOR"] },
-  { to: "/fabrica-soluciones", label: "Fábrica de Soluciones", icon: Factory, roles: ["ADMIN", "COORDINADOR"] },
+  { to: "/matching", label: "Recomendar candidatos", icon: Sparkles, roles: ["ADMIN", "COORDINADOR"] },
+  { to: "/fabrica-soluciones", label: "Programa interno", icon: Factory, roles: ["ADMIN", "COORDINADOR"] },
 ];
 
 const GROUPS: NavGroup[] = [
