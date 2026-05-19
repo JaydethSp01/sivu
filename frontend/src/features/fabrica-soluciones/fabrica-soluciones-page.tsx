@@ -41,7 +41,7 @@ export function FabricaSolucionesPage(): JSX.Element {
         toast.info("No hay estudiantes elegibles en este momento");
       } else {
         toast.success(
-          `${data.vinculados.length} vinculados · ${data.sinVacante.length} sin vacante interna`
+          `${data.vinculados.length} vinculados · ${data.sinVacante.length} sin cupo interno`
         );
       }
     },
@@ -52,7 +52,7 @@ export function FabricaSolucionesPage(): JSX.Element {
     <div className="space-y-5">
       <PageHeader
         title="Programa interno"
-        description="Asignación automática para estudiantes con HV aprobada que aún no encuentran cupo externo."
+        description="Plan B institucional: cuando llega el inicio del periodo de prácticas y un estudiante elegible aún no tiene cupo en empresa externa, la universidad lo vincula a un proyecto interno."
         icon={Factory}
         actions={
           <Button variant="gradient" onClick={() => ejecutar.mutate()} disabled={ejecutar.isPending}>
@@ -61,7 +61,7 @@ export function FabricaSolucionesPage(): JSX.Element {
             ) : (
               <PlayCircle className="h-4 w-4" />
             )}{" "}
-            Ejecutar asignación ahora
+            Asignar elegibles ahora
           </Button>
         }
       />
@@ -69,25 +69,31 @@ export function FabricaSolucionesPage(): JSX.Element {
       <Card>
         <CardHeader>
           <CardTitle className="text-base flex items-center gap-2">
-            <Info className="h-4 w-4 text-primary" /> ¿Cuándo se ejecuta automáticamente?
+            <Info className="h-4 w-4 text-primary" /> ¿Cómo funciona?
           </CardTitle>
           <CardDescription>
-            El job corre cada <strong>lunes a las 9:00 AM</strong>. Toma estudiantes con HV
-            APROBADA que llevan ≥30 días sin postulación activa y los asigna a vacantes con
-            modalidad <code className="text-xs">INTERNA_UNIVERSIDAD</code>.
+            La asignación corre cada <strong>lunes a las 9:00 AM</strong>. Toma a los
+            estudiantes con hoja de vida aprobada cuyo periodo de práctica ya inició —
+            o está por iniciar — y que aún no tienen empresa asignada, y los conecta con
+            cupos internos disponibles.
           </CardDescription>
         </CardHeader>
         <CardContent className="text-sm text-muted-foreground space-y-2">
           <p className="flex items-start gap-2">
-            <Clock className="h-4 w-4 mt-0.5 text-primary" />
-            La ejecución manual te permite forzar el matching sin esperar al lunes, útil
-            para sustentaciones, cierres de cohorte o casos urgentes.
+            <Clock className="h-4 w-4 mt-0.5 text-primary shrink-0" />
+            El sistema sigue buscando empresa externa en paralelo: el programa interno
+            es el respaldo, no la primera opción.
           </p>
           <p className="flex items-start gap-2">
-            <AlertTriangle className="h-4 w-4 mt-0.5 text-warning-foreground" />
-            Si todas las vacantes internas están ocupadas, los estudiantes elegibles
-            quedan reportados en <strong>"sin vacante"</strong>. Considera publicar nuevas
-            vacantes <code className="text-xs">INTERNA_UNIVERSIDAD</code>.
+            <Info className="h-4 w-4 mt-0.5 text-primary shrink-0" />
+            La ejecución manual permite forzar la asignación sin esperar al lunes, útil
+            para cierres de cohorte, sustentaciones o casos urgentes.
+          </p>
+          <p className="flex items-start gap-2">
+            <AlertTriangle className="h-4 w-4 mt-0.5 text-warning shrink-0" />
+            Si todos los cupos internos están ocupados, los estudiantes elegibles quedan
+            reportados como <strong>"sin cupo"</strong>. Considera abrir más cupos
+            internos antes del inicio de prácticas.
           </p>
         </CardContent>
       </Card>
@@ -127,7 +133,7 @@ export function FabricaSolucionesPage(): JSX.Element {
             <div className="space-y-2">
               <div className="flex items-center gap-2">
                 <AlertTriangle className="h-4 w-4 text-amber-600" />
-                <span className="font-semibold">Sin vacante interna disponible</span>
+                <span className="font-semibold">Sin cupo interno disponible</span>
                 <Badge variant="warning">{ultimoResultado.data.sinVacante.length}</Badge>
               </div>
               {ultimoResultado.data.sinVacante.length === 0 ? (
