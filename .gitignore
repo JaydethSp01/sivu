@@ -65,3 +65,7 @@ backend/jacoco.exec
 # --- Misc ---
 tmp/
 .cache/
+
+# --- Runtime storage (uploads de docs, archivos generados) ---
+backend/storage/
+data/
