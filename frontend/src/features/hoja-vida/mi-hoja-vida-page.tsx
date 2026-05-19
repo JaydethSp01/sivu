@@ -830,7 +830,7 @@ export function MiHojaVidaPage(): JSX.Element {
         <h1 className="text-2xl font-bold">Mi Hoja de Vida</h1>
         <EmptyState
           title="Tu cuenta no está vinculada a un estudiante"
-          description="Pide al coordinador que vincule tu usuario a un registro de estudiante."
+          description="Pide a Coformación que vincule tu usuario a un registro de estudiante."
         />
       </div>
     );

@@ -86,7 +86,7 @@ export function ProponerEmpresaPage(): JSX.Element {
       return api.post<Empresa>("/empresas/propuesta", payload);
     },
     onSuccess: () => {
-      toast.success("Tu propuesta fue enviada a coordinación; recibirás respuesta pronto");
+      toast.success("Tu propuesta fue enviada a Coformación; recibirás respuesta pronto");
       navigate("/empresas");
     },
     onError: (e) => toast.error(extractApiMessage(e)),
@@ -101,7 +101,7 @@ export function ProponerEmpresaPage(): JSX.Element {
         <div>
           <h1 className="text-2xl font-bold">Proponer empresa</h1>
           <p className="text-sm text-muted-foreground">
-            Sugiere una empresa para que coordinación la revise y, si la aprueba, quede habilitada.
+            Sugiere una empresa para que Coformación la revise y, si la aprueba, quede habilitada.
           </p>
         </div>
       </div>
@@ -110,7 +110,7 @@ export function ProponerEmpresaPage(): JSX.Element {
         <AlertTitle>¿Cómo funciona?</AlertTitle>
         <AlertDescription>
           Tu propuesta queda en estado <strong>En revisión</strong>. Una vez aprobada por
-          coordinación podrás postularte a sus vacantes.
+          Coformación podrás postularte a sus vacantes.
         </AlertDescription>
       </Alert>
 
@@ -183,7 +183,7 @@ export function ProponerEmpresaPage(): JSX.Element {
                   <FormControl>
                     <Textarea
                       rows={4}
-                      placeholder="Cuéntale a coordinación por qué esta empresa es una buena aliada"
+                      placeholder="Cuéntale a Coformación por qué esta empresa es una buena aliada"
                       {...field}
                     />
                   </FormControl>

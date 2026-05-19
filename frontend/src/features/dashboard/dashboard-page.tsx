@@ -181,7 +181,7 @@ function AdminDashboard(): JSX.Element {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Panel de coordinación"
+        title="Panel de Coformación"
         description="Una mirada rápida a cómo va el programa: estudiantes, empresas, vacantes y prácticas en curso."
         icon={GraduationCap}
       />
@@ -356,7 +356,7 @@ function EstudianteDashboard(): JSX.Element {
         <h1 className="text-2xl font-bold">Bienvenido</h1>
         <EmptyState
           title="Aún no tienes un perfil de estudiante"
-          description="Solicita al coordinador que asocie tu cuenta a un registro de estudiante."
+          description="Solicita a Coformación que asocie tu cuenta a un registro de estudiante."
         />
       </div>
     );
@@ -665,7 +665,7 @@ function EmpresaDashboard(): JSX.Element {
         <h1 className="text-2xl font-bold">Bienvenido</h1>
         <EmptyState
           title="Tu cuenta aún no está vinculada a una empresa"
-          description="Solicita al coordinador que vincule tu cuenta con el registro de tu empresa."
+          description="Solicita a Coformación que vincule tu cuenta con el registro de tu empresa."
         />
       </div>
     );
@@ -686,7 +686,7 @@ function EmpresaDashboard(): JSX.Element {
           <AlertTitle>Tu empresa aún no está aprobada como coformadora</AlertTitle>
           <AlertDescription className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <span>
-              Completa tus documentos y espera la validación de coordinación para poder
+              Completa tus documentos y espera la validación de Coformación para poder
               publicar vacantes.
             </span>
             <Button asChild size="sm" variant="outline">

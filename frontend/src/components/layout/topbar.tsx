@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useAuthStore } from "@/lib/auth-store";
 import { applyTheme, getStoredTheme, type Theme } from "@/lib/theme";
+import { ROL_LABELS } from "@/lib/enum-labels";
 
 interface TopbarProps {
   onToggleSidebar: () => void;
@@ -29,7 +30,8 @@ export function Topbar({ onToggleSidebar }: TopbarProps): JSX.Element {
   }, [theme]);
 
   const initials = `${usuario?.nombres?.[0] ?? "?"}${usuario?.apellidos?.[0] ?? ""}`.toUpperCase();
-  const rolPrincipal = usuario?.roles?.[0] ?? "";
+  const rolPrincipal = usuario?.roles?.[0];
+  const rolLabel = rolPrincipal ? ROL_LABELS[rolPrincipal] ?? rolPrincipal : "";
 
   const handleLogout = () => {
     clear();
@@ -67,7 +69,7 @@ export function Topbar({ onToggleSidebar }: TopbarProps): JSX.Element {
                 {usuario?.nombres} {usuario?.apellidos}
               </span>
               <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                {rolPrincipal}
+                {rolLabel}
               </span>
             </div>
           </Button>
@@ -76,7 +78,9 @@ export function Topbar({ onToggleSidebar }: TopbarProps): JSX.Element {
           <DropdownMenuLabel>
             <div className="flex flex-col">
               <span className="text-sm">{usuario?.email}</span>
-              <span className="text-xs text-muted-foreground">{usuario?.roles?.join(", ")}</span>
+              <span className="text-xs text-muted-foreground">
+                {usuario?.roles?.map((r) => ROL_LABELS[r] ?? r).join(", ")}
+              </span>
             </div>
           </DropdownMenuLabel>
           <DropdownMenuSeparator />

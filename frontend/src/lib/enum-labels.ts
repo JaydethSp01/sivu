@@ -12,10 +12,26 @@ import type {
   Modalidad,
   NivelIdioma,
   Recomendacion,
+  Rol,
   TipoDocumentoSoporte,
   TipoReunion,
   TipoTutor,
 } from "./types";
+
+/**
+ * Etiqueta de rol mostrada al usuario final.
+ * En el código, en la BD y en el JWT el rol se llama COORDINADOR
+ * (lenguaje técnico de cuando se construyó). En la práctica
+ * institucional de Uniempresarial el área se llama "Oficina de
+ * Coformación", así que en UI mostramos "Coformación".
+ */
+export const ROL_LABELS: Record<Rol, string> = {
+  ADMIN: "Administrador",
+  COORDINADOR: "Coformación",
+  ESTUDIANTE: "Estudiante",
+  EMPRESA: "Empresa",
+  MCP_AGENT: "Agente MCP",
+};
 
 export const TIPO_DOCUMENTO_LABELS: Record<TipoDocumentoSoporte, string> = {
   HOJA_VIDA: "Hoja de vida",

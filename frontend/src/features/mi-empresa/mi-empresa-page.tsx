@@ -150,7 +150,7 @@ function DatosGeneralesTab({ empresa }: DatosGeneralesTabProps): JSX.Element {
                     <FormControl>
                       <Input {...field} disabled />
                     </FormControl>
-                    <FormDescription>El NIT solo lo modifica coordinación.</FormDescription>
+                    <FormDescription>El NIT solo lo modifica Coformación.</FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -357,7 +357,7 @@ function DocumentosLegalesTab({
     return (
       <EmptyState
         title="Sin tipos de documento configurados"
-        description="Coordinación aún no ha configurado tipos de documento aplicables a empresas."
+        description="Coformación aún no ha configurado tipos de documento aplicables a empresas."
       />
     );
   }
@@ -557,7 +557,7 @@ function EstadoDetalle({ documento }: { documento: Documento | undefined }): JSX
       <div className="text-muted-foreground">{fecha}</div>
       {documento.estado === "RECHAZADO" && documento.observacionesValidacion && (
         <div className="rounded border border-destructive/30 bg-destructive/5 px-2 py-1 text-destructive">
-          <span className="font-medium">Observaciones de coordinación: </span>
+          <span className="font-medium">Observaciones de Coformación: </span>
           {documento.observacionesValidacion}
         </div>
       )}
@@ -612,12 +612,12 @@ function EstadoAprobacionTab({ empresa, faltantes }: EstadoAprobacionTabProps): 
     return (
       <Alert variant="warning">
         <Clock className="h-5 w-5" />
-        <AlertTitle className="text-base">Tu empresa está en revisión por coordinación</AlertTitle>
+        <AlertTitle className="text-base">Tu empresa está en revisión por Coformación</AlertTitle>
         <AlertDescription className="space-y-2">
           <p>Para acelerar el proceso, asegúrate de completar lo siguiente:</p>
           {faltantes.length === 0 ? (
             <div className="rounded border border-success/30 bg-success/5 px-3 py-2 text-success text-xs">
-              Todos los documentos requeridos están validados. Espera la decisión de coordinación.
+              Todos los documentos requeridos están validados. Espera la decisión de Coformación.
             </div>
           ) : (
             <ul className="ml-4 list-disc space-y-1 text-xs">
@@ -652,7 +652,7 @@ function EstadoAprobacionTab({ empresa, faltantes }: EstadoAprobacionTabProps): 
           <p>No se registró un motivo de rechazo.</p>
         )}
         <p>
-          Si crees que es un error, contacta a coordinación. Puedes corregir los datos y
+          Si crees que es un error, contacta a Coformación. Puedes corregir los datos y
           documentos y volver a enviar tu empresa a revisión.
         </p>
       </AlertDescription>

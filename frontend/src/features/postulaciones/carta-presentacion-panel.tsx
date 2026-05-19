@@ -105,7 +105,7 @@ export function CartaPresentacionPanel({ postulacionId, postulacionEstado }: Pro
             size="sm"
             onClick={() => generar.mutate()}
             disabled={generar.isPending}
-            title="Regenerar (sobrescribe la firma con el coordinador actual)"
+            title="Regenerar (sobrescribe la firma con el responsable de Coformación actual)"
           >
             {generar.isPending ? (
               <Loader2 className="h-4 w-4 animate-spin" />
