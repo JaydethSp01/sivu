@@ -49,10 +49,31 @@ function labelVacantes(roles: Rol[]): string {
     : "Vacantes";
 }
 function labelPracticas(roles: Rol[]): string {
-  // "Mis prácticas" para estudiante y empresa (los protagonistas).
-  // "Prácticas" para coordinador/admin (no son suyas).
+  // El estudiante ES quien hace la práctica; la empresa RECIBE practicantes.
   if (roles.includes("ADMIN") || roles.includes("COORDINADOR")) return "Prácticas";
-  return "Mis prácticas";
+  if (roles.includes("EMPRESA")) return "Convenios";
+  return "Mi práctica";
+}
+function labelPostulaciones(roles: Rol[]): string {
+  if (roles.includes("EMPRESA") && !roles.includes("ADMIN") && !roles.includes("COORDINADOR")) {
+    return "Postulaciones recibidas";
+  }
+  if (roles.includes("ESTUDIANTE") && !roles.includes("ADMIN") && !roles.includes("COORDINADOR") && !roles.includes("EMPRESA")) {
+    return "Mis postulaciones";
+  }
+  return "Postulaciones";
+}
+function labelEntrevistas(roles: Rol[]): string {
+  if (roles.includes("ESTUDIANTE") && !roles.includes("ADMIN") && !roles.includes("COORDINADOR") && !roles.includes("EMPRESA")) {
+    return "Mis entrevistas";
+  }
+  return "Entrevistas";
+}
+function labelEvaluaciones(roles: Rol[]): string {
+  if (roles.includes("EMPRESA") && !roles.includes("ADMIN") && !roles.includes("COORDINADOR")) {
+    return "Evaluar practicantes";
+  }
+  return "Evaluaciones";
 }
 function labelDocumentos(roles: Rol[]): string {
   return roles.includes("EMPRESA") && !roles.includes("ADMIN") && !roles.includes("COORDINADOR")
@@ -77,12 +98,12 @@ const MAIN_ITEMS: NavItem[] = [
   { to: "/mi-hoja-vida", label: "Mi Hoja de Vida", icon: FileUser, roles: ["ESTUDIANTE"] },
   { to: "/hoja-vida/bandeja", label: "Hojas de vida por revisar", icon: Inbox, roles: ["ADMIN", "COORDINADOR"] },
   { to: "/vacantes", label: labelVacantes, icon: Briefcase },
-  { to: "/postulaciones", label: "Postulaciones", icon: Send },
-  { to: "/entrevistas", label: "Entrevistas", icon: CalendarClock },
+  { to: "/postulaciones", label: labelPostulaciones, icon: Send },
+  { to: "/entrevistas", label: labelEntrevistas, icon: CalendarClock },
   { to: "/documentos", label: labelDocumentos, icon: FileText },
   { to: "/convenios", label: labelPracticas, icon: FileSignature },
   { to: "/tutores", label: labelTutores, icon: UserCog, roles: ["ADMIN", "COORDINADOR", "EMPRESA", "MCP_AGENT"] },
-  { to: "/evaluaciones/new", label: "Evaluaciones", icon: ClipboardList, roles: ["ADMIN", "COORDINADOR", "EMPRESA"] },
+  { to: "/evaluaciones/new", label: labelEvaluaciones, icon: ClipboardList, roles: ["ADMIN", "COORDINADOR", "EMPRESA"] },
   { to: "/matching", label: "Recomendar candidatos", icon: Sparkles, roles: ["ADMIN", "COORDINADOR"] },
   { to: "/fabrica-soluciones", label: "Programa interno", icon: Factory, roles: ["ADMIN", "COORDINADOR"] },
   { to: "/programa-interno/solicitudes", label: "Solicitudes programa interno", icon: Inbox, roles: ["ADMIN", "COORDINADOR"] },

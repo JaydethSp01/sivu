@@ -58,6 +58,7 @@ export function VacantesListPage(): JSX.Element {
   const canCreate = hasRole("ADMIN", "COORDINADOR", "EMPRESA");
   const canDelete = hasRole("ADMIN", "COORDINADOR");
   const isStudentOnly = hasRole("ESTUDIANTE") && !hasRole("ADMIN", "COORDINADOR", "EMPRESA");
+  const isEmpresaOnly = hasRole("EMPRESA") && !hasRole("ADMIN", "COORDINADOR");
 
   const [q, setQ] = useState("");
   const [estado, setEstado] = useState<EstadoVacante | "ALL">(
@@ -168,11 +169,19 @@ export function VacantesListPage(): JSX.Element {
   return (
     <div className="space-y-5">
       <PageHeader
-        title={isStudentOnly ? "Vacantes disponibles" : "Vacantes"}
+        title={
+          isStudentOnly
+            ? "Vacantes disponibles"
+            : isEmpresaOnly
+              ? "Mis vacantes"
+              : "Vacantes"
+        }
         description={
           isStudentOnly
             ? "Encuentra cupos de práctica abiertos por empresas aliadas. Postúlate con un clic."
-            : "Cupos de práctica abiertos en empresas aliadas. Filtra por estado o por empresa."
+            : isEmpresaOnly
+              ? "Las vacantes de práctica que tu empresa ha publicado. Crea nuevas y revisa quién postula."
+              : "Cupos de práctica abiertos en empresas aliadas. Filtra por estado o por empresa."
         }
         icon={Briefcase}
         actions={

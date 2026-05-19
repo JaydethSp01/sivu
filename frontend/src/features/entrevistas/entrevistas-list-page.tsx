@@ -26,6 +26,7 @@ import {
 import { StatusBadge } from "@/components/status-badge";
 import { EmptyState } from "@/components/empty-state";
 import { api } from "@/lib/api";
+import { useAuthStore } from "@/lib/auth-store";
 import {
   MODALIDAD_ENTREVISTA_LABELS,
   RESULTADO_ENTREVISTA_LABELS,
@@ -41,6 +42,9 @@ const RESULTADOS: (ResultadoEntrevista | "TODAS")[] = [
 
 export function EntrevistasListPage(): JSX.Element {
   const [resultado, setResultado] = useState<ResultadoEntrevista | "TODAS">("TODAS");
+  const hasRole = useAuthStore((s) => s.hasRole);
+  const isStudentOnly = hasRole("ESTUDIANTE") && !hasRole("ADMIN", "COORDINADOR", "EMPRESA");
+  const isEmpresaOnly = hasRole("EMPRESA") && !hasRole("ADMIN", "COORDINADOR");
 
   const lista = useQuery({
     queryKey: ["/entrevistas", { scope: "all" }],
@@ -63,8 +67,20 @@ export function EntrevistasListPage(): JSX.Element {
   return (
     <div className="space-y-5">
       <PageHeader
-        title="Entrevistas"
-        description="Entrevistas entre empresa y candidato. Cada rol ve las que le corresponden."
+        title={
+          isStudentOnly
+            ? "Mis entrevistas"
+            : isEmpresaOnly
+              ? "Entrevistas programadas"
+              : "Entrevistas"
+        }
+        description={
+          isStudentOnly
+            ? "Tus entrevistas con las empresas a las que postulaste. Aquí ves fecha, modalidad y resultado."
+            : isEmpresaOnly
+              ? "Entrevistas con candidatos a tus vacantes. Registra el resultado para avanzar el proceso."
+              : "Entrevistas entre empresa y candidato. Cada rol ve las que le corresponden."
+        }
         icon={CalendarClock}
         actions={
           <div className="flex items-center gap-2">

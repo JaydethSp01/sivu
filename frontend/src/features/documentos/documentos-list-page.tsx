@@ -64,6 +64,7 @@ export function DocumentosListPage(): JSX.Element {
   const hasRole = useAuthStore((s) => s.hasRole);
   const canValidate = hasRole("ADMIN", "COORDINADOR");
   const isStudentOnly = hasRole("ESTUDIANTE") && !hasRole("ADMIN", "COORDINADOR", "EMPRESA");
+  const isEmpresaOnly = hasRole("EMPRESA") && !hasRole("ADMIN", "COORDINADOR");
 
   const [estado, setEstado] = useState<EstadoDocumento | "ALL">("ALL");
   const [tipo, setTipo] = useState<TipoDocumentoSoporte | "ALL">("ALL");
@@ -175,11 +176,19 @@ export function DocumentosListPage(): JSX.Element {
   return (
     <div className="space-y-5">
       <PageHeader
-        title={isStudentOnly ? "Mis documentos" : "Documentos"}
+        title={
+          isStudentOnly
+            ? "Mis documentos"
+            : isEmpresaOnly
+              ? "Documentos de mi empresa"
+              : "Documentos"
+        }
         description={
           isStudentOnly
             ? "Tus soportes: hoja de vida, identificación, EPS, certificados. Tu hoja de vida se sube automáticamente cuando la completas."
-            : "Soportes académicos y de formalización: hojas de vida, certificados, EPS, convenios."
+            : isEmpresaOnly
+              ? "Soportes corporativos de tu empresa: RUT, cámara de comercio, certificaciones, convenios firmados."
+              : "Soportes académicos y de formalización del proceso de Coformación."
         }
         icon={FileText}
         actions={

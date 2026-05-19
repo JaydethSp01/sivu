@@ -42,6 +42,7 @@ export function TutoresListPage(): JSX.Element {
   const canEdit = hasRole("ADMIN", "COORDINADOR");
   const canDelete = hasRole("ADMIN");
   const canFilterEmpresa = hasRole("ADMIN", "COORDINADOR");
+  const isEmpresaOnly = hasRole("EMPRESA") && !hasRole("ADMIN", "COORDINADOR");
 
   const [q, setQ] = useState("");
   const [tipo, setTipo] = useState<TipoTutor | "ALL">("ALL");
@@ -155,8 +156,12 @@ export function TutoresListPage(): JSX.Element {
   return (
     <div className="space-y-5">
       <PageHeader
-        title="Tutores"
-        description="Tutores académicos y empresariales que acompañan a los practicantes durante el proceso."
+        title={isEmpresaOnly ? "Mis tutores" : "Tutores"}
+        description={
+          isEmpresaOnly
+            ? "Tutores empresariales de tu empresa que acompañan a los practicantes."
+            : "Tutores académicos y empresariales que acompañan a los practicantes durante el proceso."
+        }
         icon={UserCog}
         actions={
           canEdit ? (

@@ -41,6 +41,8 @@ export function PostulacionesListPage(): JSX.Element {
   const hasRole = useAuthStore((s) => s.hasRole);
   const usuario = useAuthStore((s) => s.usuario);
   const canDelete = hasRole("ADMIN", "COORDINADOR");
+  const isStudentOnly = hasRole("ESTUDIANTE") && !hasRole("ADMIN", "COORDINADOR", "EMPRESA");
+  const isEmpresaOnly = hasRole("EMPRESA") && !hasRole("ADMIN", "COORDINADOR");
 
   const [estado, setEstado] = useState<EstadoPostulacion | "ALL">("ALL");
   const [page, setPage] = useState(0);
@@ -140,8 +142,20 @@ export function PostulacionesListPage(): JSX.Element {
   return (
     <div className="space-y-5">
       <PageHeader
-        title="Postulaciones"
-        description="Sigue el avance de cada postulación: en revisión, entrevista, preselección y aceptación."
+        title={
+          isStudentOnly
+            ? "Mis postulaciones"
+            : isEmpresaOnly
+              ? "Postulaciones recibidas"
+              : "Postulaciones"
+        }
+        description={
+          isStudentOnly
+            ? "Sigue el avance de cada postulación que enviaste: en revisión, entrevista, preselección y aceptación."
+            : isEmpresaOnly
+              ? "Estudiantes que postularon a tus vacantes. Revisa perfiles, agenda entrevistas y decide."
+              : "Sigue el avance de cada postulación: en revisión, entrevista, preselección y aceptación."
+        }
         icon={Send}
         actions={
           hasRole("ESTUDIANTE", "ADMIN", "COORDINADOR") ? (

@@ -38,6 +38,8 @@ export function ConveniosListPage(): JSX.Element {
   const navigate = useNavigate();
   const hasRole = useAuthStore((s) => s.hasRole);
   const esCoordOAdmin = hasRole("ADMIN", "COORDINADOR");
+  const isStudentOnly = hasRole("ESTUDIANTE") && !esCoordOAdmin && !hasRole("EMPRESA");
+  const isEmpresaOnly = hasRole("EMPRESA") && !esCoordOAdmin;
   const [estado, setEstado] = useState<EstadoConvenio | "ALL">("ALL");
   const [page, setPage] = useState(0);
 
@@ -83,8 +85,20 @@ export function ConveniosListPage(): JSX.Element {
   return (
     <div className="space-y-5">
       <PageHeader
-        title={esCoordOAdmin ? "Prácticas" : "Mis prácticas"}
-        description="Convenios de práctica firmados entre estudiante, empresa y universidad."
+        title={
+          isEmpresaOnly
+            ? "Convenios"
+            : isStudentOnly
+              ? "Mi práctica"
+              : "Prácticas"
+        }
+        description={
+          isEmpresaOnly
+            ? "Convenios firmados con tus practicantes. Aquí ves sus datos, fechas y estado del proceso."
+            : isStudentOnly
+              ? "Tu convenio de práctica firmado entre tú, la empresa y la universidad."
+              : "Convenios de práctica firmados entre estudiante, empresa y universidad."
+        }
         icon={FileSignature}
       />
       <div className="flex flex-wrap gap-2 items-center">
@@ -108,8 +122,20 @@ export function ConveniosListPage(): JSX.Element {
         totalElements={data?.totalElements ?? 0}
         onPageChange={setPage}
         rowKey={(r) => r.id}
-        emptyTitle="Sin prácticas aún"
-        emptyDescription="Cuando se formalice una postulación aceptada se creará un convenio de práctica."
+        emptyTitle={
+          isEmpresaOnly
+            ? "Aún no tienes practicantes vinculados"
+            : isStudentOnly
+              ? "Aún no tienes una práctica activa"
+              : "Sin convenios aún"
+        }
+        emptyDescription={
+          isEmpresaOnly
+            ? "Cuando aceptes a un postulante, su convenio de práctica aparecerá aquí."
+            : isStudentOnly
+              ? "Cuando una empresa acepte tu postulación, tu convenio aparecerá aquí."
+              : "Cuando se formalice una postulación aceptada, se creará un convenio."
+        }
       />
     </div>
   );

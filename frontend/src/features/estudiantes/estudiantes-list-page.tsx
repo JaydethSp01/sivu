@@ -33,6 +33,7 @@ export function EstudiantesListPage(): JSX.Element {
   const hasRole = useAuthStore((s) => s.hasRole);
   const canEdit = hasRole("ADMIN", "COORDINADOR");
   const canDelete = hasRole("ADMIN");
+  const isEmpresaOnly = hasRole("EMPRESA") && !hasRole("ADMIN", "COORDINADOR");
 
   const [q, setQ] = useState("");
   const [estado, setEstado] = useState<EstadoEstudiante | "ALL">("ALL");
@@ -134,8 +135,12 @@ export function EstudiantesListPage(): JSX.Element {
   return (
     <div className="space-y-5">
       <PageHeader
-        title="Estudiantes"
-        description="Gestiona los estudiantes habilitados para iniciar su práctica profesional."
+        title={isEmpresaOnly ? "Mis practicantes" : "Estudiantes"}
+        description={
+          isEmpresaOnly
+            ? "Estudiantes vinculados a tu empresa o que postularon a tus vacantes."
+            : "Gestiona los estudiantes habilitados para iniciar su práctica profesional."
+        }
         icon={Users}
         actions={
           canEdit ? (
