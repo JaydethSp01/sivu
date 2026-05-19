@@ -65,13 +65,41 @@ api.interceptors.response.use(
   }
 );
 
+const STATUS_FRIENDLY: Record<number, string> = {
+  400: "Los datos enviados no son válidos.",
+  401: "Tu sesión expiró. Vuelve a iniciar sesión.",
+  403: "No tienes permiso para esta acción.",
+  404: "No encontramos lo que buscabas.",
+  409: "Esta acción genera un conflicto con datos existentes.",
+  413: "El archivo es demasiado grande.",
+  415: "El formato de la solicitud no es válido.",
+  422: "Algunos datos no pasaron las validaciones.",
+  500: "Ocurrió un error en el servidor. Intenta de nuevo o avisa al equipo.",
+  502: "El servidor está caído. Reintenta en unos segundos.",
+  503: "Servicio no disponible. Reintenta en unos segundos.",
+};
+
 export function extractApiMessage(error: unknown): string {
   if (error instanceof AxiosError) {
-    const data = error.response?.data as { message?: string; errors?: { mensaje: string }[] } | undefined;
+    const data = error.response?.data as
+      | { message?: string; error?: string; errors?: { mensaje: string }[] }
+      | undefined;
+    const status = error.response?.status;
+
     if (data?.errors && data.errors.length > 0) {
       return data.errors.map((e) => e.mensaje).join(", ");
     }
+
+    // Para 5xx, los mensajes técnicos del backend ("Internal Server Error")
+    // no aportan al usuario. Preferir un fallback amigable.
+    if (status && status >= 500) {
+      return STATUS_FRIENDLY[status] ?? "Ocurrió un error en el servidor.";
+    }
+
+    if (data?.message && data.message !== data.error) return data.message;
+    if (status && STATUS_FRIENDLY[status]) return STATUS_FRIENDLY[status];
     if (data?.message) return data.message;
+    if (error.code === "ERR_NETWORK") return "Sin conexión con el servidor. Revisa tu red.";
     return error.message;
   }
   if (error instanceof Error) return error.message;

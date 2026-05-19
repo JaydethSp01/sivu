@@ -10,10 +10,16 @@ import java.util.Optional;
 
 public interface HojaVidaRepository extends JpaRepository<HojaVida, Long> {
 
-    @EntityGraph(attributePaths = {
-        "estudiante", "habilidades", "idiomas", "educacion",
-        "experienciaFase", "experienciaLaboral"
-    })
+    /**
+     * Solo carga el estudiante con EntityGraph. Las sub-colecciones de la HV
+     * (habilidades, idiomas, educacion, experienciaFase, experienciaLaboral)
+     * se cargan via {@code default_batch_fetch_size} configurado en
+     * application.yml — un solo SELECT IN(?, ?, ?) cuando se accede.
+     *
+     * Esto evita {@code MultipleBagFetchException}: Hibernate no permite hacer
+     * JOIN FETCH a más de una colección tipo List ("bag") en la misma query.
+     */
+    @EntityGraph(attributePaths = {"estudiante"})
     Optional<HojaVida> findByEstudianteId(Long estudianteId);
 
     boolean existsByEstudianteId(Long estudianteId);

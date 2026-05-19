@@ -208,7 +208,13 @@ function NuevoDocumentoForm(): JSX.Element {
       const params: Record<string, string | number> = { tipo };
       if (estudianteId) params.estudianteId = estudianteId;
       if (postulacionId) params.postulacionId = postulacionId;
-      return api.post<Documento>("/documentos/upload", formData, { params });
+      return api.post<Documento>("/documentos/upload", formData, {
+        params,
+        // Axios reemplaza este valor con multipart/form-data; boundary=... al
+        // detectar el FormData. Si no lo seteamos aquí, hereda el JSON global
+        // del api.ts y el backend lanza HttpMediaTypeNotSupportedException.
+        headers: { "Content-Type": "multipart/form-data" },
+      });
     },
     onSuccess: () => {
       toast.success("Documento subido");
