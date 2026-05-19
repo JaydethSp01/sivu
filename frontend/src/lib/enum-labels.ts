@@ -157,6 +157,35 @@ export const ESTADO_SOLICITUD_FABRICA_VARIANT: Record<
   RECHAZADA: "destructive",
 };
 
+export const TIPO_PLANTILLA_LABELS: Record<string, string> = {
+  EVAL_TUTOR: "Evaluación del Tutor",
+  EVAL_PROFESOR: "Evaluación del Profesor",
+  ACTA: "Acta de Acompañamiento",
+  PLAN_ACTIVIDADES: "Plan de Actividades",
+  INFORME_FINAL: "Informe Final del PM",
+};
+
+export const ESTADO_RESPUESTA_LABELS: Record<string, string> = {
+  PENDIENTE: "Pendiente",
+  EN_PROGRESO: "En progreso",
+  ENTREGADO: "Entregado",
+  FIRMADO: "Firmado",
+  APROBADO: "Aprobado",
+  RECHAZADO: "Rechazado",
+};
+
+export const ESTADO_RESPUESTA_VARIANT: Record<
+  string,
+  "muted" | "warning" | "success" | "destructive"
+> = {
+  PENDIENTE: "muted",
+  EN_PROGRESO: "warning",
+  ENTREGADO: "warning",
+  FIRMADO: "success",
+  APROBADO: "success",
+  RECHAZADO: "destructive",
+};
+
 export const ESTADO_INFORME_FINAL_LABELS: Record<string, string> = {
   BORRADOR: "Borrador",
   ENTREGADO: "Entregado — en revisión",

@@ -904,3 +904,129 @@ export interface EvaluacionProfesorRequest {
   observaciones?: string | null;
   fechaElaboracion?: string | null;
 }
+
+// ============================================================
+// Módulo Plantillas (#75)
+// ============================================================
+
+export type TipoPlantilla =
+  | "EVAL_TUTOR"
+  | "EVAL_PROFESOR"
+  | "ACTA"
+  | "PLAN_ACTIVIDADES"
+  | "INFORME_FINAL";
+
+export type EstadoRespuestaForm =
+  | "PENDIENTE"
+  | "EN_PROGRESO"
+  | "ENTREGADO"
+  | "FIRMADO"
+  | "APROBADO"
+  | "RECHAZADO";
+
+export interface CriterioPlantilla {
+  id: number;
+  orden: number;
+  codigo?: string | null;
+  descripcion: string;
+  peso?: number | string | null;
+  placeholder?: string | null;
+}
+
+export interface SeccionPlantilla {
+  id: number;
+  orden: number;
+  codigo?: string | null;
+  titulo: string;
+  descripcion?: string | null;
+  peso?: number | string | null;
+  criterios: CriterioPlantilla[];
+}
+
+export interface PlantillaFormulario {
+  id: number;
+  codigo: string;
+  version: string;
+  tipo: TipoPlantilla;
+  nombre: string;
+  descripcion?: string | null;
+  vigente: boolean;
+  fechaVigencia?: string | null;
+  creadoPorNombre?: string | null;
+  secciones: SeccionPlantilla[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PlantillaRequest {
+  codigo: string;
+  version: string;
+  tipo: TipoPlantilla;
+  nombre: string;
+  descripcion?: string | null;
+  fechaVigencia?: string | null;
+}
+
+export interface SeccionRequest {
+  orden?: number;
+  codigo?: string | null;
+  titulo: string;
+  descripcion?: string | null;
+  peso?: number | null;
+}
+
+export interface CriterioRequest {
+  orden?: number;
+  codigo?: string | null;
+  descripcion: string;
+  peso?: number | null;
+  placeholder?: string | null;
+}
+
+export interface ValorCriterio {
+  criterioId: number;
+  valorNumero?: number | string | null;
+  valorTexto?: string | null;
+  valorBool?: boolean | null;
+}
+
+export interface RespuestaFormulario {
+  id: number;
+  plantillaId: number;
+  plantillaCodigo: string;
+  plantillaNombre: string;
+  convenioId?: number | null;
+  trimestreId?: number | null;
+  estudianteId?: number | null;
+  estudianteNombre?: string | null;
+  asignadoANombre?: string | null;
+  asignadoARol?: string | null;
+  asignadoPorNombre?: string | null;
+  fechaAsignacion: string;
+  fechaLimite?: string | null;
+  estado: EstadoRespuestaForm;
+  notaCalculada?: number | string | null;
+  observaciones?: string | null;
+  fechaEntrega?: string | null;
+  fechaFirma?: string | null;
+  firmadoPorNombre?: string | null;
+  valores: ValorCriterio[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AsignarRequest {
+  plantillaId: number;
+  convenioId?: number | null;
+  trimestreId?: number | null;
+  estudianteId?: number | null;
+  asignadoAMongoId?: string | null;
+  asignadoANombre?: string | null;
+  asignadoARol?: string | null;
+  fechaLimite?: string | null;
+}
+
+export interface LlenarRequest {
+  valores?: ValorCriterio[];
+  observaciones?: string | null;
+}

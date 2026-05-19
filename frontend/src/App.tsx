@@ -33,6 +33,10 @@ import { BandejaHvPage } from "@/features/hoja-vida/bandeja-hv-page";
 import { EntrevistasListPage } from "@/features/entrevistas/entrevistas-list-page";
 import { FabricaSolucionesPage } from "@/features/fabrica-soluciones/fabrica-soluciones-page";
 import { SolicitudesFabricaPage } from "@/features/fabrica-soluciones/solicitudes-fabrica-page";
+import { PlantillasListPage } from "@/features/plantillas/plantillas-list-page";
+import { PlantillaDetailPage } from "@/features/plantillas/plantilla-detail-page";
+import { MisFormulariosPage } from "@/features/plantillas/mis-formularios-page";
+import { RespuestaLlenarPage } from "@/features/plantillas/respuesta-llenar-page";
 import { TutoresListPage } from "@/features/tutores/tutores-list-page";
 import { TutorFormPage } from "@/features/tutores/tutor-form-page";
 import { TutorDetailPage } from "@/features/tutores/tutor-detail-page";
@@ -135,7 +139,12 @@ export function App(): JSX.Element {
                 <Route path="matching" element={<MatchingToolPage />} />
                 <Route path="fabrica-soluciones" element={<FabricaSolucionesPage />} />
                 <Route path="programa-interno/solicitudes" element={<SolicitudesFabricaPage />} />
+                <Route path="plantillas" element={<PlantillasListPage />} />
+                <Route path="plantillas/:id" element={<PlantillaDetailPage />} />
               </Route>
+
+              <Route path="mis-formularios" element={<MisFormulariosPage />} />
+              <Route path="mis-formularios/:id" element={<RespuestaLlenarPage />} />
 
               <Route element={<RoleGuard allow={["ADMIN", "COORDINADOR"]} />}>
                 <Route path="catalogos/modalidades" element={<ModalidadesListPage />} />
