@@ -1,5 +1,6 @@
 package co.uempresarial.sivu.plantilla.web.dto;
 
+import co.uempresarial.sivu.plantilla.domain.TipoCampo;
 import co.uempresarial.sivu.plantilla.domain.TipoPlantilla;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -44,7 +45,9 @@ public final class PlantillaDtos {
         String codigo,
         String descripcion,
         BigDecimal peso,
-        String placeholder
+        String placeholder,
+        TipoCampo tipo,
+        String opciones
     ) {}
 
     public record PlantillaRequest(
@@ -69,6 +72,12 @@ public final class PlantillaDtos {
         String codigo,
         @NotBlank String descripcion,
         BigDecimal peso,
-        String placeholder
+        String placeholder,
+        TipoCampo tipo,
+        String opciones
+    ) {}
+
+    public record ReordenarRequest(
+        java.util.List<Long> ids
     ) {}
 }

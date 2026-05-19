@@ -924,6 +924,8 @@ export type EstadoRespuestaForm =
   | "APROBADO"
   | "RECHAZADO";
 
+export type TipoCampo = "NUMBER" | "TEXT" | "BOOL" | "DATE" | "SELECT" | "SIGNATURE";
+
 export interface CriterioPlantilla {
   id: number;
   orden: number;
@@ -931,6 +933,8 @@ export interface CriterioPlantilla {
   descripcion: string;
   peso?: number | string | null;
   placeholder?: string | null;
+  tipo: TipoCampo;
+  opciones?: string | null;
 }
 
 export interface SeccionPlantilla {
@@ -981,6 +985,8 @@ export interface CriterioRequest {
   descripcion: string;
   peso?: number | null;
   placeholder?: string | null;
+  tipo?: TipoCampo;
+  opciones?: string | null;
 }
 
 export interface ValorCriterio {

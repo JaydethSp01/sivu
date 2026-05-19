@@ -39,4 +39,13 @@ public class CriterioPlantilla extends BaseEntity {
 
     @Column(columnDefinition = "TEXT")
     private String placeholder;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    @Builder.Default
+    private TipoCampo tipo = TipoCampo.NUMBER;
+
+    /** Para tipo=SELECT, CSV de opciones (p. ej. "INICIAL,SEGUIMIENTO,FINAL"). */
+    @Column(columnDefinition = "TEXT")
+    private String opciones;
 }

@@ -104,4 +104,23 @@ public class PlantillaController {
         service.eliminarCriterio(criterioId);
         return ResponseEntity.noContent().build();
     }
+
+    // ----- Reordenar (drag & drop) -----
+    @PostMapping("/{plantillaId}/secciones/reordenar")
+    @PreAuthorize("hasAnyRole('ADMIN','COORDINADOR')")
+    @Operation(summary = "Reordenar secciones (lista de IDs en el nuevo orden)")
+    public ResponseEntity<Void> reordenarSecciones(@PathVariable Long plantillaId,
+                                                    @RequestBody ReordenarRequest req) {
+        service.reordenarSecciones(plantillaId, req.ids());
+        return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/secciones/{seccionId}/criterios/reordenar")
+    @PreAuthorize("hasAnyRole('ADMIN','COORDINADOR')")
+    @Operation(summary = "Reordenar criterios dentro de una sección")
+    public ResponseEntity<Void> reordenarCriterios(@PathVariable Long seccionId,
+                                                    @RequestBody ReordenarRequest req) {
+        service.reordenarCriterios(seccionId, req.ids());
+        return ResponseEntity.noContent().build();
+    }
 }

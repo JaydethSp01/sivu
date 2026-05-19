@@ -1,11 +1,12 @@
 import { useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
   ArrowLeft,
   CheckCircle2,
   FileCog,
+  GripVertical,
   Loader2,
   Pencil,
   Plus,
@@ -13,12 +14,26 @@ import {
   Send,
   Trash2,
 } from "lucide-react";
+import {
+  DndContext,
+  PointerSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  arrayMove,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -48,12 +63,14 @@ import {
 } from "@/components/ui/select";
 import { PageHeader } from "@/components/page-header";
 import { api, extractApiMessage } from "@/lib/api";
-import { TIPO_PLANTILLA_LABELS } from "@/lib/enum-labels";
+import { TIPO_CAMPO_LABELS, TIPO_PLANTILLA_LABELS } from "@/lib/enum-labels";
 import type {
+  CriterioPlantilla,
   CriterioRequest,
   PlantillaFormulario,
   SeccionPlantilla,
   SeccionRequest,
+  TipoCampo,
 } from "@/lib/types";
 
 export function PlantillaDetailPage(): JSX.Element {
@@ -116,6 +133,22 @@ export function PlantillaDetailPage(): JSX.Element {
     onError: (e) => toast.error(extractApiMessage(e)),
   });
 
+  const reordenarSecciones = useMutation({
+    mutationFn: async (ids: number[]) =>
+      api.post(`/plantillas/${id}/secciones/reordenar`, { ids }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["/plantillas", id] }),
+    onError: (e) => toast.error(extractApiMessage(e)),
+  });
+
+  const reordenarCriterios = useMutation({
+    mutationFn: async ({ seccionId, ids }: { seccionId: number; ids: number[] }) =>
+      api.post(`/plantillas/secciones/${seccionId}/criterios/reordenar`, { ids }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["/plantillas", id] }),
+    onError: (e) => toast.error(extractApiMessage(e)),
+  });
+
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
+
   if (isLoading || !data) {
     return (
       <div className="flex items-center text-sm text-muted-foreground">
@@ -123,6 +156,16 @@ export function PlantillaDetailPage(): JSX.Element {
       </div>
     );
   }
+
+  const onDragEndSecciones = (e: DragEndEvent) => {
+    const { active, over } = e;
+    if (!over || active.id === over.id) return;
+    const oldIndex = data.secciones.findIndex((s) => s.id === active.id);
+    const newIndex = data.secciones.findIndex((s) => s.id === over.id);
+    if (oldIndex < 0 || newIndex < 0) return;
+    const nuevos = arrayMove(data.secciones, oldIndex, newIndex);
+    reordenarSecciones.mutate(nuevos.map((s) => s.id));
+  };
 
   return (
     <div className="space-y-5">
@@ -155,29 +198,37 @@ export function PlantillaDetailPage(): JSX.Element {
                 Plantilla vigente
               </strong>
               <p className="text-muted-foreground mt-0.5">
-                No puedes editar criterios ni pesos. Crea una nueva versión si necesitas cambios.
+                No puedes editar criterios ni pesos ni reordenar. Crea una nueva versión si necesitas cambios.
               </p>
             </div>
           </CardContent>
         </Card>
       )}
 
-      <div className="space-y-4">
-        {data.secciones.map((s) => (
-          <SeccionCard
-            key={s.id}
-            seccion={s}
-            editable={!data.vigente}
-            onDeleteSeccion={() => eliminarSeccion.mutate(s.id)}
-            onAddCriterio={(req) => agregarCriterio.mutate({ seccionId: s.id, req })}
-            onDeleteCriterio={(critId) => eliminarCriterio.mutate(critId)}
-          />
-        ))}
+      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEndSecciones}>
+        <SortableContext
+          items={data.secciones.map((s) => s.id)}
+          strategy={verticalListSortingStrategy}
+        >
+          <div className="space-y-4">
+            {data.secciones.map((s) => (
+              <SeccionCard
+                key={s.id}
+                seccion={s}
+                editable={!data.vigente}
+                onDeleteSeccion={() => eliminarSeccion.mutate(s.id)}
+                onAddCriterio={(req) => agregarCriterio.mutate({ seccionId: s.id, req })}
+                onDeleteCriterio={(critId) => eliminarCriterio.mutate(critId)}
+                onReorderCriterios={(ids) => reordenarCriterios.mutate({ seccionId: s.id, ids })}
+              />
+            ))}
+          </div>
+        </SortableContext>
+      </DndContext>
 
-        {!data.vigente && (
-          <AgregarSeccionCard onAdd={(req) => agregarSeccion.mutate(req)} />
-        )}
-      </div>
+      {!data.vigente && (
+        <AgregarSeccionCard onAdd={(req) => agregarSeccion.mutate(req)} />
+      )}
 
       <Card>
         <CardContent className="pt-5">
@@ -203,6 +254,7 @@ interface SeccionCardProps {
   onDeleteSeccion: () => void;
   onAddCriterio: (req: CriterioRequest) => void;
   onDeleteCriterio: (criterioId: number) => void;
+  onReorderCriterios: (ids: number[]) => void;
 }
 
 function SeccionCard({
@@ -211,26 +263,62 @@ function SeccionCard({
   onDeleteSeccion,
   onAddCriterio,
   onDeleteCriterio,
+  onReorderCriterios,
 }: SeccionCardProps): JSX.Element {
-  const [nuevo, setNuevo] = useState("");
+  const sortable = useSortable({ id: seccion.id, disabled: !editable });
+  const style = {
+    transform: CSS.Transform.toString(sortable.transform),
+    transition: sortable.transition,
+  };
+
+  const [nuevoDesc, setNuevoDesc] = useState("");
+  const [nuevoTipo, setNuevoTipo] = useState<TipoCampo>("NUMBER");
+  const [nuevoOpciones, setNuevoOpciones] = useState("");
+  const [nuevoPeso, setNuevoPeso] = useState("");
+
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
+
+  const onDragEndCriterios = (e: DragEndEvent) => {
+    const { active, over } = e;
+    if (!over || active.id === over.id) return;
+    const oldIndex = seccion.criterios.findIndex((c) => c.id === active.id);
+    const newIndex = seccion.criterios.findIndex((c) => c.id === over.id);
+    if (oldIndex < 0 || newIndex < 0) return;
+    const nuevos = arrayMove(seccion.criterios, oldIndex, newIndex);
+    onReorderCriterios(nuevos.map((c) => c.id));
+  };
+
   return (
-    <Card>
+    <Card ref={sortable.setNodeRef} style={style}>
       <CardContent className="pt-5 space-y-3">
         <div className="flex flex-wrap items-start justify-between gap-2">
-          <div>
-            <div className="font-display text-base font-bold tracking-tight">
-              {seccion.titulo}
-              {seccion.peso != null && (
-                <span className="ml-2 text-sm text-muted-foreground font-normal">
-                  ({porcentaje(seccion.peso)})
-                </span>
+          <div className="flex items-start gap-2 min-w-0">
+            {editable && (
+              <button
+                type="button"
+                className="mt-1 cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground"
+                {...sortable.attributes}
+                {...sortable.listeners}
+                aria-label="Arrastrar sección"
+              >
+                <GripVertical className="h-4 w-4" />
+              </button>
+            )}
+            <div>
+              <div className="font-display text-base font-bold tracking-tight">
+                {seccion.titulo}
+                {seccion.peso != null && (
+                  <span className="ml-2 text-sm text-muted-foreground font-normal">
+                    ({porcentaje(seccion.peso)})
+                  </span>
+                )}
+              </div>
+              {seccion.descripcion && (
+                <p className="text-xs text-muted-foreground mt-1 max-w-2xl">
+                  {seccion.descripcion}
+                </p>
               )}
             </div>
-            {seccion.descripcion && (
-              <p className="text-xs text-muted-foreground mt-1 max-w-2xl">
-                {seccion.descripcion}
-              </p>
-            )}
           </div>
           {editable && (
             <AlertDialog>
@@ -255,59 +343,144 @@ function SeccionCard({
           )}
         </div>
 
-        <ul className="space-y-1.5">
-          {seccion.criterios.length === 0 && (
-            <li className="text-xs text-muted-foreground">Sin criterios en esta sección.</li>
-          )}
-          {seccion.criterios.map((c) => (
-            <li
-              key={c.id}
-              className="flex items-start justify-between gap-2 rounded-md border bg-muted/30 px-3 py-2 text-sm"
-            >
-              <div className="min-w-0">
-                <div className="font-medium">{c.descripcion}</div>
-                {(c.codigo || c.peso != null) && (
-                  <div className="text-[11px] text-muted-foreground mt-0.5">
-                    {c.codigo}
-                    {c.peso != null && (c.codigo ? " · " : "") + porcentaje(c.peso)}
-                  </div>
-                )}
-              </div>
-              {editable && (
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  onClick={() => onDeleteCriterio(c.id)}
-                  aria-label="Eliminar criterio"
-                >
-                  <Trash2 className="h-4 w-4 text-destructive" />
-                </Button>
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEndCriterios}>
+          <SortableContext
+            items={seccion.criterios.map((c) => c.id)}
+            strategy={verticalListSortingStrategy}
+          >
+            <ul className="space-y-1.5">
+              {seccion.criterios.length === 0 && (
+                <li className="text-xs text-muted-foreground">Sin criterios en esta sección.</li>
               )}
-            </li>
-          ))}
-        </ul>
+              {seccion.criterios.map((c) => (
+                <CriterioItem
+                  key={c.id}
+                  criterio={c}
+                  editable={editable}
+                  onDelete={() => onDeleteCriterio(c.id)}
+                />
+              ))}
+            </ul>
+          </SortableContext>
+        </DndContext>
 
         {editable && (
-          <div className="flex gap-2 pt-1">
+          <div className="space-y-2 rounded-md border border-dashed p-3">
+            <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              Agregar criterio
+            </div>
             <Input
-              value={nuevo}
-              onChange={(e) => setNuevo(e.target.value)}
-              placeholder="Descripción del nuevo criterio..."
+              value={nuevoDesc}
+              onChange={(e) => setNuevoDesc(e.target.value)}
+              placeholder="Descripción del criterio..."
             />
-            <Button
-              size="sm"
-              onClick={() => {
-                if (!nuevo.trim()) return;
-                onAddCriterio({ descripcion: nuevo.trim() });
-                setNuevo("");
-              }}
-            >
-              <Plus className="h-4 w-4" /> Agregar
-            </Button>
+            <div className="grid gap-2 sm:grid-cols-[1fr_120px_auto]">
+              <Select value={nuevoTipo} onValueChange={(v) => setNuevoTipo(v as TipoCampo)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {(Object.keys(TIPO_CAMPO_LABELS) as TipoCampo[]).map((t) => (
+                    <SelectItem key={t} value={t}>{TIPO_CAMPO_LABELS[t]}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Input
+                type="number"
+                step="0.01"
+                min={0}
+                max={1}
+                value={nuevoPeso}
+                onChange={(e) => setNuevoPeso(e.target.value)}
+                placeholder="Peso (0-1)"
+              />
+              <Button
+                size="sm"
+                onClick={() => {
+                  if (!nuevoDesc.trim()) return;
+                  onAddCriterio({
+                    descripcion: nuevoDesc.trim(),
+                    tipo: nuevoTipo,
+                    opciones: nuevoTipo === "SELECT" ? nuevoOpciones.trim() || null : null,
+                    peso: nuevoPeso === "" ? null : Number(nuevoPeso),
+                  });
+                  setNuevoDesc("");
+                  setNuevoOpciones("");
+                  setNuevoPeso("");
+                  setNuevoTipo("NUMBER");
+                }}
+              >
+                <Plus className="h-4 w-4" /> Agregar
+              </Button>
+            </div>
+            {nuevoTipo === "SELECT" && (
+              <Input
+                value={nuevoOpciones}
+                onChange={(e) => setNuevoOpciones(e.target.value)}
+                placeholder="Opciones separadas por coma — ej: INICIO, MITAD, CIERRE"
+              />
+            )}
           </div>
         )}
       </CardContent>
     </Card>
+  );
+}
+
+interface CriterioItemProps {
+  criterio: CriterioPlantilla;
+  editable: boolean;
+  onDelete: () => void;
+}
+
+function CriterioItem({ criterio: c, editable, onDelete }: CriterioItemProps): JSX.Element {
+  const sortable = useSortable({ id: c.id, disabled: !editable });
+  const style = {
+    transform: CSS.Transform.toString(sortable.transform),
+    transition: sortable.transition,
+  };
+  return (
+    <li
+      ref={sortable.setNodeRef}
+      style={style}
+      className="flex items-start justify-between gap-2 rounded-md border bg-muted/30 px-3 py-2 text-sm"
+    >
+      <div className="flex items-start gap-2 min-w-0">
+        {editable && (
+          <button
+            type="button"
+            className="mt-0.5 cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground shrink-0"
+            {...sortable.attributes}
+            {...sortable.listeners}
+            aria-label="Arrastrar criterio"
+          >
+            <GripVertical className="h-4 w-4" />
+          </button>
+        )}
+        <div className="min-w-0">
+          <div className="font-medium">{c.descripcion}</div>
+          <div className="text-[11px] text-muted-foreground mt-0.5 inline-flex flex-wrap items-center gap-1.5">
+            <Badge variant="muted" className="text-[10px] font-normal py-0">
+              {TIPO_CAMPO_LABELS[c.tipo] ?? c.tipo}
+            </Badge>
+            {c.peso != null && <span>· {Math.round(Number(c.peso) * 100)}%</span>}
+            {c.tipo === "SELECT" && c.opciones && (
+              <span>· Opciones: {c.opciones}</span>
+            )}
+          </div>
+        </div>
+      </div>
+      {editable && (
+        <Button
+          size="icon"
+          variant="ghost"
+          onClick={onDelete}
+          aria-label="Eliminar criterio"
+        >
+          <Trash2 className="h-4 w-4 text-destructive" />
+        </Button>
+      )}
+    </li>
   );
 }
 

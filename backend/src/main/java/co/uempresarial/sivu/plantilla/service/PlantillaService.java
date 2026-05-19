@@ -151,8 +151,39 @@ public class PlantillaService {
             .descripcion(req.descripcion().trim())
             .peso(req.peso())
             .placeholder(req.placeholder())
+            .tipo(req.tipo() == null ? TipoCampo.NUMBER : req.tipo())
+            .opciones(req.opciones())
             .build();
         return toCriterioResponse(criterioRepo.save(c));
+    }
+
+    public void reordenarSecciones(Long plantillaId, java.util.List<Long> ids) {
+        PlantillaFormulario p = obtenerEntidad(plantillaId);
+        if (Boolean.TRUE.equals(p.getVigente())) {
+            throw new BusinessException("Plantilla vigente: crea nueva versión para reordenar.");
+        }
+        java.util.Map<Long, SeccionPlantilla> indice = new java.util.HashMap<>();
+        for (SeccionPlantilla s : p.getSecciones()) indice.put(s.getId(), s);
+        short orden = 0;
+        for (Long sid : ids) {
+            SeccionPlantilla s = indice.get(sid);
+            if (s != null) s.setOrden(orden++);
+        }
+    }
+
+    public void reordenarCriterios(Long seccionId, java.util.List<Long> ids) {
+        SeccionPlantilla s = seccionRepo.findById(seccionId)
+            .orElseThrow(() -> new ResourceNotFoundException("Sección", seccionId));
+        if (Boolean.TRUE.equals(s.getPlantilla().getVigente())) {
+            throw new BusinessException("Plantilla vigente: crea nueva versión para reordenar.");
+        }
+        java.util.Map<Long, CriterioPlantilla> indice = new java.util.HashMap<>();
+        for (CriterioPlantilla c : s.getCriterios()) indice.put(c.getId(), c);
+        short orden = 0;
+        for (Long cid : ids) {
+            CriterioPlantilla c = indice.get(cid);
+            if (c != null) c.setOrden(orden++);
+        }
     }
 
     public CriterioResponse actualizarCriterio(Long criterioId, CriterioRequest req) {
@@ -166,6 +197,8 @@ public class PlantillaService {
         c.setDescripcion(req.descripcion().trim());
         c.setPeso(req.peso());
         c.setPlaceholder(req.placeholder());
+        if (req.tipo() != null) c.setTipo(req.tipo());
+        c.setOpciones(req.opciones());
         return toCriterioResponse(c);
     }
 
@@ -195,6 +228,7 @@ public class PlantillaService {
 
     CriterioResponse toCriterioResponse(CriterioPlantilla c) {
         return new CriterioResponse(c.getId(), c.getOrden(), c.getCodigo(),
-            c.getDescripcion(), c.getPeso(), c.getPlaceholder());
+            c.getDescripcion(), c.getPeso(), c.getPlaceholder(),
+            c.getTipo(), c.getOpciones());
     }
 }

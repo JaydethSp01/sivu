@@ -12,7 +12,6 @@ import {
   PenLine,
   Save,
   Send,
-  ThumbsUp,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -31,6 +30,13 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { PageHeader } from "@/components/page-header";
 import { api, extractApiMessage } from "@/lib/api";
 import {
@@ -38,19 +44,12 @@ import {
   ESTADO_RESPUESTA_VARIANT,
 } from "@/lib/enum-labels";
 import type {
+  CriterioPlantilla,
   LlenarRequest,
   PlantillaFormulario,
   RespuestaFormulario,
   ValorCriterio,
 } from "@/lib/types";
-
-/** Heurística para decidir el tipo de input por criterio (no es config aún). */
-function tipoInputDeCriterio(descripcion: string): "numero" | "texto" {
-  const d = descripcion.toLowerCase();
-  // Si la descripción incluye porcentaje o "calificación" → numérico
-  if (/\d+%|calificac|puntaj|nota|0\s*-\s*5|0\s*a\s*5/.test(d)) return "numero";
-  return "texto";
-}
 
 export function RespuestaLlenarPage(): JSX.Element {
   const { id } = useParams();
@@ -302,54 +301,15 @@ export function RespuestaLlenarPage(): JSX.Element {
               <p className="text-xs text-muted-foreground">{s.descripcion}</p>
             )}
             <div className="space-y-3">
-              {s.criterios.map((c) => {
-                const tipo = tipoInputDeCriterio(c.descripcion);
-                const v = valores[c.id];
-                return (
-                  <div key={c.id} className="rounded-md border p-3 space-y-2">
-                    <div className="flex items-start justify-between gap-2">
-                      <Label className="text-sm font-medium">
-                        {c.descripcion}
-                      </Label>
-                      {c.peso != null && (
-                        <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                          {Math.round(Number(c.peso) * 100)}%
-                        </span>
-                      )}
-                    </div>
-                    {tipo === "numero" ? (
-                      <Input
-                        type="number"
-                        min={0}
-                        max={5}
-                        step="0.1"
-                        disabled={!editable}
-                        value={
-                          v?.valorNumero == null
-                            ? ""
-                            : String(v.valorNumero)
-                        }
-                        onChange={(e) =>
-                          setValor(c.id, {
-                            valorNumero: e.target.value === "" ? null : Number(e.target.value),
-                          })
-                        }
-                        placeholder="0.0 – 5.0"
-                      />
-                    ) : (
-                      <Textarea
-                        rows={3}
-                        disabled={!editable}
-                        value={v?.valorTexto ?? ""}
-                        onChange={(e) =>
-                          setValor(c.id, { valorTexto: e.target.value })
-                        }
-                        placeholder={c.placeholder ?? "Escribe aquí..."}
-                      />
-                    )}
-                  </div>
-                );
-              })}
+              {s.criterios.map((c) => (
+                <CriterioInput
+                  key={c.id}
+                  criterio={c}
+                  valor={valores[c.id]}
+                  editable={!!editable}
+                  onChange={(patch) => setValor(c.id, patch)}
+                />
+              ))}
               {s.criterios.length === 0 && (
                 <p className="text-xs text-muted-foreground">
                   Esta sección no tiene criterios todavía.
@@ -389,6 +349,134 @@ export function RespuestaLlenarPage(): JSX.Element {
           />
         </CardContent>
       </Card>
+    </div>
+  );
+}
+
+interface CriterioInputProps {
+  criterio: CriterioPlantilla;
+  valor: ValorCriterio | undefined;
+  editable: boolean;
+  onChange: (patch: Partial<ValorCriterio>) => void;
+}
+
+function CriterioInput({ criterio: c, valor: v, editable, onChange }: CriterioInputProps): JSX.Element {
+  const opciones = (c.opciones ?? "").split(",").map((o) => o.trim()).filter(Boolean);
+
+  return (
+    <div className="rounded-md border p-3 space-y-2">
+      <div className="flex items-start justify-between gap-2">
+        <Label className="text-sm font-medium">{c.descripcion}</Label>
+        {c.peso != null && (
+          <span className="text-[10px] uppercase tracking-wider text-muted-foreground shrink-0">
+            {Math.round(Number(c.peso) * 100)}%
+          </span>
+        )}
+      </div>
+
+      {c.tipo === "NUMBER" && (
+        <Input
+          type="number"
+          min={0}
+          max={5}
+          step="0.1"
+          disabled={!editable}
+          value={v?.valorNumero == null ? "" : String(v.valorNumero)}
+          onChange={(e) =>
+            onChange({
+              valorNumero: e.target.value === "" ? null : Number(e.target.value),
+            })
+          }
+          placeholder={c.placeholder ?? "0.0 – 5.0"}
+        />
+      )}
+
+      {c.tipo === "TEXT" && (
+        <Textarea
+          rows={3}
+          disabled={!editable}
+          value={v?.valorTexto ?? ""}
+          onChange={(e) => onChange({ valorTexto: e.target.value })}
+          placeholder={c.placeholder ?? "Escribe aquí..."}
+        />
+      )}
+
+      {c.tipo === "BOOL" && (
+        <div className="flex items-center gap-4">
+          <label className="inline-flex items-center gap-2 text-sm cursor-pointer">
+            <input
+              type="radio"
+              checked={v?.valorBool === true}
+              onChange={() => onChange({ valorBool: true })}
+              disabled={!editable}
+            />
+            Sí
+          </label>
+          <label className="inline-flex items-center gap-2 text-sm cursor-pointer">
+            <input
+              type="radio"
+              checked={v?.valorBool === false}
+              onChange={() => onChange({ valorBool: false })}
+              disabled={!editable}
+            />
+            No
+          </label>
+        </div>
+      )}
+
+      {c.tipo === "DATE" && (
+        <Input
+          type="date"
+          disabled={!editable}
+          value={v?.valorTexto ?? ""}
+          onChange={(e) => onChange({ valorTexto: e.target.value })}
+        />
+      )}
+
+      {c.tipo === "SELECT" && (
+        <Select
+          value={v?.valorTexto ?? ""}
+          onValueChange={(value) => onChange({ valorTexto: value })}
+          disabled={!editable}
+        >
+          <SelectTrigger>
+            <SelectValue placeholder={c.placeholder ?? "Selecciona una opción"} />
+          </SelectTrigger>
+          <SelectContent>
+            {opciones.map((opt) => (
+              <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      )}
+
+      {c.tipo === "SIGNATURE" && (
+        <div className="flex flex-wrap items-center gap-3">
+          {v?.valorBool ? (
+            <div className="inline-flex items-center gap-2 rounded-md border border-success/50 bg-success/10 px-3 py-2 text-sm text-success">
+              <CheckCircle2 className="h-4 w-4" />
+              Firmado por <strong>{v.valorTexto ?? "—"}</strong>
+            </div>
+          ) : (
+            <>
+              <Input
+                placeholder="Tu nombre completo"
+                disabled={!editable}
+                value={v?.valorTexto ?? ""}
+                onChange={(e) => onChange({ valorTexto: e.target.value })}
+                className="max-w-xs"
+              />
+              <Button
+                size="sm"
+                disabled={!editable || !v?.valorTexto?.trim()}
+                onClick={() => onChange({ valorBool: true })}
+              >
+                <PenLine className="h-4 w-4" /> Firmar
+              </Button>
+            </>
+          )}
+        </div>
+      )}
     </div>
   );
 }

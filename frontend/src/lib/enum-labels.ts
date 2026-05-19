@@ -165,6 +165,15 @@ export const TIPO_PLANTILLA_LABELS: Record<string, string> = {
   INFORME_FINAL: "Informe Final del PM",
 };
 
+export const TIPO_CAMPO_LABELS: Record<string, string> = {
+  NUMBER: "Calificación (0-5)",
+  TEXT: "Texto libre",
+  BOOL: "Sí / No",
+  DATE: "Fecha",
+  SELECT: "Lista desplegable",
+  SIGNATURE: "Firma",
+};
+
 export const ESTADO_RESPUESTA_LABELS: Record<string, string> = {
   PENDIENTE: "Pendiente",
   EN_PROGRESO: "En progreso",
