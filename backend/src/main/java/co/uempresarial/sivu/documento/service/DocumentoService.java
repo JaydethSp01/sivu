@@ -168,13 +168,19 @@ public class DocumentoService {
                                                   TipoDocumentoSoporte tipo,
                                                   Long estudianteId,
                                                   Pageable pageable) {
-        // Auto-scope: EMPRESA pura solo ve docs de su empresa + docs de sus practicantes.
+        // Auto-scope por rol:
+        //   EMPRESA pura  → solo docs de su empresa + de sus practicantes
+        //   ESTUDIANTE puro → solo SUS docs (forzar el filtro al id propio,
+        //                     aunque el cliente no lo mande)
         Long empresaId = null;
+        Long scopedEstudianteId = estudianteId;
         if (currentUser.esEmpresaPura()) {
             empresaId = currentUser.currentEmpresaId().orElse(-1L);
+        } else if (currentUser.esEstudiantePuro()) {
+            scopedEstudianteId = currentUser.currentEstudianteId().orElse(-1L);
         }
         return PageResponse.of(
-            repository.buscar(estado, tipo, estudianteId, empresaId, pageable).map(mapper::toResponse)
+            repository.buscar(estado, tipo, scopedEstudianteId, empresaId, pageable).map(mapper::toResponse)
         );
     }
 
