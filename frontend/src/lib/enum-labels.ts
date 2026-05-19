@@ -126,6 +126,21 @@ export const TIPO_REUNION_LABELS: Record<TipoReunion, string> = {
   OTRO: "Otro",
 };
 
+export const ESTADO_SOLICITUD_FABRICA_LABELS: Record<string, string> = {
+  PENDIENTE: "Pendiente",
+  APROBADA: "Aprobada",
+  RECHAZADA: "Rechazada",
+};
+
+export const ESTADO_SOLICITUD_FABRICA_VARIANT: Record<
+  string,
+  "muted" | "warning" | "success" | "destructive"
+> = {
+  PENDIENTE: "warning",
+  APROBADA: "success",
+  RECHAZADA: "destructive",
+};
+
 export const ESTADO_INFORME_FINAL_LABELS: Record<string, string> = {
   BORRADOR: "Borrador",
   ENTREGADO: "Entregado — en revisión",

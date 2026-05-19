@@ -85,6 +85,7 @@ const MAIN_ITEMS: NavItem[] = [
   { to: "/evaluaciones/new", label: "Evaluaciones", icon: ClipboardList, roles: ["ADMIN", "COORDINADOR", "EMPRESA"] },
   { to: "/matching", label: "Recomendar candidatos", icon: Sparkles, roles: ["ADMIN", "COORDINADOR"] },
   { to: "/fabrica-soluciones", label: "Programa interno", icon: Factory, roles: ["ADMIN", "COORDINADOR"] },
+  { to: "/programa-interno/solicitudes", label: "Solicitudes programa interno", icon: Inbox, roles: ["ADMIN", "COORDINADOR"] },
 ];
 
 const GROUPS: NavGroup[] = [

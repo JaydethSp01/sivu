@@ -32,6 +32,7 @@ import { MiHojaVidaPage } from "@/features/hoja-vida/mi-hoja-vida-page";
 import { BandejaHvPage } from "@/features/hoja-vida/bandeja-hv-page";
 import { EntrevistasListPage } from "@/features/entrevistas/entrevistas-list-page";
 import { FabricaSolucionesPage } from "@/features/fabrica-soluciones/fabrica-soluciones-page";
+import { SolicitudesFabricaPage } from "@/features/fabrica-soluciones/solicitudes-fabrica-page";
 import { TutoresListPage } from "@/features/tutores/tutores-list-page";
 import { TutorFormPage } from "@/features/tutores/tutor-form-page";
 import { TutorDetailPage } from "@/features/tutores/tutor-detail-page";
@@ -133,6 +134,7 @@ export function App(): JSX.Element {
               <Route element={<RoleGuard allow={["ADMIN", "COORDINADOR"]} />}>
                 <Route path="matching" element={<MatchingToolPage />} />
                 <Route path="fabrica-soluciones" element={<FabricaSolucionesPage />} />
+                <Route path="programa-interno/solicitudes" element={<SolicitudesFabricaPage />} />
               </Route>
 
               <Route element={<RoleGuard allow={["ADMIN", "COORDINADOR"]} />}>

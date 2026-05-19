@@ -257,6 +257,28 @@ export interface EntrevistaResponse {
 
 export type EstadoInformeFinalPm = "BORRADOR" | "ENTREGADO" | "APROBADO" | "RECHAZADO";
 
+export type EstadoSolicitudFabrica = "PENDIENTE" | "APROBADA" | "RECHAZADA";
+
+export interface SolicitudFabricaResponse {
+  id: number;
+  estudianteId: number;
+  estudianteNombreCompleto: string;
+  estudianteEmail: string;
+  programaAcademico: string;
+  motivo: string;
+  estado: EstadoSolicitudFabrica;
+  observacionesCoord?: string | null;
+  fechaSolicitud: string;
+  fechaResolucion?: string | null;
+  resueltoPorNombre?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface SolicitudFabricaRequest {
+  motivo: string;
+}
+
 export interface InformeFinalPmResponse {
   id: number;
   planMejoraId: number | null;

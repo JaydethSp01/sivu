@@ -2,6 +2,7 @@ package co.uempresarial.sivu.fabricasoluciones.service;
 
 import co.uempresarial.sivu.automatizacion.service.MatchingService;
 import co.uempresarial.sivu.automatizacion.service.NotificacionService;
+import co.uempresarial.sivu.cohorte.persistence.CohorteEstudianteRepository;
 import co.uempresarial.sivu.estudiante.domain.Estudiante;
 import co.uempresarial.sivu.estudiante.persistence.EstudianteRepository;
 import co.uempresarial.sivu.hojavida.domain.EstadoHojaVida;
@@ -9,6 +10,8 @@ import co.uempresarial.sivu.hojavida.persistence.HojaVidaRepository;
 import co.uempresarial.sivu.postulacion.domain.EstadoPostulacion;
 import co.uempresarial.sivu.postulacion.domain.Postulacion;
 import co.uempresarial.sivu.postulacion.persistence.PostulacionRepository;
+import co.uempresarial.sivu.solicitudfabrica.domain.EstadoSolicitudFabrica;
+import co.uempresarial.sivu.solicitudfabrica.persistence.SolicitudFabricaRepository;
 import co.uempresarial.sivu.vacante.domain.EstadoVacante;
 import co.uempresarial.sivu.vacante.domain.Vacante;
 import co.uempresarial.sivu.vacante.persistence.VacanteRepository;
@@ -19,10 +22,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -39,7 +45,6 @@ import java.util.Set;
 @Slf4j
 public class FabricaSolucionesService {
 
-    private static final long DIAS_SIN_POSTULACION = 30L;
     private static final String CODIGO_MODALIDAD_INTERNA = "INTERNA_UNIVERSIDAD";
     private static final Set<EstadoPostulacion> ESTADOS_ACTIVOS = Set.of(
         EstadoPostulacion.POSTULADA,
@@ -50,11 +55,14 @@ public class FabricaSolucionesService {
         EstadoPostulacion.ACEPTADA);
 
     private final HojaVidaRepository hojaVidaRepository;
+    @SuppressWarnings("unused")
     private final EstudianteRepository estudianteRepository;
     private final VacanteRepository vacanteRepository;
     private final PostulacionRepository postulacionRepository;
     private final MatchingService matchingService;
     private final NotificacionService notificacionService;
+    private final CohorteEstudianteRepository cohorteEstudianteRepository;
+    private final SolicitudFabricaRepository solicitudFabricaRepository;
 
     /**
      * Job semanal: cada lunes 9am intenta vincular a estudiantes elegibles
@@ -123,15 +131,59 @@ public class FabricaSolucionesService {
         return new ResultadoVinculacion(vinculados, sinVacante);
     }
 
+    /**
+     * Estudiantes elegibles. Dos rutas (se acumulan en orden y sin duplicar):
+     *   1) Estudiantes con solicitud APROBADA por Coordinación que aún no
+     *      tienen colocación activa (vía dominante: justificación explícita).
+     *   2) Estudiantes con HV APROBADA inscritos a una cohorte cuya
+     *      fecha_apertura ya pasó (= inició el periodo de prácticas) y
+     *      que no tienen postulación activa ni convenio en curso.
+     *
+     * El criterio (2) reemplaza al antiguo "≥30 días sin postular": ya no
+     * importa cuánto tiempo lleva el estudiante intentando, importa que
+     * el calendario académico ya empezó y aún no tiene cupo.
+     */
     private List<Estudiante> listarEstudiantesElegibles() {
-        OffsetDateTime corte = OffsetDateTime.now().minusDays(DIAS_SIN_POSTULACION);
-        return hojaVidaRepository.findByEstadoOrderByEnviadaAtAsc(EstadoHojaVida.APROBADA).stream()
-            .filter(hv -> hv.getAprobadaAt() != null && hv.getAprobadaAt().isBefore(corte))
-            .map(hv -> hv.getEstudiante())
-            .filter(est -> est != null)
-            .filter(est -> postulacionRepository.findByEstudianteId(est.getId()).stream()
-                .noneMatch(p -> ESTADOS_ACTIVOS.contains(p.getEstado())))
-            .toList();
+        Map<Long, Estudiante> resultado = new LinkedHashMap<>();
+        LocalDate hoy = LocalDate.now();
+
+        // (1) Solicitudes APROBADAS sin colocación activa
+        solicitudFabricaRepository.findByEstadoOrderByFechaSolicitudAsc(EstadoSolicitudFabrica.APROBADA)
+            .forEach(s -> {
+                Estudiante est = s.getEstudiante();
+                if (est == null) return;
+                if (!sinPostulacionActiva(est.getId())) return;
+                resultado.putIfAbsent(est.getId(), est);
+            });
+
+        // (2) HV aprobada + cohorte iniciada + sin postulación activa
+        hojaVidaRepository.findByEstadoOrderByEnviadaAtAsc(EstadoHojaVida.APROBADA).forEach(hv -> {
+            Estudiante est = hv.getEstudiante();
+            if (est == null) return;
+            if (resultado.containsKey(est.getId())) return;
+            if (!cohorteIniciada(est.getId(), hoy)) return;
+            if (!sinPostulacionActiva(est.getId())) return;
+            resultado.put(est.getId(), est);
+        });
+
+        return List.copyOf(resultado.values());
+    }
+
+    private boolean sinPostulacionActiva(Long estudianteId) {
+        return postulacionRepository.findByEstudianteId(estudianteId).stream()
+            .noneMatch(p -> ESTADOS_ACTIVOS.contains(p.getEstado()));
+    }
+
+    /**
+     * Verdadero si el estudiante pertenece a una cohorte cuya fecha_apertura
+     * ya llegó (es decir, el periodo de prácticas ya inició o está iniciando).
+     */
+    private boolean cohorteIniciada(Long estudianteId, LocalDate hoy) {
+        return cohorteEstudianteRepository.findByEstudianteIdOrderByCreatedAtDesc(estudianteId).stream()
+            .anyMatch(ce -> {
+                LocalDate apertura = ce.getCohorte() == null ? null : ce.getCohorte().getFechaApertura();
+                return apertura != null && !apertura.isAfter(hoy);
+            });
     }
 
     public record ResultadoVinculacion(List<String> vinculados, List<String> sinVacante) {}

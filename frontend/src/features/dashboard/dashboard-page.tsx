@@ -38,6 +38,7 @@ import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/lib/auth-store";
 import { PageHeader } from "@/components/page-header";
+import { MiSolicitudFabricaCard } from "@/features/fabrica-soluciones/mi-solicitud-fabrica-card";
 import type {
   Convenio,
   Documento,
@@ -461,6 +462,8 @@ function EstudianteDashboard(): JSX.Element {
           </CardContent>
         )}
       </Card>
+
+      {!convenioActivo.data && <MiSolicitudFabricaCard />}
 
       {convenioActivo.data && (
         <Card>
