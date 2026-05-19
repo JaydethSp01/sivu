@@ -29,6 +29,7 @@ import { ConveniosListPage } from "@/features/convenios/convenios-list-page";
 import { ConvenioDetailPage } from "@/features/convenios/convenio-detail-page";
 import { MatchingToolPage } from "@/features/automatizacion/matching-tool-page";
 import { MiHojaVidaPage } from "@/features/hoja-vida/mi-hoja-vida-page";
+import { BandejaHvPage } from "@/features/hoja-vida/bandeja-hv-page";
 import { TutoresListPage } from "@/features/tutores/tutores-list-page";
 import { TutorFormPage } from "@/features/tutores/tutor-form-page";
 import { TutorDetailPage } from "@/features/tutores/tutor-detail-page";
@@ -149,6 +150,7 @@ export function App(): JSX.Element {
                 <Route path="mi-hoja-vida" element={<MiHojaVidaPage />} />
               </Route>
               <Route element={<RoleGuard allow={["ADMIN", "COORDINADOR"]} />}>
+                <Route path="hoja-vida/bandeja" element={<BandejaHvPage />} />
                 <Route path="hoja-vida/:id" element={<MiHojaVidaPage />} />
               </Route>
             </Route>

@@ -8,6 +8,7 @@ import {
   FileText,
   FileUser,
   GraduationCap,
+  Inbox,
   LayoutDashboard,
   ListChecks,
   Send,
@@ -72,6 +73,7 @@ const MAIN_ITEMS: NavItem[] = [
   // propuesta en "Empresas" (filtro estado=EN_REVISION) para aprobar/rechazar.
   { to: "/empresas/proponer", label: "Proponer empresa", icon: Building2, roles: ["ESTUDIANTE"] },
   { to: "/mi-hoja-vida", label: "Mi Hoja de Vida", icon: FileUser, roles: ["ESTUDIANTE"] },
+  { to: "/hoja-vida/bandeja", label: "Bandeja HV (Coformación)", icon: Inbox, roles: ["ADMIN", "COORDINADOR"] },
   { to: "/vacantes", label: labelVacantes, icon: Briefcase },
   { to: "/postulaciones", label: "Postulaciones", icon: Send },
   { to: "/documentos", label: labelDocumentos, icon: FileText },

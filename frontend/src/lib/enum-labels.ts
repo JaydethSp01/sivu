@@ -3,6 +3,7 @@ import type {
   AreaPractica,
   CategoriaHabilidad,
   EstadoEmpresa,
+  EstadoHojaVida,
   EstadoPlanActividades,
   EstadoPlanMejora,
   EstadoTrimestre,
@@ -123,6 +124,23 @@ export const TIPO_REUNION_LABELS: Record<TipoReunion, string> = {
   EVALUACION_PARCIAL: "Evaluación parcial",
   EVALUACION_FINAL: "Evaluación final",
   OTRO: "Otro",
+};
+
+export const ESTADO_HOJA_VIDA_LABELS: Record<EstadoHojaVida, string> = {
+  BORRADOR: "Borrador",
+  ENVIADA: "Enviada a Coformación",
+  APROBADA: "Aprobada por Coformación",
+  RECHAZADA: "Rechazada — requiere ajustes",
+};
+
+export const ESTADO_HOJA_VIDA_VARIANT: Record<
+  EstadoHojaVida,
+  "muted" | "warning" | "success" | "destructive"
+> = {
+  BORRADOR: "muted",
+  ENVIADA: "warning",
+  APROBADA: "success",
+  RECHAZADA: "destructive",
 };
 
 export function humanize(value: string, map: Record<string, string>): string {

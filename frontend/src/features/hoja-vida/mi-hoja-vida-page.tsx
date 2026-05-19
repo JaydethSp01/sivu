@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -10,6 +10,7 @@ import {
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import {
+  AlertTriangle,
   ArrowLeft,
   BookOpen,
   Briefcase,
@@ -22,6 +23,9 @@ import {
   Loader2,
   Plus,
   Save,
+  Send,
+  ThumbsDown,
+  ThumbsUp,
   Trash2,
   UserCircle,
 } from "lucide-react";
@@ -41,11 +45,23 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { EmptyState } from "@/components/empty-state";
 import { api, extractApiMessage } from "@/lib/api";
 import { useAuthStore } from "@/lib/auth-store";
 import {
   CATEGORIA_HABILIDAD_LABELS,
+  ESTADO_HOJA_VIDA_LABELS,
+  ESTADO_HOJA_VIDA_VARIANT,
   NIVEL_IDIOMA_LABELS,
 } from "@/lib/enum-labels";
 import type {
@@ -753,6 +769,55 @@ export function MiHojaVidaPage(): JSX.Element {
     onError: (e) => toast.error(extractApiMessage(e)),
   });
 
+  const enviarACoformacion = useMutation({
+    mutationFn: async () => {
+      if (!targetEstudianteId) throw new Error("Estudiante no identificado");
+      const { data } = await api.post<HojaVidaResponse>(
+        `/hoja-vida/${targetEstudianteId}/enviar-a-coformacion`
+      );
+      return data;
+    },
+    onSuccess: (data) => {
+      toast.success("HV enviada a Coformación");
+      qc.setQueryData(["/hoja-vida", targetEstudianteId], data);
+    },
+    onError: (e) => toast.error(extractApiMessage(e)),
+  });
+
+  const aprobarHv = useMutation({
+    mutationFn: async () => {
+      if (!hv.data) throw new Error("HV no cargada");
+      const { data } = await api.post<HojaVidaResponse>(`/hoja-vida/${hv.data.id}/aprobar`);
+      return data;
+    },
+    onSuccess: (data) => {
+      toast.success("HV aprobada — el estudiante ya puede postularse");
+      qc.setQueryData(["/hoja-vida", targetEstudianteId], data);
+    },
+    onError: (e) => toast.error(extractApiMessage(e)),
+  });
+
+  const [rechazoOpen, setRechazoOpen] = useState(false);
+  const [observaciones, setObservaciones] = useState("");
+
+  const rechazarHv = useMutation({
+    mutationFn: async (obs: string) => {
+      if (!hv.data) throw new Error("HV no cargada");
+      const { data } = await api.post<HojaVidaResponse>(
+        `/hoja-vida/${hv.data.id}/rechazar`,
+        { observaciones: obs }
+      );
+      return data;
+    },
+    onSuccess: (data) => {
+      toast.success("HV rechazada con observaciones");
+      qc.setQueryData(["/hoja-vida", targetEstudianteId], data);
+      setRechazoOpen(false);
+      setObservaciones("");
+    },
+    onError: (e) => toast.error(extractApiMessage(e)),
+  });
+
   const watched = form.watch();
   const faltantes = useMemo(() => calcularFaltantes(watched), [watched]);
   const completaLocal = faltantes.length === 0;
@@ -803,7 +868,15 @@ export function MiHojaVidaPage(): JSX.Element {
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          {hv.data && (
+            <Badge
+              variant={ESTADO_HOJA_VIDA_VARIANT[hv.data.estado]}
+              className="px-3 py-1 text-sm"
+            >
+              {ESTADO_HOJA_VIDA_LABELS[hv.data.estado]}
+            </Badge>
+          )}
           {esCompleta ? (
             <Badge variant="success" className="px-3 py-1 text-sm">
               <CheckCircle2 className="h-4 w-4 mr-1" /> HV completa
@@ -839,8 +912,138 @@ export function MiHojaVidaPage(): JSX.Element {
             )}
             Guardar HV
           </Button>
+          {hv.data &&
+            (hv.data.estado === "BORRADOR" || hv.data.estado === "RECHAZADA") &&
+            (esMiHV || hasRole("COORDINADOR", "ADMIN")) && (
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => enviarACoformacion.mutate()}
+                disabled={enviarACoformacion.isPending || !completaBackend}
+                title={
+                  !completaBackend
+                    ? "Completa la HV antes de enviarla"
+                    : "Enviar a Coformación para revisión"
+                }
+              >
+                {enviarACoformacion.isPending ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Send className="h-4 w-4" />
+                )}
+                Enviar a Coformación
+              </Button>
+            )}
+          {hv.data &&
+            hv.data.estado === "ENVIADA" &&
+            hasRole("COORDINADOR", "ADMIN") && (
+              <>
+                <Button
+                  type="button"
+                  variant="default"
+                  onClick={() => aprobarHv.mutate()}
+                  disabled={aprobarHv.isPending}
+                >
+                  {aprobarHv.isPending ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <ThumbsUp className="h-4 w-4" />
+                  )}
+                  Aprobar
+                </Button>
+                <Button
+                  type="button"
+                  variant="destructive"
+                  onClick={() => {
+                    setObservaciones("");
+                    setRechazoOpen(true);
+                  }}
+                >
+                  <ThumbsDown className="h-4 w-4" /> Rechazar
+                </Button>
+              </>
+            )}
         </div>
       </div>
+
+      {hv.data?.estado === "RECHAZADA" && hv.data.observacionesCoformacion && (
+        <Card className="border-destructive/40 bg-destructive/5">
+          <CardContent className="pt-4">
+            <div className="flex items-start gap-2 text-sm">
+              <AlertTriangle className="h-5 w-5 text-destructive shrink-0 mt-0.5" />
+              <div>
+                <div className="font-semibold text-destructive">
+                  Coformación rechazó la HV — ajusta y vuelve a enviar
+                </div>
+                <p className="mt-1 whitespace-pre-line">
+                  {hv.data.observacionesCoformacion}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {hv.data?.estado === "APROBADA" && (
+        <Card className="border-emerald-500/30 bg-emerald-500/5">
+          <CardContent className="pt-4">
+            <div className="flex items-start gap-2 text-sm">
+              <CheckCircle2 className="h-5 w-5 text-emerald-600 shrink-0 mt-0.5" />
+              <div>
+                <div className="font-semibold text-emerald-700 dark:text-emerald-400">
+                  HV aprobada por Coformación
+                </div>
+                <p className="mt-1 text-muted-foreground">
+                  {hv.data.aprobadaPorCoordNombre && (
+                    <>Aprobada por {hv.data.aprobadaPorCoordNombre}. </>
+                  )}
+                  {hv.data.aprobadaAt && (
+                    <>El {new Date(hv.data.aprobadaAt).toLocaleString()}. </>
+                  )}
+                  Ya puedes postularte a vacantes.
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      <AlertDialog open={rechazoOpen} onOpenChange={setRechazoOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Rechazar Hoja de Vida</AlertDialogTitle>
+            <AlertDialogDescription>
+              Indica al estudiante qué debe ajustar. Se le enviará por correo y quedará
+              visible en su HV hasta que reenvíe.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <Textarea
+            rows={5}
+            value={observaciones}
+            onChange={(e) => setObservaciones(e.target.value)}
+            placeholder="Ej: La sección SER está vacía y la experiencia laboral no incluye fechas."
+          />
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                if (!observaciones.trim()) {
+                  toast.error("Las observaciones son obligatorias");
+                  return;
+                }
+                rechazarHv.mutate(observaciones.trim());
+              }}
+              disabled={rechazarHv.isPending}
+            >
+              {rechazarHv.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin mr-1" />
+              ) : null}
+              Rechazar HV
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {hv.data && (
         <Card>

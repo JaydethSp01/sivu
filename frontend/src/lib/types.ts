@@ -488,6 +488,8 @@ export interface HojaVidaExperiencia {
   orden?: number | null;
 }
 
+export type EstadoHojaVida = "BORRADOR" | "ENVIADA" | "APROBADA" | "RECHAZADA";
+
 export interface HojaVidaResponse {
   id: number;
   estudianteId: number;
@@ -503,6 +505,11 @@ export interface HojaVidaResponse {
   perfilHacer?: string | null;
   perfilSer?: string | null;
   completa: boolean;
+  estado: EstadoHojaVida;
+  observacionesCoformacion?: string | null;
+  enviadaAt?: string | null;
+  aprobadaAt?: string | null;
+  aprobadaPorCoordNombre?: string | null;
   ultimaActualizacion: string;
   createdAt: string;
   updatedAt: string;
@@ -522,6 +529,11 @@ export type HojaVidaRequest = Omit<
   | "programaAcademico"
   | "semestre"
   | "completa"
+  | "estado"
+  | "observacionesCoformacion"
+  | "enviadaAt"
+  | "aprobadaAt"
+  | "aprobadaPorCoordNombre"
   | "ultimaActualizacion"
   | "createdAt"
   | "updatedAt"
