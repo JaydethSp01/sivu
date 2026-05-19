@@ -6,21 +6,21 @@ import { z } from "zod";
 import { toast } from "sonner";
 import {
   ArrowRight,
+  Eye,
+  EyeOff,
   GraduationCap,
   Loader2,
   Moon,
-  ShieldCheck,
   Sparkles,
   Sun,
-  UsersRound,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { api, extractApiMessage } from "@/lib/api";
 import { useAuthStore } from "@/lib/auth-store";
 import { applyTheme, getStoredTheme, type Theme } from "@/lib/theme";
+import { cn } from "@/lib/utils";
 import type { AuthResponse } from "@/lib/types";
 
 const schema = z.object({
@@ -30,24 +30,25 @@ const schema = z.object({
 
 type LoginValues = z.infer<typeof schema>;
 
-const DEMO_CREDS = [
-  { rol: "ADMIN", email: "admin@uempresarial.edu.co", password: "Admin123*" },
-  { rol: "COORDINADOR", email: "coord@uempresarial.edu.co", password: "Coord123*" },
-  { rol: "ESTUDIANTE", email: "kelly@est.uempresarial.edu.co", password: "Estudiante123*" },
-  { rol: "EMPRESA", email: "rrhh@coally.com", password: "Empresa123*" },
-];
+interface DemoCred {
+  rol: string;
+  emoji: string;
+  email: string;
+  password: string;
+}
 
-const ROL_COLOR: Record<string, string> = {
-  ADMIN: "bg-accent-soft text-accent",
-  COORDINADOR: "bg-primary-soft text-primary",
-  ESTUDIANTE: "bg-secondary-soft text-secondary-foreground dark:text-secondary",
-  EMPRESA: "bg-warning-soft text-warning",
-};
+const DEMO_CREDS: DemoCred[] = [
+  { rol: "Admin", emoji: "👑", email: "admin@uempresarial.edu.co", password: "Admin123*" },
+  { rol: "Coordinación", emoji: "🎓", email: "coord@uempresarial.edu.co", password: "Coord123*" },
+  { rol: "Estudiante", emoji: "📚", email: "kelly@est.uempresarial.edu.co", password: "Estudiante123*" },
+  { rol: "Empresa", emoji: "🏢", email: "rrhh@coally.com", password: "Empresa123*" },
+];
 
 export function LoginPage(): JSX.Element {
   const navigate = useNavigate();
   const setSession = useAuthStore((s) => s.setSession);
   const [seeding, setSeeding] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [theme, setTheme] = useState<Theme>(() => getStoredTheme());
 
   useEffect(() => {
@@ -63,7 +64,7 @@ export function LoginPage(): JSX.Element {
     try {
       const { data } = await api.post<AuthResponse>("/auth/login", values);
       setSession(data);
-      toast.success(`Bienvenido ${data.usuario.nombres}`);
+      toast.success(`Hola, ${data.usuario.nombres}`);
       navigate("/", { replace: true });
     } catch (err) {
       toast.error(extractApiMessage(err));
@@ -82,237 +83,325 @@ export function LoginPage(): JSX.Element {
     }
   };
 
-  const usar = (email: string, password: string) => {
-    form.setValue("email", email);
-    form.setValue("password", password);
+  const usar = (cred: DemoCred) => {
+    form.setValue("email", cred.email);
+    form.setValue("password", cred.password);
   };
 
   return (
-    <div className="min-h-screen grid lg:grid-cols-[1.05fr_1fr] relative">
+    <div className="relative min-h-screen overflow-hidden bg-background">
+      {/* Mesh gradient animado de fondo */}
+      <MeshBackground />
+
+      {/* Toggle theme flotante */}
       <Button
         type="button"
         variant="ghost"
         size="icon"
         aria-label={`Cambiar a tema ${theme === "dark" ? "claro" : "oscuro"}`}
-        aria-pressed={theme === "dark"}
         onClick={() => setTheme((t) => (t === "dark" ? "light" : "dark"))}
-        className="absolute top-4 right-4 z-50 rounded-full bg-card/80 backdrop-blur ring-1 ring-border/60 hover:bg-card"
+        className="absolute top-5 right-5 z-50 rounded-full bg-card/70 backdrop-blur-md ring-1 ring-border/60 hover:bg-card"
       >
         {theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
       </Button>
-      {/* Hero institucional */}
-      <aside className="relative hidden lg:flex flex-col justify-between overflow-hidden bg-uni-gradient text-primary-foreground p-12">
-        <div
-          aria-hidden
-          className="pointer-events-none absolute -top-32 -right-32 h-96 w-96 rounded-full bg-secondary opacity-30 blur-3xl"
-        />
-        <div
-          aria-hidden
-          className="pointer-events-none absolute bottom-0 left-0 h-80 w-80 -translate-x-1/3 translate-y-1/3 rounded-full bg-coral opacity-30 blur-3xl"
-        />
-        <div className="relative z-10 flex items-center gap-3">
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/15 backdrop-blur ring-1 ring-white/30">
-            <GraduationCap className="h-7 w-7" />
+
+      {/* Logo + chip institucional */}
+      <div className="absolute top-5 left-5 z-50 flex items-center gap-2.5">
+        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-uni-gradient text-primary-foreground shadow-md ring-1 ring-white/10">
+          <GraduationCap className="h-4.5 w-4.5" />
+        </div>
+        <div className="leading-tight">
+          <div className="font-display text-sm font-bold tracking-tight">SIVU</div>
+          <div className="text-[9px] uppercase tracking-[0.18em] text-muted-foreground">
+            Uniempresarial
           </div>
-          <div className="leading-tight">
-            <div className="font-display text-xl font-bold tracking-tight">SIVU</div>
-            <div className="text-xs uppercase tracking-widest text-white/80">
-              Uniempresarial
+        </div>
+      </div>
+
+      {/* Hero asimétrico — tipografía editorial */}
+      <main className="relative z-10 mx-auto flex min-h-screen w-full max-w-6xl flex-col items-center justify-center px-5 py-20 sm:px-8">
+        <div className="grid w-full gap-12 lg:grid-cols-[1.1fr_minmax(360px,440px)] lg:items-center">
+          {/* Lado izquierdo: marquesina tipográfica */}
+          <section className="relative hidden lg:block">
+            <div className="inline-flex items-center gap-2 rounded-full border border-border/70 bg-card/50 px-3 py-1 text-xs font-medium backdrop-blur">
+              <span className="relative flex h-2 w-2">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-secondary opacity-75" />
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-secondary" />
+              </span>
+              Coformación 2026 abierta
             </div>
-          </div>
-        </div>
 
-        <div className="relative z-10 space-y-6 max-w-md">
-          <div className="inline-flex items-center gap-2 rounded-full bg-white/25 px-3.5 py-1.5 text-xs font-semibold uppercase tracking-wider backdrop-blur ring-1 ring-white/40">
-            <Sparkles className="h-3.5 w-3.5" /> Plataforma oficial
-          </div>
-          <h1 className="font-display text-4xl xl:text-5xl font-bold leading-tight tracking-tight text-white drop-shadow-sm">
-            Tus prácticas profesionales, claras de principio a fin.
-          </h1>
-          <p className="text-white text-lg leading-relaxed">
-            Acompañamos a estudiantes, empresas y a la universidad en cada paso —
-            desde la postulación hasta el cierre de la práctica.
-          </p>
+            <h1 className="mt-6 font-display text-[3.4rem] xl:text-[4.2rem] font-bold leading-[0.95] tracking-tight">
+              <span className="block">Practicar.</span>
+              <span className="block text-primary">Aprender.</span>
+              <span className="relative inline-block">
+                <span className="relative z-10">Avanzar.</span>
+                <span
+                  aria-hidden
+                  className="absolute -bottom-1 left-0 right-0 h-3 bg-secondary/40 -z-0"
+                />
+              </span>
+            </h1>
 
-          <div className="grid grid-cols-1 gap-3 pt-4">
-            <FeatureRow
-              icon={UsersRound}
-              title="Todos en sintonía"
-              text="Estudiantes, empresas y universidad trabajan en el mismo espacio."
-            />
-            <FeatureRow
-              icon={ShieldCheck}
-              title="Tu historial siempre claro"
-              text="Cada paso queda registrado; nada se pierde en el camino."
-            />
-            <FeatureRow
-              icon={Sparkles}
-              title="Menos papeleo, más práctica"
-              text="El sistema valida, conecta y te ayuda a avanzar más rápido."
-            />
-          </div>
-        </div>
+            <p className="mt-7 max-w-md text-base text-muted-foreground leading-relaxed">
+              El sistema institucional de Uniempresarial para vincularte a una práctica
+              real — sin formularios infinitos, sin papeleo perdido, sin esperar correos.
+            </p>
 
-        <div className="relative z-10 text-xs text-white/80">
-          © {new Date().getFullYear()} Fundación Universitaria Empresarial — Uniempresarial
-        </div>
-      </aside>
-
-      {/* Formulario */}
-      <section className="flex flex-col justify-center px-6 py-12 sm:px-12 lg:px-16 surface-gradient">
-        <div className="mx-auto w-full max-w-md">
-          <div className="lg:hidden flex items-center gap-3 mb-6">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-uni-gradient text-primary-foreground shadow-md">
-              <GraduationCap className="h-5 w-5" />
+            <div className="mt-10 flex items-center gap-6">
+              <Stat n="6" label="roles" />
+              <span className="h-10 w-px bg-border" />
+              <Stat n="100%" label="trazable" />
+              <span className="h-10 w-px bg-border" />
+              <Stat n="0" label="papel" />
             </div>
-            <div>
-              <div className="font-display text-lg font-bold">SIVU</div>
-              <div className="text-[10px] uppercase tracking-widest text-muted-foreground">
-                Uniempresarial
+          </section>
+
+          {/* Card de login — glassmorphism */}
+          <section className="relative">
+            <div className="relative rounded-3xl border border-border/60 bg-card/70 p-7 shadow-2xl backdrop-blur-xl sm:p-8">
+              <div
+                aria-hidden
+                className="pointer-events-none absolute -top-px left-10 right-10 h-px bg-gradient-to-r from-transparent via-primary/40 to-transparent"
+              />
+              <div className="lg:hidden mb-4 inline-flex items-center gap-2 rounded-full border border-border/70 bg-background/50 px-3 py-1 text-[10px] uppercase tracking-widest font-semibold backdrop-blur">
+                <Sparkles className="h-3 w-3 text-primary" /> Bienvenido
               </div>
-            </div>
-          </div>
 
-          <h2 className="font-display text-3xl font-bold tracking-tight">
-            Inicia sesión
-          </h2>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Ingresa con tu correo institucional para acceder al panel.
-          </p>
+              <h2 className="font-display text-2xl sm:text-3xl font-bold tracking-tight">
+                Inicia sesión
+              </h2>
+              <p className="mt-2 text-sm text-muted-foreground">
+                Entra con tu correo institucional para acceder al panel.
+              </p>
 
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="mt-8 space-y-5">
-              <FormField
-                control={form.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Correo institucional</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="email"
-                        placeholder="usuario@uempresarial.edu.co"
-                        autoComplete="email"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="password"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Contraseña</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="password"
-                        autoComplete="current-password"
-                        placeholder="••••••••"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <Button
-                type="submit"
-                variant="gradient"
-                size="lg"
-                className="w-full"
-                disabled={form.formState.isSubmitting}
-              >
-                {form.formState.isSubmitting ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <ArrowRight className="h-4 w-4" />
-                )}
-                Entrar al sistema
-              </Button>
-              <div className="text-xs text-muted-foreground text-center">
+              <Form {...form}>
+                <form
+                  onSubmit={form.handleSubmit(onSubmit)}
+                  className="mt-6 space-y-4"
+                >
+                  <FormField
+                    control={form.control}
+                    name="email"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                          Correo
+                        </FormLabel>
+                        <FormControl>
+                          <Input
+                            type="email"
+                            placeholder="kelly@est.uempresarial.edu.co"
+                            autoComplete="email"
+                            className="h-11"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="password"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                          Contraseña
+                        </FormLabel>
+                        <FormControl>
+                          <div className="relative">
+                            <Input
+                              type={showPassword ? "text" : "password"}
+                              autoComplete="current-password"
+                              placeholder="••••••••"
+                              className="h-11 pr-11"
+                              {...field}
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setShowPassword((s) => !s)}
+                              className="absolute right-1.5 top-1/2 -translate-y-1/2 inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+                              aria-label={showPassword ? "Ocultar" : "Mostrar"}
+                            >
+                              {showPassword ? (
+                                <EyeOff className="h-4 w-4" />
+                              ) : (
+                                <Eye className="h-4 w-4" />
+                              )}
+                            </button>
+                          </div>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <Button
+                    type="submit"
+                    variant="gradient"
+                    size="lg"
+                    className="group w-full"
+                    disabled={form.formState.isSubmitting}
+                  >
+                    {form.formState.isSubmitting ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <>
+                        Entrar
+                        <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                      </>
+                    )}
+                  </Button>
+                </form>
+              </Form>
+
+              <div className="mt-6 text-center text-xs text-muted-foreground">
                 ¿Sin cuenta?{" "}
-                <Link to="/register" className="text-primary font-medium hover:underline">
+                <Link
+                  to="/register"
+                  className="font-semibold text-primary hover:underline underline-offset-4"
+                >
                   Regístrate
                 </Link>
               </div>
-            </form>
-          </Form>
-
-          <div className="mt-8">
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center" aria-hidden>
-                <div className="w-full border-t border-border" />
-              </div>
-              <div className="relative flex justify-center">
-                <span className="bg-background px-3 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
-                  Credenciales demo
-                </span>
-              </div>
             </div>
 
-            <Card className="mt-4 p-2">
-              <ul className="grid gap-1 text-sm">
-                {DEMO_CREDS.map((c) => (
-                  <li key={c.email}>
-                    <button
-                      type="button"
-                      onClick={() => usar(c.email, c.password)}
-                      className="group w-full flex items-center justify-between gap-2 rounded-lg px-3 py-2 text-left transition-colors hover:bg-primary-soft"
-                    >
-                      <span
-                        className={`text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full ${ROL_COLOR[c.rol] ?? "bg-muted text-muted-foreground"}`}
-                      >
-                        {c.rol}
-                      </span>
-                      <span className="text-xs text-muted-foreground truncate">{c.email}</span>
-                      <ArrowRight className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
-                    </button>
-                  </li>
-                ))}
-              </ul>
-              <div className="mt-3 flex justify-end">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={seed}
-                  disabled={seeding}
-                >
-                  {seeding ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Sparkles className="h-4 w-4" />
-                  )}
-                  Cargar datos demo
-                </Button>
+            {/* Demo creds horizontales — chips minimalistas */}
+            <div className="mt-5 flex flex-col items-center gap-2.5">
+              <div className="flex items-center gap-2 text-[10px] uppercase tracking-widest text-muted-foreground">
+                <span className="h-px w-6 bg-border" />
+                Probar como
+                <span className="h-px w-6 bg-border" />
               </div>
-            </Card>
-          </div>
+              <div className="flex flex-wrap justify-center gap-2">
+                {DEMO_CREDS.map((c) => (
+                  <button
+                    key={c.email}
+                    type="button"
+                    onClick={() => usar(c)}
+                    className={cn(
+                      "group inline-flex items-center gap-1.5 rounded-full border border-border/70 bg-card/60 px-3 py-1.5 text-xs font-medium",
+                      "backdrop-blur-md transition-all duration-200",
+                      "hover:border-primary/40 hover:bg-primary-soft hover:text-primary hover:-translate-y-0.5 hover:shadow-md"
+                    )}
+                  >
+                    <span aria-hidden>{c.emoji}</span>
+                    <span>{c.rol}</span>
+                  </button>
+                ))}
+              </div>
+              <button
+                type="button"
+                onClick={seed}
+                disabled={seeding}
+                className="text-[10px] uppercase tracking-widest text-muted-foreground hover:text-primary transition-colors inline-flex items-center gap-1 disabled:opacity-50"
+              >
+                {seeding ? (
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                ) : (
+                  <Sparkles className="h-3 w-3" />
+                )}
+                Cargar datos demo
+              </button>
+            </div>
+          </section>
         </div>
-      </section>
+      </main>
+
+      <footer className="absolute bottom-4 left-0 right-0 z-10 text-center text-[10px] uppercase tracking-[0.2em] text-muted-foreground/70">
+        © {new Date().getFullYear()} · Fundación Universitaria Empresarial
+      </footer>
     </div>
   );
 }
 
-interface FeatureRowProps {
-  icon: React.ComponentType<{ className?: string }>;
-  title: string;
-  text: string;
-}
-
-function FeatureRow({ icon: Icon, title, text }: FeatureRowProps): JSX.Element {
+function Stat({ n, label }: { n: string; label: string }): JSX.Element {
   return (
-    <div className="flex items-start gap-3 rounded-xl bg-white/15 p-3.5 ring-1 ring-white/30 backdrop-blur-sm">
-      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white/25 text-white ring-1 ring-white/30">
-        <Icon className="h-4 w-4" />
-      </div>
-      <div className="min-w-0">
-        <div className="text-sm font-semibold text-white">{title}</div>
-        <div className="text-xs text-white/85 mt-0.5">{text}</div>
+    <div>
+      <div className="font-display text-2xl font-bold tracking-tight leading-none">{n}</div>
+      <div className="mt-0.5 text-[10px] uppercase tracking-widest text-muted-foreground">
+        {label}
       </div>
     </div>
+  );
+}
+
+/**
+ * Fondo con mesh gradient animado: tres blobs cónicos que rotan + grano sutil.
+ * Define keyframes inline para no tocar tailwind config.
+ */
+function MeshBackground(): JSX.Element {
+  return (
+    <>
+      <style>{`
+        @keyframes meshDrift1 {
+          0%, 100% { transform: translate(0%, 0%) rotate(0deg); }
+          50% { transform: translate(8%, -6%) rotate(40deg); }
+        }
+        @keyframes meshDrift2 {
+          0%, 100% { transform: translate(0%, 0%) rotate(0deg); }
+          50% { transform: translate(-10%, 8%) rotate(-30deg); }
+        }
+        @keyframes meshDrift3 {
+          0%, 100% { transform: translate(0%, 0%) rotate(0deg); }
+          50% { transform: translate(6%, 10%) rotate(60deg); }
+        }
+        .mesh-blob {
+          position: absolute;
+          border-radius: 9999px;
+          filter: blur(80px);
+          will-change: transform;
+          mix-blend-mode: screen;
+        }
+        .dark .mesh-blob { mix-blend-mode: lighten; opacity: 0.55; }
+        .light .mesh-blob, html:not(.dark) .mesh-blob { opacity: 0.55; }
+      `}</style>
+      <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
+        <div
+          className="mesh-blob"
+          style={{
+            top: "-15%",
+            left: "-10%",
+            width: "55vw",
+            height: "55vw",
+            background:
+              "radial-gradient(circle at 30% 30%, hsl(var(--primary) / 0.55), transparent 60%)",
+            animation: "meshDrift1 18s ease-in-out infinite",
+          }}
+        />
+        <div
+          className="mesh-blob"
+          style={{
+            top: "20%",
+            right: "-15%",
+            width: "50vw",
+            height: "50vw",
+            background:
+              "radial-gradient(circle at 60% 40%, hsl(var(--accent) / 0.55), transparent 60%)",
+            animation: "meshDrift2 22s ease-in-out infinite",
+          }}
+        />
+        <div
+          className="mesh-blob"
+          style={{
+            bottom: "-20%",
+            left: "25%",
+            width: "60vw",
+            height: "60vw",
+            background:
+              "radial-gradient(circle at 40% 60%, hsl(var(--secondary) / 0.45), transparent 60%)",
+            animation: "meshDrift3 26s ease-in-out infinite",
+          }}
+        />
+        {/* Sutil grano para textura — usando data URI pequeño */}
+        <div
+          className="absolute inset-0 opacity-[0.04] mix-blend-overlay"
+          style={{
+            backgroundImage:
+              "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)' opacity='1'/></svg>\")",
+          }}
+        />
+      </div>
+    </>
   );
 }
