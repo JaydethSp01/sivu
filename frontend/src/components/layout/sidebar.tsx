@@ -5,6 +5,7 @@ import {
   Briefcase,
   CalendarClock,
   ClipboardList,
+  Factory,
   FileSignature,
   FileText,
   FileUser,
@@ -83,6 +84,7 @@ const MAIN_ITEMS: NavItem[] = [
   { to: "/tutores", label: labelTutores, icon: UserCog, roles: ["ADMIN", "COORDINADOR", "EMPRESA", "MCP_AGENT"] },
   { to: "/evaluaciones/new", label: "Evaluaciones", icon: ClipboardList, roles: ["ADMIN", "COORDINADOR", "EMPRESA"] },
   { to: "/matching", label: "Matching", icon: Sparkles, roles: ["ADMIN", "COORDINADOR"] },
+  { to: "/fabrica-soluciones", label: "Fábrica de Soluciones", icon: Factory, roles: ["ADMIN", "COORDINADOR"] },
 ];
 
 const GROUPS: NavGroup[] = [
