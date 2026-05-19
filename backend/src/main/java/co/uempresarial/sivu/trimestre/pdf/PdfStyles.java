@@ -12,27 +12,27 @@ import com.lowagie.text.pdf.PdfPTable;
 import java.awt.Color;
 
 /** Estilos compartidos para los PDFs institucionales Uniempresarial. */
-final class PdfStyles {
+public final class PdfStyles {
 
     private PdfStyles() {}
 
-    static final Color AZUL_UE = new Color(15, 76, 129);
-    static final Color GRIS_SUAVE = new Color(238, 238, 240);
-    static final Color GRIS_BORDE = new Color(180, 180, 188);
+    public static final Color AZUL_UE = new Color(15, 76, 129);
+    public static final Color GRIS_SUAVE = new Color(238, 238, 240);
+    public static final Color GRIS_BORDE = new Color(180, 180, 188);
 
-    static final Font FUENTE_TITULO       = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 14, AZUL_UE);
-    static final Font FUENTE_SUBTITULO    = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 11, AZUL_UE);
-    static final Font FUENTE_SECCION      = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 10, Color.WHITE);
-    static final Font FUENTE_CAMPO        = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 9, Color.DARK_GRAY);
-    static final Font FUENTE_VALOR        = FontFactory.getFont(FontFactory.HELVETICA, 9, Color.DARK_GRAY);
-    static final Font FUENTE_TEXTO        = FontFactory.getFont(FontFactory.HELVETICA, 9, Color.DARK_GRAY);
-    static final Font FUENTE_TEXTO_BOLD   = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 9, Color.DARK_GRAY);
-    static final Font FUENTE_PEQUENO      = FontFactory.getFont(FontFactory.HELVETICA, 8, Color.GRAY);
-    static final Font FUENTE_HEADER_LOGO  = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 16, AZUL_UE);
-    static final Font FUENTE_HEADER_META  = FontFactory.getFont(FontFactory.HELVETICA, 7, Color.DARK_GRAY);
+    public static final Font FUENTE_TITULO       = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 14, AZUL_UE);
+    public static final Font FUENTE_SUBTITULO    = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 11, AZUL_UE);
+    public static final Font FUENTE_SECCION      = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 10, Color.WHITE);
+    public static final Font FUENTE_CAMPO        = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 9, Color.DARK_GRAY);
+    public static final Font FUENTE_VALOR        = FontFactory.getFont(FontFactory.HELVETICA, 9, Color.DARK_GRAY);
+    public static final Font FUENTE_TEXTO        = FontFactory.getFont(FontFactory.HELVETICA, 9, Color.DARK_GRAY);
+    public static final Font FUENTE_TEXTO_BOLD   = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 9, Color.DARK_GRAY);
+    public static final Font FUENTE_PEQUENO      = FontFactory.getFont(FontFactory.HELVETICA, 8, Color.GRAY);
+    public static final Font FUENTE_HEADER_LOGO  = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 16, AZUL_UE);
+    public static final Font FUENTE_HEADER_META  = FontFactory.getFont(FontFactory.HELVETICA, 7, Color.DARK_GRAY);
 
     /** Encabezado institucional con marca, código y versión. */
-    static PdfPTable encabezadoInstitucional(String codigo, String version, String fecha, String titulo) {
+    public static PdfPTable encabezadoInstitucional(String codigo, String version, String fecha, String titulo) {
         PdfPTable header = new PdfPTable(new float[]{2.2f, 4.5f, 2.5f});
         header.setWidthPercentage(100);
 
@@ -76,7 +76,7 @@ final class PdfStyles {
         return c;
     }
 
-    static PdfPCell seccionCell(String texto, int colspan) {
+    public static PdfPCell seccionCell(String texto, int colspan) {
         PdfPCell c = new PdfPCell(new Phrase(texto.toUpperCase(), FUENTE_SECCION));
         c.setBackgroundColor(AZUL_UE);
         c.setPadding(5);
@@ -85,7 +85,7 @@ final class PdfStyles {
         return c;
     }
 
-    static PdfPCell campoCell(String campo, String valor) {
+    public static PdfPCell campoCell(String campo, String valor) {
         PdfPTable tbl = new PdfPTable(new float[]{2f, 5f});
         tbl.setWidthPercentage(100);
         PdfPCell c1 = new PdfPCell(new Phrase(campo, FUENTE_CAMPO));
@@ -100,24 +100,24 @@ final class PdfStyles {
         return wrap;
     }
 
-    static PdfPCell celdaTexto(String texto, Font font, int align) {
+    public static PdfPCell celdaTexto(String texto, Font font, int align) {
         PdfPCell c = new PdfPCell(new Phrase(texto == null ? "" : texto, font));
         c.setPadding(4);
         c.setHorizontalAlignment(align);
         return c;
     }
 
-    static PdfPCell celdaTextoFondo(String texto, Font font, int align, Color bg) {
+    public static PdfPCell celdaTextoFondo(String texto, Font font, int align, Color bg) {
         PdfPCell c = celdaTexto(texto, font, align);
         c.setBackgroundColor(bg);
         return c;
     }
 
-    static Paragraph espacio(float h) {
+    public static Paragraph espacio(float h) {
         Paragraph p = new Paragraph(" ");
         p.setSpacingAfter(h);
         return p;
     }
 
-    static String safe(String s) { return s == null ? "" : s; }
+    public static String safe(String s) { return s == null ? "" : s; }
 }
