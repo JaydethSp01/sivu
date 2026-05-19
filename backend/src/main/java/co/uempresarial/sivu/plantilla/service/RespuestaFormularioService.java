@@ -38,6 +38,56 @@ public class RespuestaFormularioService {
     private final CurrentUserService currentUser;
     private final NotificacionService notificacionService;
 
+    /**
+     * Abre (o crea) una respuesta para el usuario autenticado contra la
+     * plantilla vigente del tipo, en el contexto dado. Es la puerta que usan
+     * las pantallas viejas para conectar con el sistema configurable.
+     */
+    public RespuestaResponse abrirParaSelf(AbrirSelfRequest req) {
+        var usuario = currentUser.current().orElseThrow(() ->
+            new BusinessException("Usuario no autenticado"));
+
+        PlantillaFormulario plantilla = plantillaRepo.findByTipoAndVigenteTrue(req.tipo())
+            .orElseThrow(() -> new BusinessException(
+                "No hay plantilla vigente para el tipo " + req.tipo()));
+
+        Optional<RespuestaFormulario> existente = respuestaRepo
+            .findByAsignadoAMongoIdOrderByFechaAsignacionDesc(usuario.getId()).stream()
+            .filter(r -> r.getPlantilla().getId().equals(plantilla.getId()))
+            .filter(r -> sameRef(r.getConvenio() == null ? null : r.getConvenio().getId(), req.convenioId()))
+            .filter(r -> sameRef(r.getTrimestre() == null ? null : r.getTrimestre().getId(), req.trimestreId()))
+            .findFirst();
+        if (existente.isPresent()) return toResponse(existente.get());
+
+        RespuestaFormulario r = RespuestaFormulario.builder()
+            .plantilla(plantilla)
+            .asignadoAMongoId(usuario.getId())
+            .asignadoANombre((usuario.getNombres() + " " + usuario.getApellidos()).trim())
+            .asignadoARol(usuario.getRoles().isEmpty() ? null : usuario.getRoles().iterator().next().name())
+            .asignadoPorNombre("Sistema (auto)")
+            .estado(EstadoRespuesta.PENDIENTE)
+            .build();
+        if (req.convenioId() != null) {
+            r.setConvenio(convenioRepo.findById(req.convenioId())
+                .orElseThrow(() -> new ResourceNotFoundException("Convenio", req.convenioId())));
+        }
+        if (req.trimestreId() != null) {
+            r.setTrimestre(trimestreRepo.findById(req.trimestreId())
+                .orElseThrow(() -> new ResourceNotFoundException("Trimestre", req.trimestreId())));
+        }
+        if (req.estudianteId() != null) {
+            r.setEstudiante(estudianteRepo.findById(req.estudianteId())
+                .orElseThrow(() -> new ResourceNotFoundException("Estudiante", req.estudianteId())));
+        }
+        return toResponse(respuestaRepo.save(r));
+    }
+
+    private static boolean sameRef(Long a, Long b) {
+        if (a == null && b == null) return true;
+        if (a == null || b == null) return false;
+        return a.equals(b);
+    }
+
     public RespuestaResponse asignar(AsignarRequest req) {
         PlantillaFormulario plantilla = plantillaRepo.findById(req.plantillaId())
             .orElseThrow(() -> new ResourceNotFoundException("Plantilla", req.plantillaId()));

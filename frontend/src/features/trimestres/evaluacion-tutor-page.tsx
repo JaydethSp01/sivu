@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { AbrirPlantillaShortcut } from "@/features/plantillas/abrir-plantilla-shortcut";
 import { api, extractApiMessage } from "@/lib/api";
 import type { EvaluacionTutorRequest, EvaluacionTutorResponse, ParteFirmaTrimestre } from "@/lib/types";
 
@@ -149,7 +150,13 @@ export function EvaluacionTutorPage(): JSX.Element {
             </p>
           </div>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
+          <AbrirPlantillaShortcut
+            tipo="EVAL_TUTOR"
+            convenioId={Number(convenioId)}
+            trimestreId={Number(trimestreId)}
+            label="Abrir versión configurable"
+          />
           {data && (
             <Button variant="outline" onClick={() => descargar.mutate()} disabled={descargar.isPending}>
               {descargar.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}

@@ -33,6 +33,13 @@ public class RespuestaFormularioController {
         return ResponseEntity.ok(service.asignar(req));
     }
 
+    @PostMapping("/abrir")
+    @PreAuthorize("isAuthenticated()")
+    @Operation(summary = "Abrir (o crear) la plantilla vigente del tipo para mí, en un contexto convenio/trimestre. Idempotente.")
+    public ResponseEntity<RespuestaResponse> abrir(@Valid @RequestBody AbrirSelfRequest req) {
+        return ResponseEntity.ok(service.abrirParaSelf(req));
+    }
+
     @GetMapping("/mias")
     @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Mis formularios asignados")

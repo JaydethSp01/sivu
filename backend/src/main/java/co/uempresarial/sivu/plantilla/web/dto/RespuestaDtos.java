@@ -60,4 +60,16 @@ public final class RespuestaDtos {
     ) {}
 
     public record ResolverRequest(String observaciones) {}
+
+    /**
+     * El usuario autenticado pide abrir la plantilla vigente de un tipo para
+     * un convenio/trimestre. Si ya tiene una respuesta abierta para ese
+     * contexto, devuelve esa misma.
+     */
+    public record AbrirSelfRequest(
+        @NotNull co.uempresarial.sivu.plantilla.domain.TipoPlantilla tipo,
+        Long convenioId,
+        Long trimestreId,
+        Long estudianteId
+    ) {}
 }
