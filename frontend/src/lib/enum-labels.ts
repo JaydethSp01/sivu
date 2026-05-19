@@ -126,6 +126,18 @@ export const TIPO_REUNION_LABELS: Record<TipoReunion, string> = {
   OTRO: "Otro",
 };
 
+export const MODALIDAD_ENTREVISTA_LABELS: Record<string, string> = {
+  PRESENCIAL: "Presencial",
+  VIRTUAL: "Virtual",
+  HIBRIDA: "Híbrida",
+};
+
+export const RESULTADO_ENTREVISTA_LABELS: Record<string, string> = {
+  PENDIENTE: "Pendiente",
+  APROBADA: "Aprobada",
+  RECHAZADA: "Rechazada",
+};
+
 export const ESTADO_HOJA_VIDA_LABELS: Record<EstadoHojaVida, string> = {
   BORRADOR: "Borrador",
   ENVIADA: "Enviada a Coformación",

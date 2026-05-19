@@ -30,10 +30,13 @@ import type {
   Postulacion,
   PostulacionEvento,
 } from "@/lib/types";
+import { EntrevistaPanel } from "@/features/entrevistas/entrevista-panel";
 
 const TRANSICIONES: Record<EstadoPostulacion, EstadoPostulacion[]> = {
   POSTULADA: ["EN_REVISION", "RECHAZADA", "RETIRADA"],
   EN_REVISION: ["PRESELECCIONADA", "RECHAZADA", "RETIRADA"],
+  ENTREVISTA_PROGRAMADA: [],
+  ENTREVISTA_REALIZADA: [],
   PRESELECCIONADA: ["ACEPTADA", "RECHAZADA", "RETIRADA"],
   RECHAZADA: [],
   ACEPTADA: [],
@@ -258,6 +261,8 @@ export function PostulacionDetailPage(): JSX.Element {
           </CardContent>
         </Card>
       </div>
+
+      <EntrevistaPanel postulacionId={data.id} postulacionEstado={data.estado} />
     </div>
   );
 }

@@ -30,6 +30,7 @@ import { ConvenioDetailPage } from "@/features/convenios/convenio-detail-page";
 import { MatchingToolPage } from "@/features/automatizacion/matching-tool-page";
 import { MiHojaVidaPage } from "@/features/hoja-vida/mi-hoja-vida-page";
 import { BandejaHvPage } from "@/features/hoja-vida/bandeja-hv-page";
+import { EntrevistasListPage } from "@/features/entrevistas/entrevistas-list-page";
 import { TutoresListPage } from "@/features/tutores/tutores-list-page";
 import { TutorFormPage } from "@/features/tutores/tutor-form-page";
 import { TutorDetailPage } from "@/features/tutores/tutor-detail-page";
@@ -93,6 +94,8 @@ export function App(): JSX.Element {
               <Route path="postulaciones" element={<PostulacionesListPage />} />
               <Route path="postulaciones/new" element={<NuevaPostulacionPage />} />
               <Route path="postulaciones/:id" element={<PostulacionDetailPage />} />
+
+              <Route path="entrevistas" element={<EntrevistasListPage />} />
 
               <Route path="documentos" element={<DocumentosListPage />} />
               <Route path="documentos/:id" element={<DocumentoDetailPage />} />

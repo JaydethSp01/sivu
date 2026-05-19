@@ -226,10 +226,45 @@ export interface ResumenChecklist {
 export type EstadoPostulacion =
   | "POSTULADA"
   | "EN_REVISION"
+  | "ENTREVISTA_PROGRAMADA"
+  | "ENTREVISTA_REALIZADA"
   | "PRESELECCIONADA"
   | "RECHAZADA"
   | "ACEPTADA"
   | "RETIRADA";
+
+export type ModalidadEntrevista = "PRESENCIAL" | "VIRTUAL" | "HIBRIDA";
+export type ResultadoEntrevista = "PENDIENTE" | "APROBADA" | "RECHAZADA";
+
+export interface EntrevistaResponse {
+  id: number;
+  postulacionId: number;
+  estudianteNombre: string;
+  empresaRazonSocial: string;
+  vacanteCargo: string;
+  fechaProgramada: string;
+  modalidad: ModalidadEntrevista;
+  lugar?: string | null;
+  enlaceVirtual?: string | null;
+  entrevistadorNombre?: string | null;
+  entrevistadorCargo?: string | null;
+  observaciones?: string | null;
+  resultado: ResultadoEntrevista;
+  fechaResultado?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface EntrevistaRequest {
+  postulacionId: number;
+  fechaProgramada: string;
+  modalidad: ModalidadEntrevista;
+  lugar?: string | null;
+  enlaceVirtual?: string | null;
+  entrevistadorNombre?: string | null;
+  entrevistadorCargo?: string | null;
+  observaciones?: string | null;
+}
 
 export interface Postulacion {
   id: number;

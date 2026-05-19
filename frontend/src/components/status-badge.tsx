@@ -25,10 +25,18 @@ const VACANTE_MAP: Record<string, { label: string; variant: BadgeVariant }> = {
 const POSTULACION_MAP: Record<string, { label: string; variant: BadgeVariant }> = {
   POSTULADA: { label: "Postulada", variant: "secondary" },
   EN_REVISION: { label: "En revisión", variant: "warning" },
+  ENTREVISTA_PROGRAMADA: { label: "Entrevista programada", variant: "warning" },
+  ENTREVISTA_REALIZADA: { label: "Entrevista realizada", variant: "default" },
   PRESELECCIONADA: { label: "Preseleccionada", variant: "default" },
   RECHAZADA: { label: "Rechazada", variant: "destructive" },
   ACEPTADA: { label: "Aceptada", variant: "success" },
   RETIRADA: { label: "Retirada", variant: "muted" },
+};
+
+const ENTREVISTA_MAP: Record<string, { label: string; variant: BadgeVariant }> = {
+  PENDIENTE: { label: "Pendiente", variant: "warning" },
+  APROBADA: { label: "Aprobada", variant: "success" },
+  RECHAZADA: { label: "Rechazada", variant: "destructive" },
 };
 
 const DOCUMENTO_MAP: Record<string, { label: string; variant: BadgeVariant }> = {
@@ -60,6 +68,7 @@ const MAPS = {
   documento: DOCUMENTO_MAP,
   convenio: CONVENIO_MAP,
   tutor: TUTOR_MAP,
+  entrevista: ENTREVISTA_MAP,
 } as const;
 
 type Kind = keyof typeof MAPS;
