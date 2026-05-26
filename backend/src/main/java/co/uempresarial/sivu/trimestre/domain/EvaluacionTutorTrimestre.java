@@ -9,6 +9,7 @@ import lombok.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.OffsetDateTime;
 
 @Getter
 @Setter
@@ -67,6 +68,19 @@ public class EvaluacionTutorTrimestre extends BaseEntity {
     @Column(name = "firmado_estudiante", nullable = false)
     @Builder.Default
     private Boolean firmadoEstudiante = false;
+
+    // Sello de tiempo de firma (V15 · HU-06)
+    @Column(name = "fecha_firma_tutor")
+    private OffsetDateTime fechaFirmaTutor;
+
+    @Column(name = "fecha_firma_estudiante")
+    private OffsetDateTime fechaFirmaEstudiante;
+
+    @Column(name = "firmado_tutor_nombre", length = 160)
+    private String firmadoTutorNombre;
+
+    @Column(name = "firmado_estudiante_nombre", length = 160)
+    private String firmadoEstudianteNombre;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "documento_pdf_id")

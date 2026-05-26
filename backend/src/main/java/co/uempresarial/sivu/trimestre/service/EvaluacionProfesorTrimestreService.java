@@ -1,5 +1,6 @@
 package co.uempresarial.sivu.trimestre.service;
 
+import co.uempresarial.sivu.security.service.CurrentUserService;
 import co.uempresarial.sivu.shared.exception.BusinessException;
 import co.uempresarial.sivu.shared.exception.ResourceNotFoundException;
 import co.uempresarial.sivu.trimestre.domain.EvaluacionProfesorTrimestre;
@@ -25,6 +26,7 @@ public class EvaluacionProfesorTrimestreService {
     private final EvaluacionProfesorTrimestreRepository repository;
     private final TrimestreRepository trimestreRepository;
     private final TrimestreMapper mapper;
+    private final CurrentUserService currentUser;
 
     @Transactional(readOnly = true)
     public EvaluacionProfesorResponse obtener(Long trimestreId) {
@@ -86,18 +88,26 @@ public class EvaluacionProfesorTrimestreService {
 
     public EvaluacionProfesorResponse firmar(Long trimestreId, ParteFirmaTrimestre parte) {
         EvaluacionProfesorTrimestre e = obtenerEntidad(trimestreId);
+        java.time.OffsetDateTime now = java.time.OffsetDateTime.now();
+        String nombreActor = currentUser.current()
+            .map(u -> (u.getNombres() + " " + u.getApellidos()).trim())
+            .orElse(null);
         switch (parte) {
             case PROFESOR -> {
                 if (Boolean.TRUE.equals(e.getFirmadoProfesor())) {
                     throw new BusinessException("El profesor ya firmó esta evaluación");
                 }
                 e.setFirmadoProfesor(true);
+                e.setFechaFirmaProfesor(now);
+                e.setFirmadoProfesorNombre(nombreActor);
             }
             case ESTUDIANTE -> {
                 if (Boolean.TRUE.equals(e.getFirmadoEstudiante())) {
                     throw new BusinessException("El estudiante ya firmó esta evaluación");
                 }
                 e.setFirmadoEstudiante(true);
+                e.setFechaFirmaEstudiante(now);
+                e.setFirmadoEstudianteNombre(nombreActor);
             }
             case TUTOR -> throw new BusinessException(
                 "La evaluación del profesor solo la firman PROFESOR y ESTUDIANTE");

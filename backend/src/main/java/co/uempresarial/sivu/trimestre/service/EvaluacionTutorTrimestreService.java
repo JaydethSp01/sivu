@@ -1,5 +1,6 @@
 package co.uempresarial.sivu.trimestre.service;
 
+import co.uempresarial.sivu.security.service.CurrentUserService;
 import co.uempresarial.sivu.shared.exception.BusinessException;
 import co.uempresarial.sivu.shared.exception.ResourceNotFoundException;
 import co.uempresarial.sivu.trimestre.domain.EvaluacionTutorTrimestre;
@@ -25,6 +26,7 @@ public class EvaluacionTutorTrimestreService {
     private final EvaluacionTutorTrimestreRepository repository;
     private final TrimestreRepository trimestreRepository;
     private final TrimestreMapper mapper;
+    private final CurrentUserService currentUser;
 
     @Transactional(readOnly = true)
     public EvaluacionTutorResponse obtener(Long trimestreId) {
@@ -60,18 +62,26 @@ public class EvaluacionTutorTrimestreService {
 
     public EvaluacionTutorResponse firmar(Long trimestreId, ParteFirmaTrimestre parte) {
         EvaluacionTutorTrimestre e = obtenerEntidad(trimestreId);
+        java.time.OffsetDateTime now = java.time.OffsetDateTime.now();
+        String nombreActor = currentUser.current()
+            .map(u -> (u.getNombres() + " " + u.getApellidos()).trim())
+            .orElse(null);
         switch (parte) {
             case TUTOR -> {
                 if (Boolean.TRUE.equals(e.getFirmadoTutor())) {
                     throw new BusinessException("El tutor ya firmó esta evaluación");
                 }
                 e.setFirmadoTutor(true);
+                e.setFechaFirmaTutor(now);
+                e.setFirmadoTutorNombre(nombreActor);
             }
             case ESTUDIANTE -> {
                 if (Boolean.TRUE.equals(e.getFirmadoEstudiante())) {
                     throw new BusinessException("El estudiante ya firmó esta evaluación");
                 }
                 e.setFirmadoEstudiante(true);
+                e.setFechaFirmaEstudiante(now);
+                e.setFirmadoEstudianteNombre(nombreActor);
             }
             case PROFESOR -> throw new BusinessException(
                 "La evaluación del tutor solo la firman TUTOR y ESTUDIANTE");

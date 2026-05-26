@@ -111,6 +111,7 @@ const MAIN_ITEMS: NavItem[] = [
   { to: "/programa-interno/solicitudes", label: "Solicitudes programa interno", icon: Inbox, roles: ["ADMIN", "COORDINADOR"] },
   { to: "/plantillas", label: "Plantillas de formularios", icon: FileCog, roles: ["ADMIN", "COORDINADOR"] },
   { to: "/mis-formularios", label: "Mis formularios", icon: InboxIcon },
+  { to: "/admin/usuarios", label: "Usuarios", icon: Users, roles: ["ADMIN"] },
 ];
 
 const GROUPS: NavGroup[] = [

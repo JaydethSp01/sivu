@@ -37,6 +37,7 @@ import { PlantillasListPage } from "@/features/plantillas/plantillas-list-page";
 import { PlantillaDetailPage } from "@/features/plantillas/plantilla-detail-page";
 import { MisFormulariosPage } from "@/features/plantillas/mis-formularios-page";
 import { RespuestaLlenarPage } from "@/features/plantillas/respuesta-llenar-page";
+import { UsuariosAdminPage } from "@/features/admin/usuarios-admin-page";
 import { TutoresListPage } from "@/features/tutores/tutores-list-page";
 import { TutorFormPage } from "@/features/tutores/tutor-form-page";
 import { TutorDetailPage } from "@/features/tutores/tutor-detail-page";
@@ -145,6 +146,10 @@ export function App(): JSX.Element {
 
               <Route path="mis-formularios" element={<MisFormulariosPage />} />
               <Route path="mis-formularios/:id" element={<RespuestaLlenarPage />} />
+
+              <Route element={<RoleGuard allow={["ADMIN"]} />}>
+                <Route path="admin/usuarios" element={<UsuariosAdminPage />} />
+              </Route>
 
               <Route element={<RoleGuard allow={["ADMIN", "COORDINADOR"]} />}>
                 <Route path="catalogos/modalidades" element={<ModalidadesListPage />} />

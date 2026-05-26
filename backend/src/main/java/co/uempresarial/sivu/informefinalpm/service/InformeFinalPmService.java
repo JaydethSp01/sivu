@@ -3,6 +3,7 @@ package co.uempresarial.sivu.informefinalpm.service;
 import co.uempresarial.sivu.automatizacion.service.NotificacionService;
 import co.uempresarial.sivu.informefinalpm.domain.EstadoInformeFinalPm;
 import co.uempresarial.sivu.informefinalpm.domain.InformeFinalPm;
+import co.uempresarial.sivu.informefinalpm.pdf.InformeFinalPmPdfGenerator;
 import co.uempresarial.sivu.informefinalpm.persistence.InformeFinalPmRepository;
 import co.uempresarial.sivu.informefinalpm.web.InformeFinalPmMapper;
 import co.uempresarial.sivu.informefinalpm.web.dto.InformeFinalPmRequest;
@@ -30,6 +31,7 @@ public class InformeFinalPmService {
     private final NotificacionService notificacionService;
     private final CurrentUserService currentUser;
     private final InformeFinalPmMapper mapper;
+    private final InformeFinalPmPdfGenerator pdfGenerator;
 
     public InformeFinalPmResponse guardarBorrador(Long planMejoraId, InformeFinalPmRequest request) {
         PlanMejora pm = planMejoraRepository.findById(planMejoraId)
@@ -66,15 +68,39 @@ public class InformeFinalPmService {
             throw new BusinessException("Solo se puede entregar desde BORRADOR o RECHAZADO (actual: "
                 + i.getEstado() + ")");
         }
-        if (i.getNumeroPaginas() != null && i.getNumeroPaginas() > PAGINAS_MAX) {
-            throw new BusinessException("El Informe Final excede el máximo de " + PAGINAS_MAX
-                + " páginas (actual: " + i.getNumeroPaginas() + ")");
-        }
         validarSeccionesMinimas(i);
+
+        // Contar páginas REALES del PDF generado (HU-11) — no confiar en el
+        // valor auto-reportado por el estudiante.
+        int paginasReales = contarPaginasReales(i);
+        i.setNumeroPaginas((short) paginasReales);
+        if (paginasReales > PAGINAS_MAX) {
+            throw new BusinessException(
+                "El Informe Final excede el máximo de " + PAGINAS_MAX
+                + " páginas. El PDF generado tiene " + paginasReales + " páginas. "
+                + "Reduce el contenido (resumen ejecutivo, marco teórico) o ajusta el formato.");
+        }
+
         i.setEstado(EstadoInformeFinalPm.ENTREGADO);
         i.setFechaEntrega(OffsetDateTime.now());
         i.setFirmadoEstudiante(true);
         return mapper.toResponse(i);
+    }
+
+    /**
+     * HU-11 — Genera el PDF y cuenta las páginas reales con PdfReader.
+     * Evita confiar en el {@code numeroPaginas} auto-reportado por el estudiante.
+     */
+    private int contarPaginasReales(InformeFinalPm i) {
+        try {
+            byte[] pdf = pdfGenerator.generar(i);
+            try (com.lowagie.text.pdf.PdfReader reader =
+                     new com.lowagie.text.pdf.PdfReader(pdf)) {
+                return reader.getNumberOfPages();
+            }
+        } catch (Exception ex) {
+            throw new BusinessException("No se pudo verificar la longitud del informe: " + ex.getMessage());
+        }
     }
 
     public InformeFinalPmResponse aprobar(Long id) {

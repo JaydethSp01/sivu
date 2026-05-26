@@ -104,6 +104,19 @@ public class EvaluacionProfesorTrimestre extends BaseEntity {
     @Builder.Default
     private Boolean firmadoEstudiante = false;
 
+    // Sello de tiempo de firma (V15 · HU-06)
+    @Column(name = "fecha_firma_profesor")
+    private java.time.OffsetDateTime fechaFirmaProfesor;
+
+    @Column(name = "fecha_firma_estudiante")
+    private java.time.OffsetDateTime fechaFirmaEstudiante;
+
+    @Column(name = "firmado_profesor_nombre", length = 160)
+    private String firmadoProfesorNombre;
+
+    @Column(name = "firmado_estudiante_nombre", length = 160)
+    private String firmadoEstudianteNombre;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "documento_pdf_id")
     private Documento documentoPdf;
