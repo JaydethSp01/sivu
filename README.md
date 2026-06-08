@@ -1,93 +1,165 @@
 # SIVU — Sistema de Vinculación Universitaria
 
-> Plataforma para automatizar el proceso de vinculación de estudiantes a prácticas profesionales de pregrado (3 prácticas de 6 meses) en la Universidad Empresarial.
+> Plataforma que automatiza el proceso de **Coformación Empresarial** de la Fundación
+> Universitaria Empresarial de la Cámara de Comercio de Bogotá (Uniempresarial): desde la
+> hoja de vida del estudiante hasta el informe final de la práctica, con generación de los
+> formatos institucionales oficiales en PDF, firmas con sello de tiempo, y asistencia con IA.
 
-Proyecto final de **Despliegue Continuo** que demuestra la integración entre desarrollo de software, calidad, automatización y despliegue continuo aplicando prácticas profesionales de ingeniería de software, DevOps e integración del Model Context Protocol (MCP).
+Proyecto final de **Despliegue Continuo**. Demuestra integración de desarrollo, calidad,
+automatización, despliegue continuo y **Model Context Protocol (MCP) + IA**.
+
+---
+
+## 🚀 Demo en vivo (producción)
+
+| Pieza | URL |
+|---|---|
+| **Aplicación** | **https://sivu-platform.vercel.app** |
+| Backend (API) | https://sivu-backend.onrender.com · [Swagger](https://sivu-backend.onrender.com/swagger-ui.html) |
+| IA sidecar | https://sivu-ia-sidecar.onrender.com/health |
+
+**Usuarios demo** (sembrados automáticamente):
+
+| Rol (UI) | Email | Password |
+|---|---|---|
+| Admin | `admin@uempresarial.edu.co` | `Admin123*` |
+| **Coformación** (coordinador) | `coord@uempresarial.edu.co` | `Coord123*` |
+| Estudiante | `kelly@est.uempresarial.edu.co` | `Estudiante123*` |
+| Empresa | `rrhh@coally.com` | `Empresa123*` |
+
+> ⚠️ **Cold start**: el backend corre en Render free y se "duerme" tras 15 min de inactividad.
+> Un cron externo (cron-job.org) lo mantiene caliente. Si la primera carga tarda ~2 min, es eso —
+> recarga y listo. Detalle y arquitectura de despliegue en [`docs/DESPLIEGUE.md`](./docs/DESPLIEGUE.md).
 
 ---
 
 ## Tabla de contenido
 
-- [Resumen del proyecto](#resumen-del-proyecto)
+- [Resumen](#resumen)
+- [El proceso de Coformación (qué automatiza)](#el-proceso-de-coformación-qué-automatiza)
+- [Roles del sistema](#roles-del-sistema)
 - [Stack tecnológico](#stack-tecnológico)
 - [Arquitectura](#arquitectura)
 - [Estructura del monorepo](#estructura-del-monorepo)
 - [Cómo ejecutar en local](#cómo-ejecutar-en-local)
-- [Endpoints y documentación](#endpoints-y-documentación)
-- [Pruebas](#pruebas)
-- [Calidad de código](#calidad-de-código)
-- [CI/CD](#cicd)
+- [Asistencia con IA (Claude Code, sin API key)](#asistencia-con-ia-claude-code-sin-api-key)
 - [Integración MCP](#integración-mcp)
-- [Trazabilidad Scrum](#trazabilidad-scrum)
-- [Equipo](#equipo)
+- [Despliegue en la nube](#despliegue-en-la-nube)
+- [Pruebas y calidad](#pruebas-y-calidad)
+- [Para el equipo (onboarding)](#para-el-equipo-onboarding)
 
 ---
 
-## Resumen del proyecto
+## Resumen
 
-**Problema (AS-IS):** El proceso actual de vinculación a prácticas en la universidad presenta cuellos de botella como carga manual de documentos por correo, verificación humana repetitiva de condiciones académicas, correos de seguimiento redactados a mano, correcciones del documento de formalización por errores de captura y nula visibilidad para el estudiante sobre el estado de su trámite.
+**Problema (AS-IS):** el proceso de prácticas tiene cuellos de botella — carga manual de
+documentos por correo, validación humana repetitiva, seguimiento a mano, los 5 formatos
+oficiales llenados en Word/Excel, y nula visibilidad para el estudiante.
 
-**Solución (TO-BE — SIVU):** Un sistema empresarial que automatiza la carga y validación de documentos, la verificación académica vía API, el matching entre estudiantes y vacantes, la generación del documento de formalización y la notificación en cada cambio de estado, con un dashboard de seguimiento "tipo pedido" para el estudiante y un agente MCP que permite hacer consultas en lenguaje natural sobre el estado del proceso.
+**Solución (SIVU):** sistema que automatiza hoja de vida institucional, validación académica,
+matching estudiante↔vacante, entrevistas, carta de presentación, convenio con firmas, la fase
+activa completa (plan de actividades, actas, evaluaciones), el informe final y el cierre — con
+**generación automática de los 5 formatos oficiales en PDF**, notificaciones, un **dashboard de
+analítica institucional**, **asistencia con IA** sobre el informe final, y un **agente MCP** para
+consultar el sistema en lenguaje natural.
+
+---
+
+## El proceso de Coformación (qué automatiza)
+
+El ciclo completo de una práctica, de inicio a fin:
+
+```
+Hoja de Vida ──► revisión Coformación (aprobar/feedback) ──► Vacantes ──► Postulación
+     │                                                                        │
+     └── PDF HV Uniempresarial                                                ▼
+                                                              Entrevista ──► Carta de presentación
+                                                                                │
+                                          Convenio ◄────────────────────────────┘
+                                    (3 firmas: estudiante/empresa/universidad)
+                                             │
+                          ┌──────────────────┴─── FASE ACTIVA (por trimestre) ───┐
+                          ▼                                                       ▼
+              Plan de Actividades (GAC-FM-10)                     3 Actas de reunión (GAC-FM-11)
+              Evaluación del Tutor (GAC-FM-007)            Evaluación del Profesor (GAC-FM-1, 2 cortes)
+                          │
+                          ▼
+              Plan de Mejora ──► Informe Final (GTC-FM-16) ──► Cierre con nota + continuidad
+```
+
+**Programa interno (plan B):** si el estudiante no consigue empresa, solicita ingreso →
+Coformación aprueba y le **asigna un proyecto interno**.
+
+**Los 5 formatos oficiales** se generan como PDF institucional desde el sistema:
+
+| Formato | Documento |
+|---|---|
+| **GAC-FM-007 v2.0** | Evaluación del Tutor Empresarial |
+| **GAC-FM-1 v3** | Evaluación del Profesor Acompañante (2 cortes) |
+| **GAC-FM-11 v2.0** | Acta de Reunión de Acompañamiento |
+| **GAC-FM-10 v2.0** | Plan de Actividades |
+| **GTC-FM-16 v3.0** | Informe Final del Plan de Mejora |
+
+Además: PDF de Hoja de Vida y de Convenio. Las firmas llevan **sello de tiempo**.
+
+---
+
+## Roles del sistema
+
+| Rol técnico | UI muestra | Qué hace |
+|---|---|---|
+| `ADMIN` | Admin | Todo + gestión de usuarios y catálogos |
+| `COORDINADOR` | **Coformación** | Aprueba HV (con feedback), gestiona empresas/tutores, asigna proyectos del programa interno, ve analítica |
+| `ESTUDIANTE` | Estudiante | Llena su HV, se postula, llena formularios, ve su práctica |
+| `EMPRESA` | Empresa | Publica vacantes, programa entrevistas, evalúa practicantes |
+| `MCP_AGENT` | — | Cuenta de servicio para el agente MCP |
+
+> El menú lateral y las etiquetas cambian dinámicamente según el rol (ej. "Estudiantes" vs
+> "Mis practicantes", "Prácticas" vs "Mi práctica").
 
 ---
 
 ## Stack tecnológico
 
-| Capa | Tecnología | Justificación |
-|---|---|---|
-| **Backend** | Spring Boot 3 · Java 21 · Maven · package-by-feature en capas (`domain` JPA / `persistence` / `service` / `web`) | API REST robusta, JPA limpio, Spring Security madura. Ver ADR-003. |
-| **API docs** | springdoc-openapi (Swagger UI 3) | Estándar OpenAPI 3, generación automática |
-| **Core DB** | PostgreSQL 16 | Relacional para el dominio (estudiantes, vacantes, postulaciones, convenios) |
-| **Users DB** | MongoDB 7 | Otra tecnología (requisito); flexible para perfil, sesiones y roles |
-| **Frontend** | React 18 · Vite · TypeScript · TailwindCSS · shadcn/ui | Look empresarial moderno, dev experience óptima |
-| **Estado FE** | TanStack Query · Zustand · react-hook-form · zod | Cache server-state, store ligero, validación end-to-end |
-| **Email local** | MailHog (SMTP + UI 8025) | Visualizar emails de notificación en demo |
-| **IA / MCP** | Node.js · TypeScript · `@modelcontextprotocol/sdk` | Punto 8 del enunciado: agente que consulta DB/API/logs |
-| **Tests unit** | JUnit 5 · Mockito · Spring Boot Test | Cobertura ≥ 70% |
-| **Tests API** | Postman · Newman | Contract testing en CI |
-| **Tests E2E** | Cypress | Flujo completo en navegador real |
-| **Tests carga** | k6 | Liviano, corre headless en CI |
-| **Calidad** | SonarCloud · JaCoCo | Quality gate bloqueante en PR |
-| **CI/CD** | GitHub Actions · Docker · docker-compose | Pipeline build→test→quality→package |
-| **Contenedores** | Docker · docker-compose | Reproducible en local |
+| Capa | Tecnología |
+|---|---|
+| **Backend** | Spring Boot 3 · Java 21 · Maven · **package-by-feature** (cada feature: `domain` / `persistence` / `service` / `web` / `pdf`) |
+| **Core DB** | PostgreSQL 16 + **Flyway** (21 migraciones versionadas) |
+| **Users DB** | MongoDB 7 (colección `usuarios` / auth) |
+| **PDFs** | OpenPDF (server-side, sin dependencias externas) |
+| **Auth** | Spring Security · JWT (HS512) · `@PreAuthorize` por rol |
+| **Frontend** | React 18 · Vite · TypeScript estricto · TailwindCSS · shadcn/ui · **PWA instalable** |
+| **Estado FE** | TanStack Query · Zustand · react-hook-form · zod · @dnd-kit |
+| **IA** | **`@anthropic-ai/claude-agent-sdk`** vía sidecar Node (usa el plan Claude Code, **sin API key**) |
+| **MCP** | Node · TypeScript · `@modelcontextprotocol/sdk` (9 tools) |
+| **Email local** | MailHog (SMTP + UI 8025) |
+| **Despliegue** | Docker · Render (backend + sidecar) · Vercel (frontend) · Neon (PG) · Mongo Atlas |
+| **Calidad** | JUnit 5 · Mockito · ESLint flat config · SonarCloud · JaCoCo |
+| **CI/CD** | GitHub Actions |
 
 ---
 
 ## Arquitectura
 
-Ver [`docs/arquitectura/README.md`](./docs/arquitectura/README.md) para diagramas C4 y descripción detallada.
-
-Diagrama de alto nivel:
-
 ```
-┌──────────────┐     HTTPS/JWT     ┌─────────────────────────┐
-│  Frontend    │ ─────────────────▶│  Backend Spring Boot    │
-│  React+Vite  │                   │  - REST API             │
-└──────┬───────┘                   │  - Auth (JWT)           │
-       │                           │  - Automatizaciones     │
-       │                           │  - Notif Email          │
-       │                           └────┬──────────┬─────────┘
-       │                                │          │
-       │                          JPA   │          │  Spring Data Mongo
-       │                                ▼          ▼
-       │                       ┌─────────────┐ ┌──────────┐
-       │                       │ PostgreSQL  │ │ MongoDB  │
-       │                       │  (dominio)  │ │ (users)  │
-       │                       └─────────────┘ └──────────┘
-       │
-       │                                ┌──────────┐
-       │   Consulta vía MCP            │ MailHog  │
-       │  ┌────────────────────────┐    │ SMTP/UI  │
-       └─▶│ MCP Server (Node TS)   │    └──────────┘
-          │  - listar_pendientes   │
-          │  - estado_postulacion  │
-          │  - estadisticas_proc   │
-          │  - logs_pipeline       │
-          └────────────┬───────────┘
-                       │
-                       ▼
-                  Claude Desktop / cliente MCP
+┌──────────────┐   HTTPS/JWT   ┌──────────────────────────┐   JPA   ┌──────────────┐
+│  Frontend    │ ─────────────▶│  Backend Spring Boot     │ ───────▶│ PostgreSQL   │
+│  React (PWA) │               │  - REST API + Security   │         │ (dominio)    │
+│  Vercel      │               │  - Flyway · OpenPDF      │         └──────────────┘
+└──────────────┘               │  - 5 formatos oficiales  │ Spring  ┌──────────────┐
+                               │  - Analytics · Alertas   │ Data    │ MongoDB      │
+                               └───┬──────────────────┬───┘ Mongo──▶│ (usuarios)   │
+                          HTTP /review                │              └──────────────┘
+                                   ▼                  ▼
+                        ┌──────────────────┐   ┌──────────────┐
+                        │ IA Sidecar (Node)│   │ MCP Server   │──▶ Claude Desktop /
+                        │ claude-agent-sdk │   │ (Node, stdio)│    Claude Code
+                        │ → plan Claude    │   │ 9 tools      │
+                        │   Code (sin key) │   └──────────────┘
+                        └──────────────────┘
 ```
+
+Diagramas C4/BPMN/ER en [`docs/arquitectura/`](./docs/arquitectura/) y [`docs/diagramas/`](./docs/diagramas/).
 
 ---
 
@@ -95,46 +167,39 @@ Diagrama de alto nivel:
 
 ```
 sivu/
-├── backend/                  Spring Boot 3 + Java 21 (arquitectura hexagonal)
+├── backend/                  Spring Boot 3 + Java 21 — package-by-feature
 │   ├── src/main/java/co/uempresarial/sivu/
-│   │   ├── domain/           Entidades y reglas de negocio puras
-│   │   ├── application/      Casos de uso (services)
-│   │   ├── infrastructure/   Adaptadores: web, persistencia, mail, seguridad
-│   │   └── SivuApplication.java
-│   ├── src/main/resources/
-│   ├── src/test/             Tests unitarios e integración
-│   ├── pom.xml
+│   │   ├── hojavida/         Hoja de Vida institucional + hilo de feedback
+│   │   ├── postulacion/      Postulaciones + máquina de estados + eventos
+│   │   ├── entrevista/       Entrevistas y resultados
+│   │   ├── convenio/         Convenios + firmas (3 partes) + PDF
+│   │   ├── trimestre/        Plan actividades, actas, evaluaciones (GAC-FM-*), PDFs
+│   │   ├── informefinalpm/   Informe Final (GTC-FM-16) + carátula/nivel
+│   │   ├── solicitudfabrica/ Programa interno (solicitud → aprobar → asignar)
+│   │   ├── plantilla/        Formularios configurables (admin) + respuestas
+│   │   ├── analytics/        Dashboard: empleabilidad, embudo, estudiantes en riesgo
+│   │   ├── ia/               Feedback IA al informe (sidecar + heurístico fallback)
+│   │   ├── documento/        Documentos con estados de vigencia (ACTIVO/VENCIDO)
+│   │   ├── automatizacion/   Matching, certificados, alertas de plazos, notificaciones
+│   │   ├── security/         JWT, Spring Security, Usuario (Mongo)
+│   │   ├── admin/            Seed + jobs manuales
+│   │   └── ...               estudiante, empresa, vacante, tutor, cohorte, catalogo
+│   ├── src/main/resources/db/migration/   V1..V21 (Flyway)
 │   └── Dockerfile
-├── frontend/                 React + Vite + TS + Tailwind + shadcn/ui
-│   ├── src/
-│   │   ├── components/       shadcn/ui + componentes propios
-│   │   ├── features/         Por dominio (estudiantes, vacantes, etc.)
-│   │   ├── lib/              api client, auth, utils
-│   │   └── pages/
-│   ├── package.json
-│   └── Dockerfile
-├── mcp-server/               Servidor MCP en Node TypeScript
-│   ├── src/index.ts
-│   ├── src/tools/            Definición de herramientas MCP
-│   └── package.json
-├── tests/
-│   ├── postman/              Colección + entorno
-│   ├── newman/               Configuración para CI
-│   ├── cypress/              E2E flujo completo
-│   └── k6/                   Scripts de rendimiento
-├── infra/
-│   ├── docker/               Dockerfiles auxiliares
-│   └── mailhog/              Config MailHog
+├── frontend/                 React + Vite + TS + Tailwind + shadcn/ui (PWA)
+│   └── src/features/<modulo>/   páginas por dominio co-localizadas
+├── ia-sidecar/               Servicio IA (Node) — plan Claude Code, sin API key
+├── mcp-server/               Servidor MCP (Node TS) — 9 tools
+├── scripts/
+│   └── seed-demo-lifecycle.py   Siembra un ciclo de práctica COMPLETO vía API
 ├── docs/
-│   ├── arquitectura/         Diagramas C4, decisiones técnicas
-│   ├── scrum/                Product Backlog, Sprint Backlog, historias, DoD
-│   └── diagramas/            BPMN AS-IS / TO-BE, ER, secuencia
-├── .github/workflows/        Pipelines GitHub Actions
-├── docker-compose.yml        Orquestación local completa
-├── docker-compose.dev.yml    Solo BBDD + MailHog para desarrollo
-├── .env.example
-├── Makefile                  Atajos: make up, make test, make demo
-├── sonar-project.properties
+│   ├── PARA-EL-EQUIPO.md     ← guía de onboarding para compañeros
+│   ├── DESPLIEGUE.md         ← receta de deploy (Render+Vercel+Neon+Atlas) + gotchas
+│   ├── REVISION_COFORMACION.md   revisión del sistema para la oficina
+│   ├── auditoria-*.md        auditorías (arquitectura, BD, frontend, UX/UI)
+│   ├── arquitectura/ diagramas/ scrum/ capturas/
+├── .github/workflows/        CI + keep-alive
+├── docker-compose.yml · docker-compose.dev.yml · Makefile · .env.example
 └── README.md
 ```
 
@@ -143,160 +208,117 @@ sivu/
 ## Cómo ejecutar en local
 
 ### Prerrequisitos
+- Docker ≥ 24 (para las BBDD), Java 21, Node.js ≥ 20, `make` (opcional)
 
-- Docker ≥ 24 y docker-compose plugin
-- Java 21 (sólo si quieres correr el backend fuera de Docker)
-- Node.js ≥ 20 (sólo si quieres correr frontend/mcp fuera de Docker)
-- `make` (opcional pero recomendado)
-
-### Opción 1 — todo dockerizado (recomendado para demo)
+### Opción A — dependencias en Docker + apps en host (recomendado dev)
 
 ```bash
-cd /home/jaydethsp/sivu
+cd sivu
 cp .env.example .env
-make up        # levanta postgres, mongo, mailhog, backend, frontend
-make seed      # carga datos demo (estudiantes, empresas, vacantes)
+make dev-deps              # postgres + mongo + mailhog en Docker
+
+# Backend (en otra terminal). Si el 8080 está ocupado, usa SERVER_PORT=8081:
+cd backend && SERVER_PORT=8081 mvn spring-boot:run -Dspring-boot.run.profiles=dev
+
+# Frontend (en otra terminal). Apunta al backend:
+cd frontend
+echo "VITE_API_BASE_URL=http://localhost:8081/api/v1" > .env.local
+pnpm install && pnpm dev   # http://localhost:5173
 ```
 
-Servicios disponibles:
+El backend **siembra usuarios + catálogos automáticamente** en perfil `dev` (ver `SeedBootstrap`).
 
-| Servicio | URL |
+### Sembrar un ciclo de práctica COMPLETO (datos para demo)
+
+Para que **ninguna pantalla salga vacía** (postulaciones, convenios, evaluaciones, informe…):
+
+```bash
+python3 scripts/seed-demo-lifecycle.py http://localhost:8081/api/v1
+```
+
+Recorre HV → postulación → entrevista → carta → convenio → trimestre → plan → 3 actas →
+evaluaciones → plan de mejora → informe final → cierre. Es **idempotente** (sale si ya existe).
+
+### Opción B — todo dockerizado
+
+```bash
+make up        # postgres, mongo, mailhog, backend, frontend
+make demo      # + espera salud + seed
+```
+
+| Servicio | URL local |
 |---|---|
 | Frontend | http://localhost:5173 |
-| Backend API | http://localhost:8080/api |
-| Swagger UI | http://localhost:8080/swagger-ui.html |
-| MailHog UI | http://localhost:8025 |
-| PostgreSQL | localhost:5432 (user: `sivu` / pass en `.env`) |
-| MongoDB | localhost:27017 |
-
-Usuarios demo (creados por `make seed`):
-
-| Rol | Email | Password |
-|---|---|---|
-| Admin | admin@uempresarial.edu.co | `Admin123*` |
-| Coordinador | coord@uempresarial.edu.co | `Coord123*` |
-| Estudiante | kelly@est.uempresarial.edu.co | `Estudiante123*` |
-| Empresa | rrhh@coally.com | `Empresa123*` |
-
-### Opción 2 — desarrollo (hot reload)
-
-```bash
-make dev-deps  # solo postgres, mongo, mailhog
-# en otra terminal:
-cd backend && ./mvnw spring-boot:run
-# en otra terminal:
-cd frontend && npm install && npm run dev
-# (opcional) en otra terminal para el agente MCP:
-cd mcp-server && npm install && npm run dev
-```
-
-### Apagar y limpiar
-
-```bash
-make down       # detiene contenedores conservando volúmenes
-make clean      # elimina contenedores y volúmenes (reset total)
-```
+| Swagger | http://localhost:8080/swagger-ui.html (o 8081) |
+| MailHog | http://localhost:8025 |
 
 ---
 
-## Endpoints y documentación
+## Asistencia con IA (Claude Code, sin API key)
 
-La API expone Swagger UI en **http://localhost:8080/swagger-ui.html** y el contrato OpenAPI en `/v3/api-docs`. La colección Postman equivalente está en [`tests/postman/SIVU.postman_collection.json`](./tests/postman/SIVU.postman_collection.json).
+El **Informe Final** tiene un botón **"Revisar con IA"** que da feedback formativo
+(secciones vacías/pobres, extensión, carátula, recomendaciones).
 
-Dominio principal:
-
-| Etapa del flujo | Recurso | Endpoint base | CRUD |
-|---|---|---|---|
-| Pre-práctica | Estudiantes | `/api/v1/estudiantes` | C R U D |
-| Pre-práctica | Empresas | `/api/v1/empresas` | C R U D |
-| Pre-práctica | Vacantes | `/api/v1/vacantes` | C R U D |
-| Pre-práctica | Postulaciones | `/api/v1/postulaciones` | C R U D (+`/historial`, `/estado`) |
-| Pre-práctica | Documentos | `/api/v1/documentos` | C R U D (+`/validar`) |
-| Formalización | Convenios | `/api/v1/convenios` | C R U D (+`/firmar/{parte}`, `/tutores`, `/finalizar`) |
-| Durante | Tutores | `/api/v1/tutores` | C R U D |
-| Durante | Bitácoras | `/api/v1/bitacoras` | C R U D (+`/enviar`, `/revisar`, `/por-convenio/{id}`) |
-| Durante | Evaluaciones | `/api/v1/evaluaciones` | C R U D (+`/resumen/{convenioId}`) |
-| Cierre | Certificado | `/api/v1/automatizacion/certificado/{convenioId}` + `/convenios/{id}/certificado` | POST + GET |
-| Soporte | Auth | `/api/v1/auth/{login,register,refresh,me}` | — |
-| Soporte | Automatización | `/api/v1/automatizacion/{matching,validar-academico,formalizar,info}` | — |
-
----
-
-## Pruebas
-
-| Tipo | Tecnología | Cómo correr |
-|---|---|---|
-| Unitarias | JUnit 5 + Mockito | `cd backend && ./mvnw test` |
-| Integración | Spring Boot Test + Testcontainers | `cd backend && ./mvnw verify -P integration` |
-| Contrato API | Newman | `make test-api` |
-| E2E | Cypress | `make test-e2e` (cabezal) o `make test-e2e-ci` (headless) |
-| Carga | k6 | `make test-load` |
-
-Cobertura JaCoCo en `backend/target/site/jacoco/index.html` tras correr `./mvnw verify`.
-
----
-
-## Calidad de código
-
-SonarCloud bloquea PRs que rompan el Quality Gate. Configuración en [`sonar-project.properties`](./sonar-project.properties). Quality gate exige: cobertura ≥ 70 % en código nuevo, 0 vulnerabilidades, 0 bugs críticos, duplicación ≤ 3 %.
-
----
-
-## CI/CD
-
-Pipeline principal en [`.github/workflows/ci.yml`](./.github/workflows/ci.yml). Trazabilidad:
+- **Sin API key de pago**: el `ia-sidecar/` usa `@anthropic-ai/claude-agent-sdk`, que corre con
+  el **plan de Claude Code** (sesión logueada en local, o `CLAUDE_CODE_OAUTH_TOKEN` en deploy).
+- **Fallback**: si el sidecar no está disponible, el backend usa un **revisor heurístico local**
+  (sin red), así el sistema funciona siempre.
 
 ```
-requerimientos (docs/scrum/)
-        │
-        ▼
-desarrollo (PR → review)
-        │
-        ▼
-pruebas (unit → newman → cypress → k6)
-        │
-        ▼
-calidad (SonarCloud Quality Gate)
-        │
-        ▼
-despliegue (build Docker → docker-compose up demo)
+Frontend ──► Backend /ia/informe-final/{id}/feedback ──► IA Sidecar /review ──► Claude Code
+                          (si IA_SIDECAR_URL está set, si no: heurístico local)
 ```
+
+Correr local: `cd ia-sidecar && npm install && npm start` (usa tu sesión de Claude Code), y el
+backend con `IA_SIDECAR_URL=http://localhost:8090`. Detalle en [`ia-sidecar/README.md`](./ia-sidecar/README.md).
 
 ---
 
 ## Integración MCP
 
-El servidor MCP (`mcp-server/`) expone herramientas que permiten a un agente (p. ej. Claude Desktop) consultar el sistema en lenguaje natural:
+El `mcp-server/` (Node, stdio) expone **9 tools** para que Claude Desktop / Claude Code consulten
+SIVU en lenguaje natural — cumple el punto 8 del enunciado:
 
-- `listar_estudiantes_pendientes_validacion`
-- `consultar_estado_postulacion(estudianteId)`
-- `listar_vacantes_activas`
-- `estadisticas_proceso_vinculacion`
-- `revisar_logs_pipeline(workflowRunId?)`
-- `asistente_tecnico(query)`
+`listar_vacantes_activas` · `consultar_estado_postulacion` · `estadisticas_proceso` ·
+`verificar_academico` · `listar_estudiantes_pendientes_validacion` · `matching_estudiante_vacante` ·
+`asistente_tecnico` · `revisar_logs_pipeline` · **`revisar_informe_final`**
 
-Ejemplo de pregunta soportada: *"¿Qué estudiantes han tenido más rechazos en validación esta semana?"* → el agente invoca `estadisticas_proceso_vinculacion` y `listar_estudiantes_pendientes_validacion` y responde con datos reales del backend.
-
-Configuración del cliente en [`mcp-server/README.md`](./mcp-server/README.md).
+Ejemplo: *"revisa el informe final 1"* → el agente llama `revisar_informe_final`, el backend
+devuelve el análisis, y Claude le suma su revisión cualitativa. Setup en
+[`mcp-server/README.md`](./mcp-server/README.md).
 
 ---
 
-## Trazabilidad Scrum
+## Despliegue en la nube
 
-Artefactos en [`docs/scrum/`](./docs/scrum/):
-
-- Product Backlog ([`product-backlog.md`](./docs/scrum/product-backlog.md))
-- Sprint Backlog Sprint 1 y Sprint 2
-- Historias de usuario con criterios de aceptación
-- Definition of Done
-- Tablero de gestión: GitHub Projects ([enlace en el README de Scrum])
-
-Mapa requerimiento → endpoint → test → pipeline en [`docs/scrum/trazabilidad.md`](./docs/scrum/trazabilidad.md).
+Arquitectura productiva: **Vercel** (frontend) + **Render** (backend + IA sidecar) +
+**Neon** (PostgreSQL) + **Mongo Atlas** (usuarios). La receta completa, las variables de entorno
+y los **gotchas resueltos** (puerto $PORT, JWT ≥64 chars, health de mail/mongo, rewrite SPA, etc.)
+están en **[`docs/DESPLIEGUE.md`](./docs/DESPLIEGUE.md)**.
 
 ---
 
-## Equipo
+## Pruebas y calidad
 
-Proyecto desarrollado por el equipo de la asignatura **Despliegue Continuo** de la Universidad Empresarial.
+| Tipo | Cómo correr |
+|---|---|
+| Unitarias backend | `cd backend && mvn test` |
+| Lint frontend | `cd frontend && pnpm lint` |
+| Type-check FE | `cd frontend && pnpm tsc --noEmit` |
+| Type-check MCP | `cd mcp-server && pnpm typecheck` |
+| Build prod FE | `cd frontend && pnpm build` |
+| Contrato API | `make test-api` (Newman) |
+| E2E | `make test-e2e` (Cypress) |
 
-Documentación de soporte en `/home/jaydethsp/proyecto_kelly_doc/`.
+---
+
+## Para el equipo (onboarding)
+
+👉 Lee **[`docs/PARA-EL-EQUIPO.md`](./docs/PARA-EL-EQUIPO.md)** — guía de arranque para compañeros:
+mapa del proyecto, convenciones, cómo levantar todo, troubleshooting, y cómo contribuir.
+
+Auditorías técnicas (arquitectura, BD, frontend, UX/UI) en [`docs/auditorias-INDEX.md`](./docs/auditorias-INDEX.md).
+
+---
+
+Desarrollado por el equipo de **Despliegue Continuo** — Uniempresarial.
