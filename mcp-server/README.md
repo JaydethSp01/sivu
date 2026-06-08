@@ -18,6 +18,7 @@ Servidor [Model Context Protocol](https://modelcontextprotocol.io) que expone el
 | 6 | `matching_estudiante_vacante` | Score, recomendación y justificación del matching. | `{ estudianteId: number, vacanteId: number }` |
 | 7 | `asistente_tecnico` | Recibe una pregunta natural, decide qué tool aplicar y la ejecuta si la intención es clara. | `{ pregunta: string }` |
 | 8 | `revisar_logs_pipeline` | Último run de GitHub Actions del repo (o uno específico). Devuelve stub informativo si no hay `GITHUB_TOKEN`/`GITHUB_REPO`. | `{ workflowRunId?: number, limit?: number }` |
+| 9 | `revisar_informe_final` | Pide al backend el análisis del Informe Final del PM (secciones vacías, extensión, carátula) para que Claude le sume su revisión cualitativa. Cierra el §6.4 (IA al informe). | `{ informeId: number }` |
 
 Todas las tools devuelven `{ content: [{ type: 'text', text: ... }] }`. Si algo falla (backend caído, 401, etc.) el resultado lleva `isError: true` y un mensaje accionable en español.
 
