@@ -1,0 +1,26 @@
+# Mantiene "caliente" el backend y el sidecar en Render free para evitar el
+# cold start de ~2 min. Hace ping cada 10 minutos al healthcheck, de modo que
+# el instance nunca queda inactivo los 15 min que disparan el spin-down.
+#
+# Nota: Render free da 750 horas/mes por workspace. Mantener servicios
+# despiertos 24/7 las consume; para una ventana de demo está bien. Si se quiere
+# always-on permanente y sin límites, el plan Starter ($7/mes) es lo robusto.
+name: keep-alive
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"   # cada 10 minutos
+  workflow_dispatch:          # también se puede disparar a mano
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping backend
+        run: |
+          curl -s -m 60 -o /dev/null -w "backend: %{http_code} en %{time_total}s\n" \
+            https://sivu-backend.onrender.com/actuator/health || true
+      - name: Ping IA sidecar
+        run: |
+          curl -s -m 60 -o /dev/null -w "sidecar: %{http_code} en %{time_total}s\n" \
+            https://sivu-ia-sidecar.onrender.com/health || true
