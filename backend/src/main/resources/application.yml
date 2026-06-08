@@ -32,7 +32,8 @@ spring:
             enable: false
 
 server:
-  port: 8080
+  # En PaaS (Render) el puerto lo inyecta la plataforma vía $PORT.
+  port: ${PORT:8080}
   error:
     # Mensajes detallados solo en dev/docker. En producción mejor 'never'/'on_param'.
     include-message: on_param

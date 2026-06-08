@@ -71,3 +71,4 @@ backend/storage/
 data/
 .mongo-atlas.env
 *.atlas.env
+.neon*.env
