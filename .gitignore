@@ -72,3 +72,4 @@ data/
 .mongo-atlas.env
 *.atlas.env
 .neon*.env
+.render*.env
