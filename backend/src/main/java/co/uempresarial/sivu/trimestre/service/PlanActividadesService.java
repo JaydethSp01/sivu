@@ -22,10 +22,16 @@ public class PlanActividadesService {
     private final PlanActividadesRepository repository;
     private final TrimestreRepository trimestreRepository;
     private final TrimestreMapper mapper;
+    private final co.uempresarial.sivu.trimestre.pdf.PlanActividadesPdfGenerator pdfGenerator;
 
     @Transactional(readOnly = true)
     public PlanActividadesResponse obtener(Long trimestreId) {
         return mapper.toResponse(obtenerEntidad(trimestreId));
+    }
+
+    @Transactional(readOnly = true)
+    public byte[] generarPdf(Long trimestreId) {
+        return pdfGenerator.generar(obtenerEntidad(trimestreId));
     }
 
     public PlanActividades obtenerEntidad(Long trimestreId) {

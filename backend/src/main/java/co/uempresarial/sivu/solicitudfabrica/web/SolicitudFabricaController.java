@@ -2,9 +2,11 @@ package co.uempresarial.sivu.solicitudfabrica.web;
 
 import co.uempresarial.sivu.solicitudfabrica.domain.EstadoSolicitudFabrica;
 import co.uempresarial.sivu.solicitudfabrica.service.SolicitudFabricaService;
+import co.uempresarial.sivu.solicitudfabrica.web.dto.AsignarProyectoRequest;
 import co.uempresarial.sivu.solicitudfabrica.web.dto.ResolverSolicitudRequest;
 import co.uempresarial.sivu.solicitudfabrica.web.dto.SolicitudFabricaRequest;
 import co.uempresarial.sivu.solicitudfabrica.web.dto.SolicitudFabricaResponse;
+import co.uempresarial.sivu.solicitudfabrica.web.dto.VacanteInternaDisponibleResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -60,5 +62,20 @@ public class SolicitudFabricaController {
     public ResponseEntity<SolicitudFabricaResponse> rechazar(@PathVariable Long id,
                                                               @Valid @RequestBody ResolverSolicitudRequest body) {
         return ResponseEntity.ok(service.rechazar(id, body));
+    }
+
+    @GetMapping("/vacantes-internas-disponibles")
+    @PreAuthorize("hasAnyRole('COORDINADOR','ADMIN')")
+    @Operation(summary = "Listar vacantes internas PUBLICADAS con cupos disponibles, para el selector de asignación")
+    public ResponseEntity<List<VacanteInternaDisponibleResponse>> vacantesInternasDisponibles() {
+        return ResponseEntity.ok(service.listarVacantesInternasDisponibles());
+    }
+
+    @PostMapping("/{id}/asignar-proyecto")
+    @PreAuthorize("hasAnyRole('COORDINADOR','ADMIN')")
+    @Operation(summary = "Asignar manualmente una vacante interna a una solicitud APROBADA. Crea la postulación y pasa a ASIGNADA.")
+    public ResponseEntity<SolicitudFabricaResponse> asignarProyecto(@PathVariable Long id,
+                                                                     @Valid @RequestBody AsignarProyectoRequest body) {
+        return ResponseEntity.ok(service.asignarProyecto(id, body.vacanteId()));
     }
 }

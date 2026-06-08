@@ -3,6 +3,8 @@ package co.uempresarial.sivu.hojavida.web;
 import co.uempresarial.sivu.hojavida.domain.EstadoHojaVida;
 import co.uempresarial.sivu.hojavida.pdf.HojaVidaPdfGenerator;
 import co.uempresarial.sivu.hojavida.service.HojaVidaService;
+import co.uempresarial.sivu.hojavida.web.dto.HojaVidaComentarioRequest;
+import co.uempresarial.sivu.hojavida.web.dto.HojaVidaComentarioResponse;
 import co.uempresarial.sivu.hojavida.web.dto.HojaVidaRequest;
 import co.uempresarial.sivu.hojavida.web.dto.HojaVidaResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -47,7 +49,7 @@ public class HojaVidaController {
     @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Descargar la HV como PDF con formato Uniempresarial")
     public ResponseEntity<byte[]> descargarPdf(@PathVariable Long estudianteId) {
-        byte[] pdf = pdfGenerator.generar(service.obtenerEntidad(estudianteId));
+        byte[] pdf = service.generarPdf(estudianteId);
         return ResponseEntity.ok()
             .contentType(MediaType.APPLICATION_PDF)
             .header(HttpHeaders.CONTENT_DISPOSITION,
@@ -84,5 +86,23 @@ public class HojaVidaController {
     @Operation(summary = "Bandeja de Coordinación: HVs en un estado dado (default ENVIADA)")
     public ResponseEntity<List<HojaVidaResponse>> bandeja(@RequestParam(defaultValue = "ENVIADA") EstadoHojaVida estado) {
         return ResponseEntity.ok(service.listarPorEstado(estado));
+    }
+
+    // ----- Hilo de comentarios -----
+
+    @GetMapping("/{hvId}/comentarios")
+    @PreAuthorize("isAuthenticated()")
+    @Operation(summary = "Historial conversacional entre Coformación y el estudiante sobre la HV")
+    public ResponseEntity<List<HojaVidaComentarioResponse>> listarComentarios(@PathVariable Long hvId) {
+        return ResponseEntity.ok(service.listarComentarios(hvId));
+    }
+
+    @PostMapping("/{hvId}/comentarios")
+    @PreAuthorize("hasAnyRole('COORDINADOR','ADMIN','ESTUDIANTE')")
+    @Operation(summary = "Agregar un mensaje al hilo (Coformación=FEEDBACK, Estudiante=RESPUESTA)")
+    public ResponseEntity<HojaVidaComentarioResponse> agregarComentario(
+        @PathVariable Long hvId,
+        @Valid @RequestBody HojaVidaComentarioRequest body) {
+        return ResponseEntity.ok(service.agregarComentario(hvId, body));
     }
 }

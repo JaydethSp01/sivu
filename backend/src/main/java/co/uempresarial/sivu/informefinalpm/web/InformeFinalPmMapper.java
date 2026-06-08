@@ -11,6 +11,9 @@ public class InformeFinalPmMapper {
         return new InformeFinalPmResponse(
             i.getId(),
             i.getPlanMejora() != null ? i.getPlanMejora().getId() : null,
+            i.getTituloInforme(),
+            i.getNivel(),
+            i.getCargoTutorEmpresarial(),
             i.getResumenEjecutivo(),
             i.getContextualizacion(),
             i.getPlanteamientoProblema(),

@@ -22,6 +22,12 @@ public class ActaReunionService {
     private final ActaReunionRepository repository;
     private final TrimestreRepository trimestreRepository;
     private final TrimestreMapper mapper;
+    private final co.uempresarial.sivu.trimestre.pdf.ActaReunionPdfGenerator pdfGenerator;
+
+    @Transactional(readOnly = true)
+    public byte[] generarPdf(Long id) {
+        return pdfGenerator.generar(obtenerEntidad(id));
+    }
 
     @Transactional(readOnly = true)
     public List<ActaReunionResponse> listarPorTrimestre(Long trimestreId) {

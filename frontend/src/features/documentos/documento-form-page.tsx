@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -176,6 +177,8 @@ function NuevoDocumentoForm(): JSX.Element {
     isStudent ? usuario?.estudianteId ?? null : null
   );
   const [postulacionId, setPostulacionId] = useState<number | null>(null);
+  const [fechaVigenciaInicio, setFechaVigenciaInicio] = useState<string>("");
+  const [fechaVigenciaFin, setFechaVigenciaFin] = useState<string>("");
 
   const estudiantes = useQuery({
     queryKey: ["/estudiantes", "for-doc-upload"],
@@ -208,6 +211,8 @@ function NuevoDocumentoForm(): JSX.Element {
       const params: Record<string, string | number> = { tipo };
       if (estudianteId) params.estudianteId = estudianteId;
       if (postulacionId) params.postulacionId = postulacionId;
+      if (fechaVigenciaInicio) params.fechaVigenciaInicio = fechaVigenciaInicio;
+      if (fechaVigenciaFin) params.fechaVigenciaFin = fechaVigenciaFin;
       return api.post<Documento>("/documentos/upload", formData, {
         params,
         // Axios reemplaza este valor con multipart/form-data; boundary=... al
@@ -287,6 +292,37 @@ function NuevoDocumentoForm(): JSX.Element {
               </Select>
             </div>
           )}
+
+          {/* Fechas de vigencia (opcionales) — relevantes para EPS,
+              certificados, contratos. Si se setean, el sistema calcula
+              ACTIVO/POR_VENCER/VENCIDO automáticamente. */}
+          <div className="grid sm:grid-cols-2 gap-3">
+            <div className="space-y-2">
+              <Label htmlFor="doc-vigencia-inicio">
+                Vigencia desde <span className="text-muted-foreground font-normal">(opcional)</span>
+              </Label>
+              <Input
+                id="doc-vigencia-inicio"
+                type="date"
+                value={fechaVigenciaInicio}
+                onChange={(e) => setFechaVigenciaInicio(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="doc-vigencia-fin">
+                Vigencia hasta <span className="text-muted-foreground font-normal">(opcional)</span>
+              </Label>
+              <Input
+                id="doc-vigencia-fin"
+                type="date"
+                value={fechaVigenciaFin}
+                onChange={(e) => setFechaVigenciaFin(e.target.value)}
+              />
+              <p className="text-xs text-muted-foreground">
+                Útil para EPS, certificados o contratos. Se marca como vencido al pasar la fecha.
+              </p>
+            </div>
+          </div>
 
           {estudianteId && (postulaciones.data?.length ?? 0) > 0 && (
             <div className="space-y-2">

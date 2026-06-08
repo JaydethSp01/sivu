@@ -5,6 +5,12 @@ spring:
     active: ${SPRING_PROFILES_ACTIVE:dev}
   jpa:
     open-in-view: false
+    properties:
+      hibernate:
+        # Carga por lotes las colecciones LAZY: evita N+1 sin caer en
+        # MultipleBagFetchException al traer entidades con 2+ List. Global
+        # a todos los perfiles (dev lo reafirma en su YAML).
+        default_batch_fetch_size: 16
   jackson:
     serialization:
       write-dates-as-timestamps: false
@@ -55,7 +61,10 @@ springdoc:
 app:
   security:
     jwt:
-      secret: ${JWT_SECRET:please_change_me_to_something_at_least_64_chars_long_so_hs512_is_happy_okay}
+      # Obligatorio definir JWT_SECRET via variable de entorno en cualquier despliegue.
+      # Los perfiles dev/test definen un default explícito en sus YAMLs respectivos.
+      # Si no se define en prod, la app falla al arrancar (lo cual es lo que queremos).
+      secret: ${JWT_SECRET:}
       access-token-expiration-minutes: ${JWT_EXPIRATION_MINUTES:60}
       refresh-token-expiration-days: ${JWT_REFRESH_EXPIRATION_DAYS:7}
   mail:
@@ -67,3 +76,11 @@ app:
     promedio-minimo: 3.5
   matching:
     score-minimo-recomendacion: 70
+  ia:
+    # URL del IA sidecar (Node + claude-agent-sdk con plan Claude Code, sin API key).
+    # Vacío = revisor heurístico local. Ej local: http://localhost:8090
+    sidecar-url: ${IA_SIDECAR_URL:}
+  alertas:
+    plazos:
+      enabled: ${ALERTAS_PLAZOS_ENABLED:true}
+      dias-anticipacion: ${ALERTAS_PLAZOS_DIAS:3}

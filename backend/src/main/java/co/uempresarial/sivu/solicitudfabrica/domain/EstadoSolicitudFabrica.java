@@ -7,5 +7,7 @@ package co.uempresarial.sivu.solicitudfabrica.domain;
 public enum EstadoSolicitudFabrica {
     PENDIENTE,
     APROBADA,
+    /** APROBADA + Coformación ya eligió la vacante interna concreta y se creó la postulación. */
+    ASIGNADA,
     RECHAZADA
 }

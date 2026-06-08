@@ -44,6 +44,12 @@ public class InformeFinalPmService {
             throw new BusinessException("El Informe Final ya está APROBADO y no se puede modificar");
         }
 
+        informe.setTituloInforme(request.tituloInforme());
+        if (request.nivel() != null && (request.nivel() < 1 || request.nivel() > 3)) {
+            throw new BusinessException("El nivel del informe debe ser 1, 2 o 3");
+        }
+        informe.setNivel(request.nivel());
+        informe.setCargoTutorEmpresarial(request.cargoTutorEmpresarial());
         informe.setResumenEjecutivo(request.resumenEjecutivo());
         informe.setContextualizacion(request.contextualizacion());
         informe.setPlanteamientoProblema(request.planteamientoProblema());
@@ -154,6 +160,11 @@ public class InformeFinalPmService {
     public InformeFinalPm obtenerEntidad(Long id) {
         return repository.findById(id)
             .orElseThrow(() -> new ResourceNotFoundException("InformeFinalPm", id));
+    }
+
+    @Transactional(readOnly = true)
+    public byte[] generarPdf(Long id) {
+        return pdfGenerator.generar(obtenerEntidad(id));
     }
 
     private void validarSeccionesMinimas(InformeFinalPm i) {

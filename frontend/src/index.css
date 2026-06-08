@@ -4,30 +4,30 @@
 
 @layer base {
   :root {
-    /* ---- Paleta institucional Uniempresarial ----
-       Primario   azul        #2575fc  → HSL 219 97% 57%
-       Secundario verde lima  #7ed500  → HSL 84  100% 42%
-       Acento     violeta     #605BE5  → HSL 243 73% 63%
+    /* ---- Paleta institucional Uniempresarial (logo oficial) ----
+       Primario   azul UE     #1B3380  → HSL 224 64% 30%
+       Secundario rojo UE     #E2173A  → HSL 350 80% 49%
+       Acento     azul claro  #4A6FCF  → HSL 222 55% 55%
        Coral CTA  coral       #fe8f75  → HSL 12  98% 73%
     */
     --background: 210 20% 98%;
-    --foreground: 222 47% 11%;
+    --foreground: 224 47% 11%;
     --card: 0 0% 100%;
-    --card-foreground: 222 47% 11%;
+    --card-foreground: 224 47% 11%;
     --popover: 0 0% 100%;
-    --popover-foreground: 222 47% 11%;
+    --popover-foreground: 224 47% 11%;
 
-    --primary: 219 97% 57%;
+    --primary: 224 64% 30%;
     --primary-foreground: 0 0% 100%;
-    --primary-soft: 219 100% 96%;
+    --primary-soft: 224 64% 95%;
 
-    --secondary: 84 100% 42%;
-    --secondary-foreground: 84 100% 12%;
-    --secondary-soft: 84 90% 94%;
+    --secondary: 350 80% 49%;
+    --secondary-foreground: 0 0% 100%;
+    --secondary-soft: 350 80% 96%;
 
-    --accent: 243 73% 63%;
+    --accent: 222 55% 55%;
     --accent-foreground: 0 0% 100%;
-    --accent-soft: 243 100% 96%;
+    --accent-soft: 222 70% 96%;
 
     --coral: 12 98% 73%;
     --coral-foreground: 12 60% 18%;
@@ -49,7 +49,7 @@
 
     --border: 216 19% 90%;
     --input: 216 19% 90%;
-    --ring: 219 97% 57%;
+    --ring: 224 64% 30%;
     --radius: 0.75rem;
 
     --shadow-xs: 0 1px 2px 0 hsl(222 47% 11% / 0.04);
@@ -70,17 +70,17 @@
     --popover: 222 47% 10%;
     --popover-foreground: 210 40% 98%;
 
-    --primary: 219 100% 68%;
-    --primary-foreground: 222 47% 7%;
-    --primary-soft: 219 60% 18%;
+    --primary: 222 70% 70%;
+    --primary-foreground: 224 47% 7%;
+    --primary-soft: 224 50% 22%;
 
-    --secondary: 84 90% 52%;
-    --secondary-foreground: 222 47% 7%;
-    --secondary-soft: 84 60% 14%;
+    --secondary: 350 85% 62%;
+    --secondary-foreground: 0 0% 100%;
+    --secondary-soft: 350 50% 22%;
 
-    --accent: 243 80% 72%;
-    --accent-foreground: 222 47% 7%;
-    --accent-soft: 243 50% 18%;
+    --accent: 222 70% 72%;
+    --accent-foreground: 224 47% 7%;
+    --accent-soft: 222 50% 22%;
 
     --coral: 12 98% 73%;
     --coral-foreground: 12 60% 14%;
@@ -102,7 +102,7 @@
 
     --border: 222 33% 18%;
     --input: 222 33% 22%;
-    --ring: 219 100% 68%;
+    --ring: 222 70% 70%;
 
     --shadow-xs: 0 1px 2px 0 hsl(0 0% 0% / 0.4);
     --shadow-sm: 0 1px 3px 0 hsl(0 0% 0% / 0.5),

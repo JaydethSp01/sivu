@@ -257,7 +257,7 @@ export interface EntrevistaResponse {
 
 export type EstadoInformeFinalPm = "BORRADOR" | "ENTREGADO" | "APROBADO" | "RECHAZADO";
 
-export type EstadoSolicitudFabrica = "PENDIENTE" | "APROBADA" | "RECHAZADA";
+export type EstadoSolicitudFabrica = "PENDIENTE" | "APROBADA" | "ASIGNADA" | "RECHAZADA";
 
 export interface SolicitudFabricaResponse {
   id: number;
@@ -271,12 +271,103 @@ export interface SolicitudFabricaResponse {
   fechaSolicitud: string;
   fechaResolucion?: string | null;
   resueltoPorNombre?: string | null;
+  vacanteAsignadaId?: number | null;
+  vacanteAsignadaTitulo?: string | null;
+  postulacionCreadaId?: number | null;
   createdAt: string;
   updatedAt: string;
 }
 
 export interface SolicitudFabricaRequest {
   motivo: string;
+}
+
+// ----- Asistencia con IA al Informe Final (§6.4) -----
+
+export interface HallazgoIA {
+  severidad: "ALTO" | "MEDIO" | "BAJO" | string;
+  seccion: string;
+  detalle: string;
+}
+
+export interface FeedbackInformeIA {
+  /** "local" = análisis local sin LLM externo. */
+  fuente: string;
+  reporteMarkdown: string;
+  hallazgos: HallazgoIA[];
+  aviso?: string | null;
+}
+
+// ----- Analytics institucional (§6.1 + §6.5) -----
+
+export interface AnalyticsResumen {
+  estudiantesActivos: number;
+  empresasActivas: number;
+  vacantesPublicadas: number;
+  convenios_BORRADOR: number;
+  convenios_ACTIVOS: number;
+  convenios_FINALIZADOS: number;
+  hvAprobadas: number;
+  hvEnRevision: number;
+  postulacionesAbiertas: number;
+  entrevistasAgendadas: number;
+  solicitudesProgramaInternoPendientes: number;
+  alertasPlazoUrgente: number;
+}
+
+export interface AnalyticsEmbudo {
+  conteoPorEstado: Record<string, number>;
+  total: number;
+}
+
+export interface AnalyticsEmpleabilidadEmpresa {
+  empresaId: number;
+  razonSocial: string;
+  convenios: number;
+  continuidadSi: number;
+  continuidadNo: number;
+  tasaContinuidad: number;
+}
+
+export interface AnalyticsEmpleabilidadResumen {
+  convenios: number;
+  continuidadSi: number;
+  continuidadNo: number;
+  tasaContinuidadGlobal: number;
+  topEmpresas: AnalyticsEmpleabilidadEmpresa[];
+}
+
+export interface EstudianteEnRiesgo {
+  id: number;
+  nombreCompleto: string;
+  email: string;
+  programa: string;
+  motivo: string;
+}
+
+/** Comentario del hilo conversacional asociado a una Hoja de Vida. */
+export type HojaVidaAutorRol = "COORDINADOR" | "ADMIN" | "ESTUDIANTE" | "SISTEMA";
+export type HojaVidaTipoComentario = "FEEDBACK" | "RESPUESTA" | "SISTEMA";
+
+export interface HojaVidaComentarioResponse {
+  id: number;
+  hojaVidaId: number;
+  autorNombre: string;
+  autorRol: HojaVidaAutorRol;
+  tipo: HojaVidaTipoComentario;
+  mensaje: string;
+  createdAt: string;
+}
+
+/** Vacante interna disponible para asignar — proyección recortada. */
+export interface VacanteInternaDisponible {
+  id: number;
+  titulo: string;
+  areaPractica?: string | null;
+  modalidad?: string | null;
+  ciudad?: string | null;
+  cuposDisponibles?: number | null;
+  programasDirigidos?: string | null;
 }
 
 export interface InformeFinalPmResponse {
@@ -377,6 +468,9 @@ export type ParteFirmaConvenio = "ESTUDIANTE" | "EMPRESA" | "UNIVERSIDAD";
 
 export type EstadoDocumento = "RECIBIDO" | "VALIDADO" | "RECHAZADO";
 
+/** Estado derivado de las fechas de vigencia (cálculo en backend). */
+export type EstadoVigencia = "SIN_VIGENCIA" | "ACTIVO" | "POR_VENCER" | "VENCIDO";
+
 export interface Documento {
   id: number;
   estudianteId: number | null;
@@ -395,6 +489,9 @@ export interface Documento {
   estado: EstadoDocumento;
   observacionesValidacion: string | null;
   fechaValidacion: string | null;
+  fechaVigenciaInicio: string | null;
+  fechaVigenciaFin: string | null;
+  estadoVigencia: EstadoVigencia;
   createdAt: string;
   updatedAt: string;
 }

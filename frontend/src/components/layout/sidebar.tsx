@@ -1,17 +1,16 @@
 import { NavLink } from "react-router-dom";
 import {
+  BarChart3,
   Building2,
   BookCopy,
   Briefcase,
   CalendarClock,
-  ClipboardList,
   Factory,
   FileCog,
   Inbox as InboxIcon,
   FileSignature,
   FileText,
   FileUser,
-  GraduationCap,
   Inbox,
   LayoutDashboard,
   ListChecks,
@@ -25,6 +24,7 @@ import type { LucideIcon } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 import type { Rol } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { UniempresarialLogo } from "@/components/uniempresarial-logo";
 
 interface NavItem {
   to: string;
@@ -71,12 +71,6 @@ function labelEntrevistas(roles: Rol[]): string {
   }
   return "Entrevistas";
 }
-function labelEvaluaciones(roles: Rol[]): string {
-  if (roles.includes("EMPRESA") && !roles.includes("ADMIN") && !roles.includes("COORDINADOR")) {
-    return "Evaluar practicantes";
-  }
-  return "Evaluaciones";
-}
 function labelDocumentos(roles: Rol[]): string {
   return roles.includes("EMPRESA") && !roles.includes("ADMIN") && !roles.includes("COORDINADOR")
     ? "Documentos de mi empresa"
@@ -88,40 +82,81 @@ function labelTutores(roles: Rol[]): string {
     : "Tutores";
 }
 
+// Solo el Dashboard queda como ítem principal; el resto se agrupa por dominio
+// para que cada rol vea un menú razonable y no una lista plana de 22 items.
 const MAIN_ITEMS: NavItem[] = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard },
-  { to: "/estudiantes", label: labelEstudiantes, icon: Users, roles: ["ADMIN", "COORDINADOR", "EMPRESA"] },
-  // ADMIN/COORDINADOR ven la lista completa; EMPRESA pura va a su propia pantalla "Mi empresa".
-  { to: "/empresas", label: "Empresas", icon: Building2, roles: ["ADMIN", "COORDINADOR"] },
-  { to: "/mi-empresa", label: "Mi empresa", icon: Building2, roles: ["EMPRESA"] },
-  // "Proponer empresa" es acción exclusiva del ESTUDIANTE. Coord/admin reciben la
-  // propuesta en "Empresas" (filtro estado=EN_REVISION) para aprobar/rechazar.
-  { to: "/empresas/proponer", label: "Proponer empresa", icon: Building2, roles: ["ESTUDIANTE"] },
-  { to: "/mi-hoja-vida", label: "Mi Hoja de Vida", icon: FileUser, roles: ["ESTUDIANTE"] },
-  { to: "/hoja-vida/bandeja", label: "Hojas de vida por revisar", icon: Inbox, roles: ["ADMIN", "COORDINADOR"] },
-  { to: "/vacantes", label: labelVacantes, icon: Briefcase },
-  { to: "/postulaciones", label: labelPostulaciones, icon: Send },
-  { to: "/entrevistas", label: labelEntrevistas, icon: CalendarClock },
-  { to: "/documentos", label: labelDocumentos, icon: FileText },
-  { to: "/convenios", label: labelPracticas, icon: FileSignature },
-  { to: "/tutores", label: labelTutores, icon: UserCog, roles: ["ADMIN", "COORDINADOR", "EMPRESA", "MCP_AGENT"] },
-  { to: "/evaluaciones/new", label: labelEvaluaciones, icon: ClipboardList, roles: ["ADMIN", "COORDINADOR", "EMPRESA"] },
-  { to: "/matching", label: "Recomendar candidatos", icon: Sparkles, roles: ["ADMIN", "COORDINADOR"] },
-  { to: "/fabrica-soluciones", label: "Programa interno", icon: Factory, roles: ["ADMIN", "COORDINADOR"] },
-  { to: "/programa-interno/solicitudes", label: "Solicitudes programa interno", icon: Inbox, roles: ["ADMIN", "COORDINADOR"] },
-  { to: "/plantillas", label: "Plantillas de formularios", icon: FileCog, roles: ["ADMIN", "COORDINADOR"] },
-  { to: "/mis-formularios", label: "Mis formularios", icon: InboxIcon },
-  { to: "/admin/usuarios", label: "Usuarios", icon: Users, roles: ["ADMIN"] },
 ];
 
 const GROUPS: NavGroup[] = [
+  // 1. Mi perfil — lo que cada rol gestiona sobre SÍ mismo.
   {
-    label: "Catálogos",
+    label: "Mi perfil",
+    items: [
+      { to: "/mi-hoja-vida", label: "Mi Hoja de Vida", icon: FileUser, roles: ["ESTUDIANTE"] },
+      { to: "/mi-empresa", label: "Mi empresa", icon: Building2, roles: ["EMPRESA"] },
+      { to: "/empresas/proponer", label: "Proponer empresa", icon: Building2, roles: ["ESTUDIANTE"] },
+      { to: "/mis-formularios", label: "Mis formularios", icon: InboxIcon },
+    ],
+  },
+  // 2. Personas — listas que comparten Coformación y Empresa, con etiquetas
+  //    distintas según rol ("Estudiantes" vs "Mis practicantes").
+  {
+    label: "Personas",
+    items: [
+      { to: "/estudiantes", label: labelEstudiantes, icon: Users, roles: ["ADMIN", "COORDINADOR", "EMPRESA"] },
+      { to: "/tutores", label: labelTutores, icon: UserCog, roles: ["ADMIN", "COORDINADOR", "EMPRESA", "MCP_AGENT"] },
+    ],
+  },
+  // 3. Coformación — acciones académicas exclusivas del coordinador.
+  {
+    label: "Coformación",
     roles: ["ADMIN", "COORDINADOR"],
     items: [
+      { to: "/hoja-vida/bandeja", label: "Hojas de vida por revisar", icon: Inbox },
+      { to: "/matching", label: "Recomendar candidatos", icon: Sparkles },
+      { to: "/analytics", label: "Analítica institucional", icon: BarChart3 },
+    ],
+  },
+  // 3. Empresas & vacantes — quién contrata y qué buscan.
+  {
+    label: "Empresas & vacantes",
+    items: [
+      { to: "/empresas", label: "Empresas", icon: Building2, roles: ["ADMIN", "COORDINADOR"] },
+      { to: "/vacantes", label: labelVacantes, icon: Briefcase },
+      // Vista compartida ESTUDIANTE/EMPRESA/COORD/ADMIN — la etiqueta cambia por rol.
+      { to: "/postulaciones", label: labelPostulaciones, icon: Send },
+      { to: "/entrevistas", label: labelEntrevistas, icon: CalendarClock },
+    ],
+  },
+  // 4. Procesos & soportes — práctica activa, documentos, formularios.
+  {
+    label: "Procesos & soportes",
+    items: [
+      { to: "/convenios", label: labelPracticas, icon: FileSignature },
+      { to: "/documentos", label: labelDocumentos, icon: FileText },
+    ],
+  },
+  // 5. Programa interno — plan B académico. Solo coord/admin gestionan; los
+  // estudiantes proponen su solicitud desde el Dashboard, no desde el sidebar.
+  {
+    label: "Programa interno",
+    roles: ["ADMIN", "COORDINADOR"],
+    items: [
+      { to: "/fabrica-soluciones", label: "Cartera de proyectos", icon: Factory },
+      { to: "/programa-interno/solicitudes", label: "Solicitudes recibidas", icon: Inbox },
+    ],
+  },
+  // 6. Administración — solo COORDINADOR/ADMIN gestionan plantillas y catálogos.
+  {
+    label: "Administración",
+    roles: ["ADMIN", "COORDINADOR"],
+    items: [
+      { to: "/plantillas", label: "Plantillas de formularios", icon: FileCog },
       { to: "/catalogos/modalidades", label: "Modalidades", icon: BookCopy },
       { to: "/catalogos/tipos-requisito", label: "Tipos de requisito", icon: Tags },
       { to: "/catalogos/matriz", label: "Matriz de requisitos", icon: ListChecks },
+      { to: "/admin/usuarios", label: "Usuarios del sistema", icon: Users, roles: ["ADMIN"] },
     ],
   },
 ];
@@ -180,7 +215,15 @@ export function Sidebar({ collapsed, embedded = false }: SidebarProps): JSX.Elem
   const usuario = useAuthStore((s) => s.usuario);
   const userRoles: Rol[] = usuario?.roles ?? [];
   const items = MAIN_ITEMS.filter((i) => !i.roles || hasRole(...i.roles));
-  const groups = GROUPS.filter((g) => !g.roles || hasRole(...g.roles));
+  // Cada grupo se filtra por su propio rol Y se reduce a sólo los items que el
+  // usuario puede ver. Grupos sin ningún item visible se ocultan completos.
+  const groups = GROUPS
+    .filter((g) => !g.roles || hasRole(...g.roles))
+    .map((g) => ({
+      ...g,
+      items: g.items.filter((i) => !i.roles || hasRole(...i.roles)),
+    }))
+    .filter((g) => g.items.length > 0);
 
   return (
     <aside
@@ -193,12 +236,7 @@ export function Sidebar({ collapsed, embedded = false }: SidebarProps): JSX.Elem
       )}
     >
       <div className="flex items-center gap-3 border-b border-border/70 px-4 h-16">
-        <div className="relative shrink-0">
-          <div className="absolute inset-0 -m-1 rounded-xl bg-uni-gradient opacity-20 blur-md" />
-          <div className="relative flex h-9 w-9 items-center justify-center rounded-xl bg-uni-gradient text-primary-foreground shadow-md">
-            <GraduationCap className="h-5 w-5" />
-          </div>
-        </div>
+        <UniempresarialLogo size={36} />
         {!collapsed && (
           <div className="leading-tight">
             <div className="font-display text-base font-bold tracking-tight">SIVU</div>

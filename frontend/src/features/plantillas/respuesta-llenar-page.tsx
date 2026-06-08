@@ -182,7 +182,7 @@ export function RespuestaLlenarPage(): JSX.Element {
   const setValor = (criterioId: number, patch: Partial<ValorCriterio>) =>
     setValores((prev) => ({
       ...prev,
-      [criterioId]: { criterioId, ...prev[criterioId], ...patch },
+      [criterioId]: { ...prev[criterioId], criterioId, ...patch },
     }));
 
   return (

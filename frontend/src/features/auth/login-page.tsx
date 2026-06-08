@@ -8,7 +8,6 @@ import {
   ArrowRight,
   Eye,
   EyeOff,
-  GraduationCap,
   Loader2,
   Moon,
   Sparkles,
@@ -16,6 +15,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { UniempresarialLogo } from "@/components/uniempresarial-logo";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { api, extractApiMessage } from "@/lib/api";
 import { useAuthStore } from "@/lib/auth-store";
@@ -105,15 +105,13 @@ export function LoginPage(): JSX.Element {
         {theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
       </Button>
 
-      {/* Logo + chip institucional */}
-      <div className="absolute top-5 left-5 z-50 flex items-center gap-2.5">
-        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-uni-gradient text-primary-foreground shadow-md ring-1 ring-white/10">
-          <GraduationCap className="h-4.5 w-4.5" />
-        </div>
+      {/* Logo institucional */}
+      <div className="absolute top-4 left-5 z-50 flex items-center gap-3">
+        <UniempresarialLogo size={64} />
         <div className="leading-tight">
-          <div className="font-display text-sm font-bold tracking-tight">SIVU</div>
-          <div className="text-[9px] uppercase tracking-[0.18em] text-muted-foreground">
-            Uniempresarial
+          <div className="font-display text-lg font-bold tracking-tight">SIVU</div>
+          <div className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+            Coformación Empresarial
           </div>
         </div>
       </div>
@@ -154,6 +152,36 @@ export function LoginPage(): JSX.Element {
               <Stat n="100%" label="trazable" />
               <span className="h-10 w-px bg-border" />
               <Stat n="0" label="papel" />
+            </div>
+
+            {/* Foto institucional: instalaciones de Uniempresarial */}
+            <div className="mt-12 relative overflow-hidden rounded-2xl border border-border/60 shadow-2xl ring-1 ring-primary/10 max-w-xl group">
+              {/* Halo institucional detrás de la foto */}
+              <div aria-hidden className="absolute -inset-1 -z-10 rounded-3xl bg-uni-gradient opacity-20 blur-xl" />
+              <img
+                src="/brand/uniempresarial-fachada.jpg"
+                alt="Sede Uniempresarial — Fundación Universitaria Empresarial de la Cámara de Comercio de Bogotá"
+                className="w-full h-72 object-cover object-center transition-transform duration-700 group-hover:scale-[1.03]"
+                loading="lazy"
+              />
+              {/* Overlay con un acento institucional */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent" />
+              <div aria-hidden className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-primary via-accent to-secondary" />
+
+              <div className="absolute bottom-0 left-0 right-0 p-5">
+                <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-black/30 px-2.5 py-1 backdrop-blur-md mb-2">
+                  <span className="h-1.5 w-1.5 rounded-full bg-secondary" />
+                  <span className="text-[10px] uppercase tracking-[0.18em] text-white font-semibold">
+                    Sede principal
+                  </span>
+                </div>
+                <div className="font-display text-lg font-bold leading-tight text-white drop-shadow-md">
+                  Fundación Universitaria Empresarial
+                </div>
+                <div className="text-xs text-white/90 mt-0.5">
+                  de la Cámara de Comercio de Bogotá
+                </div>
+              </div>
             </div>
           </section>
 

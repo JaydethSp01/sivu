@@ -12,6 +12,7 @@ import {
   Loader2,
   Save,
   Send,
+  Sparkles,
   ThumbsDown,
   ThumbsUp,
 } from "lucide-react";
@@ -38,7 +39,11 @@ import {
   ESTADO_INFORME_FINAL_LABELS,
   ESTADO_INFORME_FINAL_VARIANT,
 } from "@/lib/enum-labels";
-import type { InformeFinalPmRequest, InformeFinalPmResponse } from "@/lib/types";
+import type {
+  FeedbackInformeIA,
+  InformeFinalPmRequest,
+  InformeFinalPmResponse,
+} from "@/lib/types";
 
 interface FormValues {
   resumenEjecutivo: string;
@@ -330,6 +335,23 @@ export function InformeFinalPmPage(): JSX.Element {
     onError: (e) => toast.error(extractApiMessage(e)),
   });
 
+  const [feedbackIAResult, setFeedbackIAResult] = useState<FeedbackInformeIA | null>(null);
+  const feedbackIA = useMutation({
+    mutationFn: async () => {
+      if (!informe.data) throw new Error("Guarda el borrador primero");
+      const { data } = await api.post<FeedbackInformeIA>(
+        `/ia/informe-final/${informe.data.id}/feedback`,
+        {}
+      );
+      return data;
+    },
+    onSuccess: (data) => {
+      setFeedbackIAResult(data);
+      toast.success("Revisión completada");
+    },
+    onError: (e) => toast.error(extractApiMessage(e)),
+  });
+
   const faltantes = useMemo(
     () =>
       SECCIONES_OBLIGATORIAS.filter((k) => !String(values[k] ?? "").trim()).map(
@@ -443,6 +465,21 @@ export function InformeFinalPmPage(): JSX.Element {
               PDF
             </Button>
           )}
+          {informe.data && (
+            <Button
+              variant="outline"
+              onClick={() => feedbackIA.mutate()}
+              disabled={feedbackIA.isPending}
+              title="Análisis automatizado de tu informe (secciones vacías, extensión, carátula, etc.)"
+            >
+              {feedbackIA.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Sparkles className="h-4 w-4" />
+              )}{" "}
+              Revisar con IA
+            </Button>
+          )}
           {canRevisar && estado === "ENTREGADO" && (
             <>
               <Button onClick={() => aprobar.mutate()} disabled={aprobar.isPending}>
@@ -503,6 +540,34 @@ export function InformeFinalPmPage(): JSX.Element {
                   Revisado por {informe.data.revisadoPorNombre}
                 </p>
               )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {feedbackIAResult && (
+        <Card className="border-primary/30 bg-primary-soft/30">
+          <CardHeader className="pb-2">
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center gap-2 text-base">
+                <Sparkles className="h-4 w-4 text-primary" /> Revisión automática del informe
+              </CardTitle>
+              <Button variant="ghost" size="sm" onClick={() => setFeedbackIAResult(null)}>
+                Cerrar
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent className="pt-0 space-y-3">
+            {feedbackIAResult.aviso && (
+              <div className="text-xs text-muted-foreground italic">{feedbackIAResult.aviso}</div>
+            )}
+            <pre className="whitespace-pre-wrap text-sm font-sans leading-relaxed bg-background/60 rounded-md p-3 border border-border/60">
+              {feedbackIAResult.reporteMarkdown}
+            </pre>
+            <div className="text-xs text-muted-foreground">
+              💡 Para un análisis cualitativo más profundo, conecta tu Claude Desktop /
+              Claude Code al MCP server <code>sivu-mcp-server</code> (carpeta{" "}
+              <code>mcp-server/</code>) y pídele "revisar informe final {informe.data?.id}".
             </div>
           </CardContent>
         </Card>

@@ -55,4 +55,12 @@ public class SolicitudFabrica extends BaseEntity {
 
     @Column(name = "resuelto_por_nombre", length = 160)
     private String resueltoPorNombre;
+
+    // Vacante interna que Coformación asignó manualmente (estado ASIGNADA).
+    @Column(name = "vacante_asignada_id")
+    private Long vacanteAsignadaId;
+
+    // Postulación generada al asignar la vacante. Sirve para rastreo bidireccional.
+    @Column(name = "postulacion_creada_id")
+    private Long postulacionCreadaId;
 }

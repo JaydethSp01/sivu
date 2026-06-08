@@ -145,15 +145,17 @@ export const TIPO_REUNION_LABELS: Record<TipoReunion, string> = {
 export const ESTADO_SOLICITUD_FABRICA_LABELS: Record<string, string> = {
   PENDIENTE: "Pendiente",
   APROBADA: "Aprobada",
+  ASIGNADA: "Con proyecto asignado",
   RECHAZADA: "Rechazada",
 };
 
 export const ESTADO_SOLICITUD_FABRICA_VARIANT: Record<
   string,
-  "muted" | "warning" | "success" | "destructive"
+  "muted" | "warning" | "success" | "destructive" | "outline"
 > = {
   PENDIENTE: "warning",
-  APROBADA: "success",
+  APROBADA: "outline",
+  ASIGNADA: "success",
   RECHAZADA: "destructive",
 };
 

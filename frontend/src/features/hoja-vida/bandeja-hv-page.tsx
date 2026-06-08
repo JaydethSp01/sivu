@@ -9,8 +9,17 @@ import {
   FileUser,
   Inbox,
   Loader2,
+  MessageSquare,
   XCircle,
 } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { HojaVidaTimeline } from "@/features/hoja-vida/hoja-vida-timeline";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -60,6 +69,7 @@ export function BandejaHvPage(): JSX.Element {
   const qc = useQueryClient();
   const [estado, setEstado] = useState<EstadoHojaVida>("ENVIADA");
   const [rechazoTarget, setRechazoTarget] = useState<HojaVidaResponse | null>(null);
+  const [hiloTarget, setHiloTarget] = useState<HojaVidaResponse | null>(null);
   const [observaciones, setObservaciones] = useState("");
 
   const bandeja = useQuery({
@@ -198,6 +208,13 @@ export function BandejaHvPage(): JSX.Element {
                             <Eye className="h-4 w-4" /> Ver
                           </Link>
                         </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => setHiloTarget(hv)}
+                        >
+                          <MessageSquare className="h-4 w-4" /> Hilo
+                        </Button>
                         {hv.estado === "ENVIADA" && (
                           <>
                             <Button
@@ -234,6 +251,30 @@ export function BandejaHvPage(): JSX.Element {
           )}
         </CardContent>
       </Card>
+
+      <Dialog
+        open={hiloTarget !== null}
+        onOpenChange={(open) => {
+          if (!open) setHiloTarget(null);
+        }}
+      >
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>
+              Conversación con {hiloTarget?.estudianteNombreCompleto ?? "estudiante"}
+            </DialogTitle>
+            <DialogDescription>
+              Historial de feedback entre Coformación y el estudiante sobre esta Hoja de Vida.
+            </DialogDescription>
+          </DialogHeader>
+          {hiloTarget && (
+            <HojaVidaTimeline
+              hojaVidaId={hiloTarget.id}
+              emptyLabel="Aún no se ha enviado feedback ni el estudiante ha respondido."
+            />
+          )}
+        </DialogContent>
+      </Dialog>
 
       <AlertDialog
         open={rechazoTarget !== null}

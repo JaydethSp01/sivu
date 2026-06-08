@@ -32,12 +32,99 @@ public class InformeFinalPmPdfGenerator {
             Font bold   = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 11);
             Font h2     = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 13);
             Font titulo = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 16);
+            Font caratulaTitulo = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 24);
+            Font caratulaSub    = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 14);
+
+            // --- CARÁTULA (gap §6.3 del doc Coformación) ---
+            var pmCar = informe.getPlanMejora();
+            var trimCar = pmCar.getTrimestre();
+            var convCar = trimCar.getConvenio();
+            Estudiante estCar = convCar.getEstudiante();
+            String nombreCar = (safe(estCar.getNombres()) + " " + safe(estCar.getApellidos())).trim();
+
+            Paragraph inst = new Paragraph(
+                "FUNDACIÓN UNIVERSITARIA EMPRESARIAL\nDE LA CÁMARA DE COMERCIO DE BOGOTÁ",
+                bold);
+            inst.setAlignment(Element.ALIGN_CENTER);
+            doc.add(inst);
+            doc.add(spacer(8));
+            Paragraph cd = new Paragraph("Dirección de Coformación Empresarial", normal);
+            cd.setAlignment(Element.ALIGN_CENTER);
+            doc.add(cd);
+
+            doc.add(spacer(50));
+
+            Paragraph caratulaH = new Paragraph("INFORME FINAL", caratulaTitulo);
+            caratulaH.setAlignment(Element.ALIGN_CENTER);
+            doc.add(caratulaH);
+            Paragraph caratulaSubH = new Paragraph("PLAN ESPECIAL DE MEJORA", caratulaSub);
+            caratulaSubH.setAlignment(Element.ALIGN_CENTER);
+            doc.add(caratulaSubH);
+            doc.add(spacer(12));
+            if (informe.getNivel() != null) {
+                Paragraph nivelP = new Paragraph("NIVEL " + informe.getNivel(), caratulaSub);
+                nivelP.setAlignment(Element.ALIGN_CENTER);
+                doc.add(nivelP);
+            }
+
+            doc.add(spacer(40));
+
+            // Título del informe (campo nuevo §6.3)
+            String tituloInformeStr = informe.getTituloInforme();
+            if (tituloInformeStr == null || tituloInformeStr.isBlank()) {
+                tituloInformeStr = safe(pmCar.getTitulo());
+            }
+            Paragraph tInf = new Paragraph("\"" + tituloInformeStr + "\"", caratulaSub);
+            tInf.setAlignment(Element.ALIGN_CENTER);
+            doc.add(tInf);
+
+            doc.add(spacer(60));
+
+            Paragraph autor = new Paragraph("Presentado por:", normal);
+            autor.setAlignment(Element.ALIGN_CENTER);
+            doc.add(autor);
+            Paragraph autorN = new Paragraph(nombreCar, bold);
+            autorN.setAlignment(Element.ALIGN_CENTER);
+            doc.add(autorN);
+            Paragraph prog = new Paragraph(safe(estCar.getProgramaAcademico()), normal);
+            prog.setAlignment(Element.ALIGN_CENTER);
+            doc.add(prog);
+
+            doc.add(spacer(20));
+
+            Paragraph emp = new Paragraph("Empresa:", normal);
+            emp.setAlignment(Element.ALIGN_CENTER);
+            doc.add(emp);
+            Paragraph empN = new Paragraph(safe(convCar.getEmpresa().getRazonSocial()), bold);
+            empN.setAlignment(Element.ALIGN_CENTER);
+            doc.add(empN);
+            if (convCar.getTutorEmpresarial() != null) {
+                String tutorEmpStr = safe(convCar.getTutorEmpresarial().getNombres()) + " "
+                    + safe(convCar.getTutorEmpresarial().getApellidos());
+                if (informe.getCargoTutorEmpresarial() != null && !informe.getCargoTutorEmpresarial().isBlank()) {
+                    tutorEmpStr += " · " + informe.getCargoTutorEmpresarial();
+                } else if (convCar.getTutorEmpresarial().getCargo() != null) {
+                    tutorEmpStr += " · " + convCar.getTutorEmpresarial().getCargo();
+                }
+                Paragraph te = new Paragraph("Tutor empresarial: " + tutorEmpStr, small);
+                te.setAlignment(Element.ALIGN_CENTER);
+                doc.add(te);
+            }
+
+            doc.add(spacer(40));
+            Paragraph fecha = new Paragraph("Bogotá D.C. — " + LocalDate.now().format(FECHA), small);
+            fecha.setAlignment(Element.ALIGN_CENTER);
+            doc.add(fecha);
+
+            doc.newPage();
+            // --- FIN CARÁTULA ---
 
             // Header institucional GTC-FM-16
             Paragraph header = new Paragraph(
                 "UNIVERSIDAD EMPRESARIAL\n"
                 + "DIRECCIÓN DE COFORMACIÓN EMPRESARIAL\n"
-                + "Código: GTC-FM-16   Versión: V.01   Fecha: " + LocalDate.now().format(FECHA),
+                + "Código: GTC-FM-16   Versión: V.01   Fecha: " + LocalDate.now().format(FECHA)
+                + (informe.getNivel() != null ? "   Nivel: " + informe.getNivel() : ""),
                 small);
             header.setAlignment(Element.ALIGN_CENTER);
             doc.add(header);

@@ -8,9 +8,14 @@ import co.uempresarial.sivu.estudiante.domain.Estudiante;
 import co.uempresarial.sivu.estudiante.persistence.EstudianteRepository;
 import co.uempresarial.sivu.hojavida.domain.*;
 import co.uempresarial.sivu.hojavida.domain.EstadoHojaVida;
+import co.uempresarial.sivu.hojavida.persistence.HojaVidaComentarioRepository;
 import co.uempresarial.sivu.hojavida.persistence.HojaVidaRepository;
+import co.uempresarial.sivu.hojavida.web.dto.HojaVidaComentarioRequest;
+import co.uempresarial.sivu.hojavida.web.dto.HojaVidaComentarioResponse;
 import co.uempresarial.sivu.hojavida.web.dto.HojaVidaRequest;
 import co.uempresarial.sivu.hojavida.web.dto.HojaVidaResponse;
+import co.uempresarial.sivu.security.domain.Rol;
+import co.uempresarial.sivu.security.domain.Usuario;
 import co.uempresarial.sivu.automatizacion.service.NotificacionService;
 import co.uempresarial.sivu.security.service.CurrentUserService;
 import co.uempresarial.sivu.shared.exception.BusinessException;
@@ -37,6 +42,8 @@ public class HojaVidaService {
     private final NotificacionService notificacionService;
     private final CurrentUserService currentUser;
     private final DocumentoRepository documentoRepository;
+    private final HojaVidaComentarioRepository comentarioRepository;
+    private final co.uempresarial.sivu.hojavida.pdf.HojaVidaPdfGenerator pdfGenerator;
 
     @Transactional(readOnly = true)
     public HojaVidaResponse obtener(Long estudianteId) {
@@ -223,6 +230,11 @@ public class HojaVidaService {
                 "El estudiante " + estudianteId + " aún no tiene Hoja de Vida creada"));
     }
 
+    @Transactional(readOnly = true)
+    public byte[] generarPdf(Long estudianteId) {
+        return pdfGenerator.generar(obtenerEntidad(estudianteId));
+    }
+
     private HojaVidaResponse toResponse(HojaVida hv) {
         Estudiante e = hv.getEstudiante();
         String nombreCompleto = (e.getNombres() + " " + e.getApellidos()).trim();
@@ -290,6 +302,8 @@ public class HojaVidaService {
                 + ",\n\nTu HV está en revisión por la Oficina de Coformación de Uniempresarial."
                 + " Te notificaremos el resultado.\n\nEquipo SIVU");
 
+        registrarComentarioSistema(hv.getId(),
+            "El estudiante envió su Hoja de Vida a revisión de Coformación.");
         return toResponse(hv);
     }
 
@@ -305,6 +319,8 @@ public class HojaVidaService {
             hv.setAprobadaPorCoordMongoId(u.getId());
             hv.setAprobadaPorCoordNombre(u.getNombres() + " " + u.getApellidos());
         });
+        registrarComentarioSistema(hv.getId(),
+            "Hoja de Vida aprobada por Coformación. El estudiante ya puede postularse a vacantes.");
         notificacionService.enviarTexto(
             hv.getEstudiante().getEmail(),
             "[SIVU] ¡Tu Hoja de Vida fue aprobada!",
@@ -325,6 +341,12 @@ public class HojaVidaService {
         }
         hv.setEstado(EstadoHojaVida.RECHAZADA);
         hv.setObservacionesCoformacion(observaciones);
+        // Tanto el log de sistema como el feedback del coord quedan en el hilo
+        // para que el estudiante vea el historial completo, no solo el último.
+        registrarComentarioSistema(hv.getId(),
+            "Hoja de Vida devuelta con observaciones. Ajustá y reenviá.");
+        registrarComentarioCoord(hv.getId(),
+            HojaVidaComentario.TipoComentario.FEEDBACK, observaciones);
         notificacionService.enviarTexto(
             hv.getEstudiante().getEmail(),
             "[SIVU] Tu Hoja de Vida requiere ajustes",
@@ -334,6 +356,95 @@ public class HojaVidaService {
                 + "\n\nAjusta y vuelve a enviarla.\n\nEquipo SIVU");
         sincronizarDocumentoHv(hv);
         return toResponse(hv);
+    }
+
+    // ----- Hilo de comentarios -----
+
+    @Transactional(readOnly = true)
+    public List<HojaVidaComentarioResponse> listarComentarios(Long hvId) {
+        HojaVida hv = repository.findById(hvId)
+            .orElseThrow(() -> new ResourceNotFoundException("HojaVida", hvId));
+        verificarAccesoHv(hv);
+        return comentarioRepository.findByHojaVidaIdOrderByCreatedAtAsc(hv.getId()).stream()
+            .map(HojaVidaComentarioResponse::from)
+            .toList();
+    }
+
+    /**
+     * Crea un comentario en el hilo. El tipo se infiere del rol del autor:
+     * - COORDINADOR/ADMIN → FEEDBACK
+     * - ESTUDIANTE        → RESPUESTA
+     * Solo el dueño de la HV o COORDINADOR/ADMIN pueden comentar.
+     */
+    public HojaVidaComentarioResponse agregarComentario(Long hvId, HojaVidaComentarioRequest req) {
+        HojaVida hv = repository.findById(hvId)
+            .orElseThrow(() -> new ResourceNotFoundException("HojaVida", hvId));
+        verificarAccesoHv(hv);
+        Usuario u = currentUser.current()
+            .orElseThrow(() -> new BusinessException("No hay usuario autenticado"));
+        HojaVidaComentario.AutorRol autorRol;
+        HojaVidaComentario.TipoComentario tipo;
+        if (u.getRoles().contains(Rol.ADMIN)) {
+            autorRol = HojaVidaComentario.AutorRol.ADMIN;
+            tipo = HojaVidaComentario.TipoComentario.FEEDBACK;
+        } else if (u.getRoles().contains(Rol.COORDINADOR)) {
+            autorRol = HojaVidaComentario.AutorRol.COORDINADOR;
+            tipo = HojaVidaComentario.TipoComentario.FEEDBACK;
+        } else if (u.getRoles().contains(Rol.ESTUDIANTE)) {
+            autorRol = HojaVidaComentario.AutorRol.ESTUDIANTE;
+            tipo = HojaVidaComentario.TipoComentario.RESPUESTA;
+        } else {
+            throw new BusinessException("Tu rol no puede comentar en una Hoja de Vida");
+        }
+        HojaVidaComentario c = HojaVidaComentario.builder()
+            .hojaVidaId(hv.getId())
+            .autorMongoId(u.getId())
+            .autorNombre((u.getNombres() + " " + u.getApellidos()).trim())
+            .autorRol(autorRol)
+            .tipo(tipo)
+            .mensaje(req.mensaje().trim())
+            .build();
+        c = comentarioRepository.save(c);
+        return HojaVidaComentarioResponse.from(c);
+    }
+
+    /** Solo el estudiante dueño o ADMIN/COORDINADOR pueden ver/escribir en el hilo. */
+    private void verificarAccesoHv(HojaVida hv) {
+        Usuario u = currentUser.current().orElse(null);
+        if (u == null) throw new BusinessException("No hay usuario autenticado");
+        if (u.getRoles().contains(Rol.ADMIN) || u.getRoles().contains(Rol.COORDINADOR)) return;
+        Long estudianteId = u.getEstudianteId();
+        if (estudianteId == null || !estudianteId.equals(hv.getEstudiante().getId())) {
+            throw new BusinessException("No puedes acceder a esta Hoja de Vida");
+        }
+    }
+
+    private void registrarComentarioSistema(Long hvId, String mensaje) {
+        comentarioRepository.save(HojaVidaComentario.builder()
+            .hojaVidaId(hvId)
+            .autorNombre("SIVU")
+            .autorRol(HojaVidaComentario.AutorRol.SISTEMA)
+            .tipo(HojaVidaComentario.TipoComentario.SISTEMA)
+            .mensaje(mensaje)
+            .build());
+    }
+
+    private void registrarComentarioCoord(Long hvId,
+                                          HojaVidaComentario.TipoComentario tipo,
+                                          String mensaje) {
+        currentUser.current().ifPresent(u -> {
+            HojaVidaComentario.AutorRol rol = u.getRoles().contains(Rol.ADMIN)
+                ? HojaVidaComentario.AutorRol.ADMIN
+                : HojaVidaComentario.AutorRol.COORDINADOR;
+            comentarioRepository.save(HojaVidaComentario.builder()
+                .hojaVidaId(hvId)
+                .autorMongoId(u.getId())
+                .autorNombre((u.getNombres() + " " + u.getApellidos()).trim())
+                .autorRol(rol)
+                .tipo(tipo)
+                .mensaje(mensaje)
+                .build());
+        });
     }
 
     @Transactional(readOnly = true)

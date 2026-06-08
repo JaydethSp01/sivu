@@ -13,6 +13,7 @@ import { register as registerVerificarAcademico } from './verificar-academico.js
 import { register as registerMatching } from './matching-estudiante-vacante.js';
 import { register as registerAsistente } from './asistente-tecnico.js';
 import { register as registerLogsPipeline } from './revisar-logs-pipeline.js';
+import { register as registerRevisarInforme } from './revisar-informe-final.js';
 
 export const TOOL_REGISTRARS: ReadonlyArray<(server: McpServer) => void> = [
   registerListarVacantes,
@@ -23,6 +24,7 @@ export const TOOL_REGISTRARS: ReadonlyArray<(server: McpServer) => void> = [
   registerMatching,
   registerAsistente,
   registerLogsPipeline,
+  registerRevisarInforme,
 ];
 
 export function registerAllTools(server: McpServer): number {

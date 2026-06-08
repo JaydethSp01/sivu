@@ -10,6 +10,7 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import lombok.*;
 
+import java.time.LocalDate;
 import java.time.OffsetDateTime;
 
 @Getter
@@ -80,4 +81,18 @@ public class Documento extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "empresa_id")
     private Empresa empresa;
+
+    /** Fecha de inicio de vigencia del documento (opcional). */
+    @Column(name = "fecha_vigencia_inicio")
+    private LocalDate fechaVigenciaInicio;
+
+    /** Fecha de fin de vigencia del documento (opcional). */
+    @Column(name = "fecha_vigencia_fin")
+    private LocalDate fechaVigenciaFin;
+
+    /** Estado de vigencia derivado de las fechas. No se persiste. */
+    @Transient
+    public EstadoVigencia getEstadoVigencia() {
+        return EstadoVigencia.calcular(fechaVigenciaInicio, fechaVigenciaFin);
+    }
 }

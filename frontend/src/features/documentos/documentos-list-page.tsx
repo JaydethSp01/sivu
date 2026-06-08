@@ -39,12 +39,40 @@ import { api, extractApiMessage } from "@/lib/api";
 import { formatBytes } from "@/lib/utils";
 import { TIPO_DOCUMENTO_LABELS, humanize } from "@/lib/enum-labels";
 import { useAuthStore } from "@/lib/auth-store";
+import { cn } from "@/lib/utils";
 import type {
   Documento,
   EstadoDocumento,
+  EstadoVigencia,
   PageResponse,
   TipoDocumentoSoporte,
 } from "@/lib/types";
+
+/**
+ * Badge de vigencia para documentos con fecha fin (EPS, certificados, etc).
+ * Si el documento no tiene fechas de vigencia, no se renderiza.
+ */
+function BadgeVigencia({ d }: { d: Documento }): JSX.Element | null {
+  if (d.estadoVigencia === "SIN_VIGENCIA") return null;
+  const config: Record<Exclude<EstadoVigencia, "SIN_VIGENCIA">, { label: string; cls: string }> = {
+    ACTIVO: { label: "Activo", cls: "bg-success-soft text-success" },
+    POR_VENCER: { label: "Por vencer", cls: "bg-warning-soft text-warning-foreground" },
+    VENCIDO: { label: "Vencido", cls: "bg-destructive-soft text-destructive" },
+  };
+  const c = config[d.estadoVigencia];
+  if (!c) return null;
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-widest",
+        c.cls
+      )}
+      title={d.fechaVigenciaFin ? `Vence el ${d.fechaVigenciaFin}` : undefined}
+    >
+      {c.label}
+    </span>
+  );
+}
 
 const ESTADOS: (EstadoDocumento | "ALL")[] = ["ALL", "RECIBIDO", "VALIDADO", "RECHAZADO"];
 const TIPOS: (TipoDocumentoSoporte | "ALL")[] = [
@@ -116,7 +144,16 @@ export function DocumentosListPage(): JSX.Element {
     },
     { key: "tipo", header: "Tipo", cell: (r) => humanize(r.tipo, TIPO_DOCUMENTO_LABELS) },
     { key: "estudiante", header: "Estudiante", cell: (r) => r.estudiante?.nombreCompleto ?? "—" },
-    { key: "estado", header: "Estado", cell: (r) => <StatusBadge kind="documento" value={r.estado} /> },
+    {
+      key: "estado",
+      header: "Estado",
+      cell: (r) => (
+        <div className="flex flex-col items-start gap-1">
+          <StatusBadge kind="documento" value={r.estado} />
+          <BadgeVigencia d={r} />
+        </div>
+      ),
+    },
     {
       key: "acc",
       header: "",
@@ -223,7 +260,6 @@ export function DocumentosListPage(): JSX.Element {
         <DocumentosGridEstudiante
           rows={data?.content}
           isLoading={isLoading}
-          onDelete={(id) => del.mutate(id)}
         />
       ) : (
         <DataTable
@@ -252,7 +288,6 @@ function iconForTipoOrMime(d: Documento): JSX.Element {
 interface DocumentosGridEstudianteProps {
   rows: Documento[] | undefined;
   isLoading: boolean;
-  onDelete: (id: number) => void;
 }
 
 const HV_GENERATED_PREFIX = "generated://hv/";
@@ -278,7 +313,6 @@ async function descargarHvGenerada(d: Documento): Promise<void> {
 function DocumentosGridEstudiante({
   rows,
   isLoading,
-  onDelete,
 }: DocumentosGridEstudianteProps): JSX.Element {
   const navigate = useNavigate();
   if (isLoading) {
@@ -325,7 +359,10 @@ function DocumentosGridEstudiante({
                   )}
                 </p>
               </div>
-              <StatusBadge kind="documento" value={d.estado} />
+              <div className="flex flex-col items-end gap-1">
+                <StatusBadge kind="documento" value={d.estado} />
+                <BadgeVigencia d={d} />
+              </div>
             </div>
 
             <div className="text-xs text-muted-foreground space-y-0.5">
@@ -337,6 +374,11 @@ function DocumentosGridEstudiante({
               <div>
                 {generada ? "Actualizado" : "Subido"} el {format(parseISO(d.updatedAt), "PP", { locale: es })}
               </div>
+              {d.fechaVigenciaFin && (
+                <div className="font-medium text-foreground/80">
+                  Vigencia hasta: {format(parseISO(d.fechaVigenciaFin), "PP", { locale: es })}
+                </div>
+              )}
             </div>
 
             {d.estado === "RECHAZADO" && d.observacionesValidacion && (
@@ -365,37 +407,14 @@ function DocumentosGridEstudiante({
                   </Button>
                 </>
               ) : (
-                <>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => navigate(`/documentos/${d.id}`)}
-                    className="flex-1 sm:flex-none"
-                  >
-                    <Eye className="h-4 w-4" /> Ver
-                  </Button>
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button size="sm" variant="ghost" aria-label="Eliminar">
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>¿Eliminar este documento?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          "{d.nombreOriginal}" se eliminará y tendrás que volver a subirlo.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                        <AlertDialogAction onClick={() => onDelete(d.id)}>
-                          Eliminar
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                </>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => navigate(`/documentos/${d.id}`)}
+                  className="flex-1 sm:flex-none"
+                >
+                  <Eye className="h-4 w-4" /> Ver
+                </Button>
               )}
             </div>
           </CardContent>

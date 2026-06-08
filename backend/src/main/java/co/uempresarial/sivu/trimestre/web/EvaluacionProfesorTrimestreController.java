@@ -52,7 +52,7 @@ public class EvaluacionProfesorTrimestreController {
     @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Descargar la EP en PDF con formato Uniempresarial (GAC-FM-1)")
     public ResponseEntity<byte[]> descargarPdf(@PathVariable Long trimestreId) {
-        byte[] pdf = pdfGenerator.generar(service.obtenerEntidad(trimestreId));
+        byte[] pdf = service.generarPdf(trimestreId);
         return ResponseEntity.ok()
             .contentType(MediaType.APPLICATION_PDF)
             .header(HttpHeaders.CONTENT_DISPOSITION,

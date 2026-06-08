@@ -79,12 +79,18 @@ public class DocumentoService {
                                    Long estudianteId,
                                    Long postulacionId,
                                    Long empresaId,
-                                   Long tipoRequisitoId) {
+                                   Long tipoRequisitoId,
+                                   java.time.LocalDate fechaVigenciaInicio,
+                                   java.time.LocalDate fechaVigenciaFin) {
         if (archivo == null || archivo.isEmpty()) {
             throw new BusinessException("El archivo está vacío");
         }
         if (tipo == null) {
             throw new BusinessException("El tipo de documento es obligatorio");
+        }
+        if (fechaVigenciaInicio != null && fechaVigenciaFin != null
+            && fechaVigenciaFin.isBefore(fechaVigenciaInicio)) {
+            throw new BusinessException("La fecha fin de vigencia no puede ser anterior a la de inicio");
         }
 
         String original = archivo.getOriginalFilename() != null
@@ -99,6 +105,8 @@ public class DocumentoService {
             .mimeType(archivo.getContentType() != null ? archivo.getContentType() : "application/octet-stream")
             .tamanoBytes(archivo.getSize())
             .estado(EstadoDocumento.RECIBIDO)
+            .fechaVigenciaInicio(fechaVigenciaInicio)
+            .fechaVigenciaFin(fechaVigenciaFin)
             .build();
         if (estudianteId != null) doc.setEstudiante(resolverEstudiante(estudianteId));
         if (postulacionId != null) doc.setPostulacion(resolverPostulacion(postulacionId));

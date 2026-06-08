@@ -23,13 +23,21 @@ public class JwtService {
     private final long refreshExpirationDays;
 
     public JwtService(
-        @Value("${app.security.jwt.secret}") String secret,
+        @Value("${app.security.jwt.secret:}") String secret,
         @Value("${app.security.jwt.access-token-expiration-minutes}") long accessExpirationMinutes,
         @Value("${app.security.jwt.refresh-token-expiration-days}") long refreshExpirationDays
     ) {
+        if (secret == null || secret.isBlank()) {
+            throw new IllegalStateException(
+                "JWT_SECRET (app.security.jwt.secret) no está definido. " +
+                "Es obligatorio en cualquier despliegue. Defínelo como variable de entorno " +
+                "con al menos 64 caracteres ASCII.");
+        }
         byte[] keyBytes = secret.getBytes(StandardCharsets.UTF_8);
         if (keyBytes.length < 64) {
-            throw new IllegalStateException("app.security.jwt.secret debe tener al menos 64 bytes (caracteres ASCII).");
+            throw new IllegalStateException(
+                "app.security.jwt.secret debe tener al menos 64 bytes (caracteres ASCII). " +
+                "Longitud actual: " + keyBytes.length + ".");
         }
         this.signingKey = Keys.hmacShaKeyFor(keyBytes);
         this.accessExpirationMinutes = accessExpirationMinutes;

@@ -6,6 +6,7 @@ import co.uempresarial.sivu.shared.exception.ResourceNotFoundException;
 import co.uempresarial.sivu.trimestre.domain.EvaluacionTutorTrimestre;
 import co.uempresarial.sivu.trimestre.domain.ParteFirmaTrimestre;
 import co.uempresarial.sivu.trimestre.domain.Trimestre;
+import co.uempresarial.sivu.trimestre.pdf.EvaluacionTutorPdfGenerator;
 import co.uempresarial.sivu.trimestre.persistence.EvaluacionTutorTrimestreRepository;
 import co.uempresarial.sivu.trimestre.persistence.TrimestreRepository;
 import co.uempresarial.sivu.trimestre.web.TrimestreMapper;
@@ -27,10 +28,18 @@ public class EvaluacionTutorTrimestreService {
     private final TrimestreRepository trimestreRepository;
     private final TrimestreMapper mapper;
     private final CurrentUserService currentUser;
+    private final EvaluacionTutorPdfGenerator pdfGenerator;
 
     @Transactional(readOnly = true)
     public EvaluacionTutorResponse obtener(Long trimestreId) {
         return mapper.toResponse(obtenerEntidad(trimestreId));
+    }
+
+    /** Genera el PDF DENTRO de la transacción para que las colecciones/proxies
+     *  LAZY se carguen con la sesión abierta (open-in-view está en false). */
+    @Transactional(readOnly = true)
+    public byte[] generarPdf(Long trimestreId) {
+        return pdfGenerator.generar(obtenerEntidad(trimestreId));
     }
 
     public EvaluacionTutorTrimestre obtenerEntidad(Long trimestreId) {

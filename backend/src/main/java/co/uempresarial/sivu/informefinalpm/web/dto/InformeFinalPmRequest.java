@@ -1,6 +1,9 @@
 package co.uempresarial.sivu.informefinalpm.web.dto;
 
 public record InformeFinalPmRequest(
+    String tituloInforme,
+    Short nivel,
+    String cargoTutorEmpresarial,
     String resumenEjecutivo,
     String contextualizacion,
     String planteamientoProblema,

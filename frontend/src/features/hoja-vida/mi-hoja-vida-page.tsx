@@ -64,6 +64,8 @@ import {
   ESTADO_HOJA_VIDA_VARIANT,
   NIVEL_IDIOMA_LABELS,
 } from "@/lib/enum-labels";
+import { HojaVidaTimeline } from "@/features/hoja-vida/hoja-vida-timeline";
+import { MessageSquare } from "lucide-react";
 import type {
   CategoriaHabilidad,
   HojaVidaRequest,
@@ -980,6 +982,27 @@ export function MiHojaVidaPage(): JSX.Element {
                 </p>
               </div>
             </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {hv.data?.id && hv.data.estado !== "BORRADOR" && (
+        <Card>
+          <CardContent className="pt-5">
+            <div className="flex items-center gap-2 mb-3">
+              <MessageSquare className="h-4 w-4 text-primary" />
+              <h2 className="font-display text-base font-semibold">
+                Conversación con Coformación
+              </h2>
+            </div>
+            <p className="text-xs text-muted-foreground mb-3">
+              Aquí queda el historial de feedback. Puedes responder antes o
+              después de reenviar la HV.
+            </p>
+            <HojaVidaTimeline
+              hojaVidaId={hv.data.id}
+              emptyLabel="Coformación aún no ha enviado feedback."
+            />
           </CardContent>
         </Card>
       )}

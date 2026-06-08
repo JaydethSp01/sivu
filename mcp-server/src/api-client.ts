@@ -408,6 +408,23 @@ class SivuApiClient {
       params: { estudianteId, vacanteId },
     });
   }
+
+  public revisarInformeFinal(informeId: number): Promise<FeedbackInformeIA> {
+    return this.post<FeedbackInformeIA>(`/ia/informe-final/${informeId}/feedback`, {});
+  }
+}
+
+export interface HallazgoIA {
+  severidad: string;
+  seccion: string;
+  detalle: string;
+}
+
+export interface FeedbackInformeIA {
+  fuente: string;
+  reporteMarkdown: string;
+  hallazgos: HallazgoIA[];
+  aviso: string | null;
 }
 
 let cached: SivuApiClient | undefined;

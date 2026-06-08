@@ -103,4 +103,16 @@ public class InformeFinalPm extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "documento_pdf_id")
     private Documento documentoPdf;
+
+    /** Título del informe que va en la carátula (§6.3). */
+    @Column(name = "titulo_informe", length = 300)
+    private String tituloInforme;
+
+    /** Nivel del informe según matriz Uniempresarial (1, 2 o 3). */
+    @Column(name = "nivel")
+    private Short nivel;
+
+    /** Cargo del tutor empresarial — aparece en la cabecera del informe. */
+    @Column(name = "cargo_tutor_empresarial", length = 160)
+    private String cargoTutorEmpresarial;
 }

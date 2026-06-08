@@ -7,6 +7,9 @@ import java.time.OffsetDateTime;
 public record InformeFinalPmResponse(
     Long id,
     Long planMejoraId,
+    String tituloInforme,
+    Short nivel,
+    String cargoTutorEmpresarial,
     String resumenEjecutivo,
     String contextualizacion,
     String planteamientoProblema,

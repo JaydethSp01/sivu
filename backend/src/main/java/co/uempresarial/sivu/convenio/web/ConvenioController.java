@@ -1,6 +1,7 @@
 package co.uempresarial.sivu.convenio.web;
 
 import co.uempresarial.sivu.convenio.domain.EstadoConvenio;
+import co.uempresarial.sivu.convenio.pdf.ConvenioPdfGenerator;
 import co.uempresarial.sivu.convenio.service.ConvenioService;
 import co.uempresarial.sivu.convenio.web.dto.AsignarTutoresRequest;
 import co.uempresarial.sivu.convenio.web.dto.ConvenioRequest;
@@ -14,6 +15,8 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -27,6 +30,7 @@ import java.net.URI;
 public class ConvenioController {
 
     private final ConvenioService service;
+    private final ConvenioPdfGenerator pdfGenerator;
 
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN','COORDINADOR')")
@@ -98,5 +102,17 @@ public class ConvenioController {
     public ResponseEntity<Void> eliminar(@PathVariable Long id) {
         service.eliminar(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/{id}/pdf")
+    @PreAuthorize("isAuthenticated()")
+    @Operation(summary = "Descargar el PDF institucional del convenio con datos, cláusulas y firmas")
+    public ResponseEntity<byte[]> descargarPdf(@PathVariable Long id) {
+        byte[] pdf = pdfGenerator.generar(service.obtener(id));
+        return ResponseEntity.ok()
+            .contentType(MediaType.APPLICATION_PDF)
+            .header(HttpHeaders.CONTENT_DISPOSITION,
+                "inline; filename=convenio-" + id + ".pdf")
+            .body(pdf);
     }
 }

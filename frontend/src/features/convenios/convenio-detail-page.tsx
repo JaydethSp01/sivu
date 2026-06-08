@@ -13,7 +13,6 @@ import {
   GraduationCap,
   Loader2,
   PenLine,
-  Plus,
   UserCog,
   User as UserIcon,
 } from "lucide-react";
@@ -21,7 +20,6 @@ import { format, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { StatusBadge } from "@/components/status-badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -46,7 +44,6 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Combobox } from "@/components/combobox";
-import { EmptyState } from "@/components/empty-state";
 import { TrimestresSection } from "@/features/trimestres/trimestres-section";
 import { api, extractApiMessage } from "@/lib/api";
 import { useAuthStore } from "@/lib/auth-store";
@@ -55,7 +52,6 @@ import type {
   EstadoConvenio,
   PageResponse,
   ParteFirmaConvenio,
-  ResumenEvaluaciones,
   Rol,
   Tutor,
 } from "@/lib/types";
@@ -421,95 +417,6 @@ function TutorCard({ title, tutor }: { title: string; tutor: Convenio["tutorAcad
   );
 }
 
-function EvaluacionesSection({ convenioId, canCreate }: { convenioId: number; canCreate: boolean }) {
-  const navigate = useNavigate();
-  const { data, isLoading } = useQuery({
-    queryKey: ["/evaluaciones/resumen", convenioId],
-    queryFn: async () =>
-      (await api.get<ResumenEvaluaciones>(`/evaluaciones/resumen/${convenioId}`)).data,
-  });
-
-  const num = (v: number | string | null | undefined) =>
-    v == null ? "—" : Number(v).toFixed(2);
-
-  return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle>Evaluaciones</CardTitle>
-            <CardDescription>Promedios y evaluaciones intermedias / finales.</CardDescription>
-          </div>
-          {canCreate && (
-            <Button size="sm" onClick={() => navigate(`/evaluaciones/new?convenioId=${convenioId}`)}>
-              <Plus className="h-4 w-4" /> Registrar evaluación
-            </Button>
-          )}
-        </div>
-      </CardHeader>
-      <CardContent>
-        {isLoading ? (
-          <div className="flex items-center text-sm text-muted-foreground">
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />Cargando...
-          </div>
-        ) : !data || data.totalEvaluaciones === 0 ? (
-          <EmptyState
-            title="Sin evaluaciones aún"
-            description="Cuando se registren evaluaciones, los promedios aparecerán aquí."
-          />
-        ) : (
-          <div className="space-y-4">
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-              <div className="rounded-md border p-3">
-                <div className="text-xs uppercase tracking-wide text-muted-foreground">Calificación</div>
-                <div className="text-2xl font-bold">{num(data.promedioCalificacion)}</div>
-              </div>
-              <div className="rounded-md border p-3">
-                <div className="text-xs uppercase tracking-wide text-muted-foreground">Técnicas</div>
-                <div className="text-2xl font-bold">{num(data.promedioCompetenciasTecnicas)}</div>
-              </div>
-              <div className="rounded-md border p-3">
-                <div className="text-xs uppercase tracking-wide text-muted-foreground">Blandas</div>
-                <div className="text-2xl font-bold">{num(data.promedioCompetenciasBlandas)}</div>
-              </div>
-              <div className="rounded-md border p-3">
-                <div className="text-xs uppercase tracking-wide text-muted-foreground">Final sugerida</div>
-                <div className="text-2xl font-bold">{num(data.calificacionFinalSugerida)}</div>
-                <div className="flex gap-1 mt-1">
-                  <Badge variant={data.tieneEvaluacionFinalAcademica ? "success" : "muted"}>Acad.</Badge>
-                  <Badge variant={data.tieneEvaluacionFinalEmpresarial ? "success" : "muted"}>Emp.</Badge>
-                </div>
-              </div>
-            </div>
-            <div className="space-y-2">
-              {data.evaluaciones.map((ev) => (
-                <div key={ev.id} className="flex flex-wrap items-center justify-between gap-2 rounded-md border px-3 py-2">
-                  <div className="flex flex-col">
-                    <div className="text-sm font-medium">
-                      {ev.tipo === "INTERMEDIA" ? "Intermedia" : "Final"} ·{" "}
-                      {ev.evaluadorTipo === "ACADEMICO" ? "Académico" : "Empresarial"}
-                    </div>
-                    <div className="text-xs text-muted-foreground">
-                      {ev.tutorNombre ?? `Tutor #${ev.tutorId}`}
-                      {ev.fechaEvaluacion && (
-                        <> · {format(parseISO(ev.fechaEvaluacion), "PP", { locale: es })}</>
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <span className="text-sm font-mono">{Number(ev.calificacion).toFixed(2)}</span>
-                    <Badge variant="outline">{ev.recomendacion}</Badge>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-      </CardContent>
-    </Card>
-  );
-}
-
 function CertificadoSection({ convenio, onChanged }: { convenio: Convenio; onChanged: () => void }) {
   const emitir = useMutation({
     mutationFn: async () => api.post(`/automatizacion/certificado/${convenio.id}`),
@@ -576,7 +483,6 @@ export function ConvenioDetailPage(): JSX.Element {
   const hasRole = useAuthStore((s) => s.hasRole);
   const canManageTutores = hasRole("ADMIN", "COORDINADOR");
   const canFinalizar = hasRole("ADMIN", "COORDINADOR");
-  const canCreateEvaluacion = hasRole("COORDINADOR", "EMPRESA", "ADMIN");
 
   const { data, isLoading } = useQuery({
     queryKey: ["/convenios", id],
@@ -670,7 +576,6 @@ export function ConvenioDetailPage(): JSX.Element {
       </div>
 
       <TrimestresSection convenioId={data.id} />
-      <EvaluacionesSection convenioId={data.id} canCreate={canCreateEvaluacion} />
       <CertificadoSection convenio={data} onChanged={refresh} />
     </div>
   );

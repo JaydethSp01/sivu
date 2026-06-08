@@ -52,7 +52,7 @@ public class PlanActividadesController {
     @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Descargar el PA en PDF con el formato Uniempresarial (GAC-FM-10)")
     public ResponseEntity<byte[]> descargarPdf(@PathVariable Long trimestreId) {
-        byte[] pdf = pdfGenerator.generar(service.obtenerEntidad(trimestreId));
+        byte[] pdf = service.generarPdf(trimestreId);
         return ResponseEntity.ok()
             .contentType(MediaType.APPLICATION_PDF)
             .header(HttpHeaders.CONTENT_DISPOSITION,

@@ -3,6 +3,7 @@ package co.uempresarial.sivu.trimestre.pdf;
 import com.lowagie.text.Element;
 import com.lowagie.text.Font;
 import com.lowagie.text.FontFactory;
+import com.lowagie.text.Image;
 import com.lowagie.text.Paragraph;
 import com.lowagie.text.Phrase;
 import com.lowagie.text.Rectangle;
@@ -10,15 +11,38 @@ import com.lowagie.text.pdf.PdfPCell;
 import com.lowagie.text.pdf.PdfPTable;
 
 import java.awt.Color;
+import java.io.InputStream;
 
 /** Estilos compartidos para los PDFs institucionales Uniempresarial. */
 public final class PdfStyles {
 
     private PdfStyles() {}
 
-    public static final Color AZUL_UE = new Color(15, 76, 129);
+    // Paleta institucional real Uniempresarial:
+    //  azul  #1B3380 → (27, 51, 128)
+    //  rojo  #E2173A → (226, 23, 58)
+    public static final Color AZUL_UE = new Color(27, 51, 128);
+    public static final Color ROJO_UE = new Color(226, 23, 58);
     public static final Color GRIS_SUAVE = new Color(238, 238, 240);
     public static final Color GRIS_BORDE = new Color(180, 180, 188);
+
+    /** Logo institucional cacheado en memoria. Cargado una sola vez por JVM. */
+    private static volatile byte[] LOGO_BYTES;
+
+    private static byte[] cargarLogoBytes() {
+        if (LOGO_BYTES != null) return LOGO_BYTES;
+        synchronized (PdfStyles.class) {
+            if (LOGO_BYTES != null) return LOGO_BYTES;
+            try (InputStream in = PdfStyles.class.getResourceAsStream(
+                "/static/brand/uniempresarial-logo.png")) {
+                if (in == null) return null;
+                LOGO_BYTES = in.readAllBytes();
+                return LOGO_BYTES;
+            } catch (Exception ignore) {
+                return null;
+            }
+        }
+    }
 
     public static final Font FUENTE_TITULO       = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 14, AZUL_UE);
     public static final Font FUENTE_SUBTITULO    = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 11, AZUL_UE);
@@ -36,7 +60,23 @@ public final class PdfStyles {
         PdfPTable header = new PdfPTable(new float[]{2.2f, 4.5f, 2.5f});
         header.setWidthPercentage(100);
 
-        PdfPCell logo = new PdfPCell(new Paragraph("Uniempresarial", FUENTE_HEADER_LOGO));
+        PdfPCell logo;
+        byte[] logoBytes = cargarLogoBytes();
+        if (logoBytes != null) {
+            try {
+                Image img = Image.getInstance(logoBytes);
+                // Tamaño máximo dentro de la celda (px PDF). El alto real
+                // de la fila se ajusta solo según las celdas vecinas.
+                img.scaleToFit(70f, 50f);
+                logo = new PdfPCell(img, false);
+                logo.setHorizontalAlignment(Element.ALIGN_CENTER);
+                logo.setVerticalAlignment(Element.ALIGN_MIDDLE);
+            } catch (Exception ex) {
+                logo = new PdfPCell(new Paragraph("Uniempresarial", FUENTE_HEADER_LOGO));
+            }
+        } else {
+            logo = new PdfPCell(new Paragraph("Uniempresarial", FUENTE_HEADER_LOGO));
+        }
         logo.setBorder(Rectangle.BOX);
         logo.setBorderColor(GRIS_BORDE);
         logo.setPadding(8);

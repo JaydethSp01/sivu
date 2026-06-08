@@ -16,6 +16,9 @@ public record SolicitudFabricaResponse(
     OffsetDateTime fechaSolicitud,
     OffsetDateTime fechaResolucion,
     String resueltoPorNombre,
+    Long vacanteAsignadaId,
+    String vacanteAsignadaTitulo,
+    Long postulacionCreadaId,
     OffsetDateTime createdAt,
     OffsetDateTime updatedAt
 ) {}

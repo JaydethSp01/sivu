@@ -66,7 +66,7 @@ public class InformeFinalPmController {
     @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Descargar el Informe Final en PDF (GTC-FM-16)")
     public ResponseEntity<byte[]> descargarPdf(@PathVariable Long id) {
-        byte[] pdf = pdfGenerator.generar(service.obtenerEntidad(id));
+        byte[] pdf = service.generarPdf(id);
         return ResponseEntity.ok()
             .contentType(MediaType.APPLICATION_PDF)
             .header(HttpHeaders.CONTENT_DISPOSITION,

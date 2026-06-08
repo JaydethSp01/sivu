@@ -27,10 +27,16 @@ public class EvaluacionProfesorTrimestreService {
     private final TrimestreRepository trimestreRepository;
     private final TrimestreMapper mapper;
     private final CurrentUserService currentUser;
+    private final co.uempresarial.sivu.trimestre.pdf.EvaluacionProfesorPdfGenerator pdfGenerator;
 
     @Transactional(readOnly = true)
     public EvaluacionProfesorResponse obtener(Long trimestreId) {
         return mapper.toResponse(obtenerEntidad(trimestreId));
+    }
+
+    @Transactional(readOnly = true)
+    public byte[] generarPdf(Long trimestreId) {
+        return pdfGenerator.generar(obtenerEntidad(trimestreId));
     }
 
     public EvaluacionProfesorTrimestre obtenerEntidad(Long trimestreId) {

@@ -21,6 +21,8 @@ public interface DocumentoMapper {
     @Mapping(target = "empresa", source = "empresa", qualifiedByName = "toEmpresaResumen")
     @Mapping(target = "tipoRequisitoId", source = "tipoRequisito.id")
     @Mapping(target = "tipoRequisito", source = "tipoRequisito", qualifiedByName = "toTipoRequisitoResumen")
+    @Mapping(target = "estadoVigencia",
+        expression = "java(co.uempresarial.sivu.documento.domain.EstadoVigencia.calcular(entity.getFechaVigenciaInicio(), entity.getFechaVigenciaFin()))")
     DocumentoResponse toResponse(Documento entity);
 
     @Mapping(target = "id", ignore = true)
