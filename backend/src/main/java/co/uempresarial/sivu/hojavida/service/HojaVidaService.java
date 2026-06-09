@@ -78,8 +78,21 @@ public class HojaVidaService {
         hv.setPerfilSer(request.perfilSer());
         hv.setUltimaActualizacion(OffsetDateTime.now());
 
-        // Replace-all en sub-listas
+        // Replace-all en sub-listas.
+        // IMPORTANTE: primero vaciamos TODAS las colecciones y hacemos flush para
+        // que Hibernate ejecute los DELETE ANTES de los INSERT. Si no, al re-guardar
+        // con el mismo valor (p.ej. idioma "Español") Hibernate puede insertar antes
+        // de borrar y viola el unique constraint uq_hv_idioma. (bug prod).
+        boolean esNueva = hv.getId() == null;
         hv.getHabilidades().clear();
+        hv.getIdiomas().clear();
+        hv.getEducacion().clear();
+        hv.getExperienciaFase().clear();
+        hv.getExperienciaLaboral().clear();
+        if (!esNueva) {
+            repository.saveAndFlush(hv);   // fuerza los DELETE de las sub-listas
+        }
+
         if (request.habilidades() != null) {
             int i = 0;
             for (var h : request.habilidades()) {
@@ -92,7 +105,6 @@ public class HojaVidaService {
             }
         }
 
-        hv.getIdiomas().clear();
         if (request.idiomas() != null) {
             int i = 0;
             for (var d : request.idiomas()) {
@@ -105,7 +117,6 @@ public class HojaVidaService {
             }
         }
 
-        hv.getEducacion().clear();
         if (request.educacion() != null) {
             int i = 0;
             for (var e : request.educacion()) {
@@ -122,7 +133,6 @@ public class HojaVidaService {
             }
         }
 
-        hv.getExperienciaFase().clear();
         if (request.experienciaFase() != null) {
             int i = 0;
             for (var x : request.experienciaFase()) {
@@ -139,7 +149,6 @@ public class HojaVidaService {
             }
         }
 
-        hv.getExperienciaLaboral().clear();
         if (request.experienciaLaboral() != null) {
             int i = 0;
             for (var x : request.experienciaLaboral()) {
