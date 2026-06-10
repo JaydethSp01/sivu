@@ -16,6 +16,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -45,6 +46,10 @@ public class AutomatizacionController {
     @GetMapping("/matching")
     @PreAuthorize("hasAnyRole('ADMIN','COORDINADOR','EMPRESA','ESTUDIANTE','MCP_AGENT')")
     @Operation(summary = "Calcular score de matching entre un estudiante y una vacante (sin crear postulación)")
+    // @Transactional: el matching accede vacante.empresa (LAZY) en la rama de
+    // continuidad; con open-in-view=false hay que mantener la sesión abierta
+    // durante fetch + cálculo, si no lanza LazyInitializationException (→ 0% en el dashboard).
+    @Transactional(readOnly = true)
     public ResponseEntity<MatchingResponse> matching(@RequestParam Long estudianteId, @RequestParam Long vacanteId) {
         var estudiante = estudianteRepository.findById(estudianteId)
             .orElseThrow(() -> new ResourceNotFoundException("Estudiante", estudianteId));

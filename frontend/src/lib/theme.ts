@@ -6,7 +6,9 @@ export function getStoredTheme(): Theme {
   if (typeof window === "undefined") return "light";
   const v = window.localStorage.getItem(KEY);
   if (v === "dark" || v === "light") return v;
-  return window.matchMedia?.("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+  // Default consistente: SIEMPRE claro si el usuario no eligió tema.
+  // (Antes seguía prefers-color-scheme del SO → se veía distinto en cada PC.)
+  return "light";
 }
 
 export function applyTheme(theme: Theme): void {

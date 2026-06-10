@@ -418,6 +418,8 @@ function TutorCard({ title, tutor }: { title: string; tutor: Convenio["tutorAcad
 }
 
 function CertificadoSection({ convenio, onChanged }: { convenio: Convenio; onChanged: () => void }) {
+  const hasRole = useAuthStore((s) => s.hasRole);
+  const puedeEmitir = hasRole("ADMIN", "COORDINADOR");  // emitir es de Coformación/Admin
   const emitir = useMutation({
     mutationFn: async () => api.post(`/automatizacion/certificado/${convenio.id}`),
     onSuccess: () => {
@@ -463,12 +465,16 @@ function CertificadoSection({ convenio, onChanged }: { convenio: Convenio; onCha
         ) : (
           <div className="flex flex-wrap items-center justify-between gap-2">
             <p className="text-sm text-muted-foreground">
-              Aún no se ha emitido el certificado.
+              {puedeEmitir
+                ? "Aún no se ha emitido el certificado."
+                : "El certificado aún no ha sido emitido por Coformación."}
             </p>
-            <Button onClick={() => emitir.mutate()} disabled={emitir.isPending}>
-              {emitir.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <FilePlus2 className="h-4 w-4" />}
-              Emitir certificado
-            </Button>
+            {puedeEmitir && (
+              <Button onClick={() => emitir.mutate()} disabled={emitir.isPending}>
+                {emitir.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <FilePlus2 className="h-4 w-4" />}
+                Emitir certificado
+              </Button>
+            )}
           </div>
         )}
       </CardContent>
@@ -492,7 +498,8 @@ export function ConvenioDetailPage(): JSX.Element {
 
   const descargaPdf = useMutation({
     mutationFn: async () => {
-      const res = await api.get(`/automatizacion/convenios/${id}/pdf`, { responseType: "blob" });
+      // /convenios/{id}/pdf genera el PDF al vuelo (no requiere documentoPdf almacenado)
+      const res = await api.get(`/convenios/${id}/pdf`, { responseType: "blob" });
       const blob = new Blob([res.data as BlobPart], { type: "application/pdf" });
       const url = URL.createObjectURL(blob);
       window.open(url, "_blank", "noopener,noreferrer");
@@ -530,7 +537,7 @@ export function ConvenioDetailPage(): JSX.Element {
           <Button
             variant="outline"
             onClick={() => descargaPdf.mutate()}
-            disabled={descargaPdf.isPending || !data.documentoPdfId}
+            disabled={descargaPdf.isPending}
           >
             {descargaPdf.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
             PDF formalización

@@ -43,6 +43,7 @@ public class HojaVidaService {
     private final CurrentUserService currentUser;
     private final DocumentoRepository documentoRepository;
     private final HojaVidaComentarioRepository comentarioRepository;
+    private final co.uempresarial.sivu.catalogo.requisito.persistence.TipoRequisitoDocumentalRepository tipoRequisitoRepository;
     private final co.uempresarial.sivu.hojavida.pdf.HojaVidaPdfGenerator pdfGenerator;
 
     @Transactional(readOnly = true)
@@ -204,6 +205,12 @@ public class HojaVidaService {
         doc.setRutaAlmacenamiento(RUTA_HV_GENERADA_PREFIX + est.getId());
         doc.setMimeType("application/pdf");
         doc.setTipo(TipoDocumentoSoporte.HOJA_VIDA);
+        // Enlazar el requisito documental HOJA_VIDA para que el checklist de
+        // postulación lo marque cumplido (si no, pide subir la HV de nuevo).
+        if (doc.getTipoRequisito() == null) {
+            tipoRequisitoRepository.findByCodigoIgnoreCase("HOJA_VIDA")
+                .ifPresent(doc::setTipoRequisito);
+        }
 
         switch (hv.getEstado()) {
             case APROBADA -> {
