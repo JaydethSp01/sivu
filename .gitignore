@@ -68,6 +68,7 @@ tmp/
 
 # --- Runtime storage (uploads de docs, archivos generados) ---
 backend/storage/
+storage/
 data/
 .mongo-atlas.env
 *.atlas.env
