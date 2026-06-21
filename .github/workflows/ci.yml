@@ -105,12 +105,10 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: npm
-          cache-dependency-path: frontend/package-lock.json
 
       - name: Install
         working-directory: frontend
-        run: npm ci || npm install
+        run: npm install --legacy-peer-deps
 
       - name: Build
         working-directory: frontend
@@ -202,6 +200,7 @@ jobs:
           SPRING_DATASOURCE_PASSWORD: sivu_dev_password
           SPRING_DATA_MONGODB_URI: mongodb://sivu_admin:mongo_dev_password@localhost:27017/sivu_users?authSource=admin
           SPRING_MAIL_HOST: localhost
+          MANAGEMENT_HEALTH_MAIL_ENABLED: "false"
           JWT_SECRET: ci_secret_ci_secret_ci_secret_ci_secret_ci_secret_ci_secret_ci_secret_xxx
         run: |
           nohup java -jar backend/target/sivu-backend.jar > backend.log 2>&1 &
@@ -213,9 +212,7 @@ jobs:
           done
           echo "Backend NO arrancó. Log:"; cat backend.log; exit 1
 
-      - name: Seed
-        run: curl -fsS -X POST http://localhost:8080/api/v1/admin/seed
-
+      # El SeedBootstrap siembra automáticamente en perfil docker al arrancar.
       - name: Newman
         working-directory: tests/newman
         run: |
@@ -292,12 +289,13 @@ jobs:
           SPRING_DATA_MONGODB_URI: mongodb://sivu_admin:mongo_dev_password@localhost:27017/sivu_users?authSource=admin
           JWT_SECRET: ci_secret_ci_secret_ci_secret_ci_secret_ci_secret_ci_secret_ci_secret_xxx
           SPRING_MAIL_HOST: localhost
+          MANAGEMENT_HEALTH_MAIL_ENABLED: "false"
         run: |
           nohup java -jar backend/target/sivu-backend.jar > backend.log 2>&1 &
           for i in {1..60}; do
             curl -fsS http://localhost:8080/actuator/health >/dev/null && break || sleep 2
           done
-          curl -fsS -X POST http://localhost:8080/api/v1/admin/seed
+          # El SeedBootstrap siembra solo en perfil docker al arrancar.
 
       - name: Serve frontend dist
         run: |
