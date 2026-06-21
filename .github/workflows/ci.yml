@@ -151,10 +151,6 @@ jobs:
     name: API contract (Newman)
     runs-on: ubuntu-latest
     needs: [backend]
-    # Las pruebas de contrato se ejecutan y publican reporte; algunas assertions
-    # del collection Postman quedaron desfasadas tras evolucionar la API, por lo
-    # que no bloquean el pipeline (se refinan aparte).
-    continue-on-error: true
     services:
       postgres:
         image: postgres:16-alpine
@@ -241,7 +237,6 @@ jobs:
     name: E2E (Cypress)
     runs-on: ubuntu-latest
     needs: [backend, frontend]
-    continue-on-error: true  # specs se ejecutan; selectores en refinamiento
     services:
       postgres:
         image: postgres:16-alpine

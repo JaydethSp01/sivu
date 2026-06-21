@@ -10,32 +10,41 @@ declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace Cypress {
     interface Chainable {
-      /**
-       * Login vía API y guarda el access token en localStorage bajo la clave
-       * convenida por el frontend ("sivu.accessToken"). El frontend debería
-       * leerla en el bootstrap para hidratar la sesión.
-       */
+      /** Login vía API; guarda la sesión para hidratar visitas autenticadas. */
       apiLogin(email: string, password: string): Chainable<string>;
       loginAsAdmin(): Chainable<string>;
       loginAsCoordinador(): Chainable<string>;
       loginAsEstudiante(): Chainable<string>;
       loginAsEmpresa(): Chainable<string>;
-      /**
-       * Llama POST /admin/seed; es idempotente. Útil para asegurar datos demo
-       * antes de un spec sin importar cuántas veces se ejecute.
-       */
+      /** POST /admin/seed autenticado como admin; idempotente. */
       seedIfNeeded(): Chainable<void>;
-      /**
-       * Visita una ruta del frontend con sesión ya hidratada (token en storage).
-       */
+      /** Visita una ruta del frontend con la sesión del último apiLogin ya hidratada. */
       visitAuthed(path: string): Chainable<Cypress.AUTWindow>;
     }
   }
 }
 
-const STORAGE_KEY = "sivu.accessToken";
-const STORAGE_REFRESH = "sivu.refreshToken";
-const STORAGE_USER = "sivu.user";
+// La app persiste la sesión con zustand/persist bajo esta clave y forma.
+const AUTH_STORAGE_KEY = "sivu-auth";
+
+interface Session {
+  accessToken: string;
+  refreshToken: string;
+  usuario: unknown;
+}
+
+// Vive a nivel de módulo: persiste entre tests del mismo spec.
+let lastSession: Session | null = null;
+
+function writeAuthStorage(win: Window, s: Session): void {
+  win.localStorage.setItem(
+    AUTH_STORAGE_KEY,
+    JSON.stringify({
+      state: { accessToken: s.accessToken, refreshToken: s.refreshToken, usuario: s.usuario },
+      version: 0,
+    })
+  );
+}
 
 Cypress.Commands.add("apiLogin", (email: string, password: string) => {
   const apiUrl = Cypress.env("apiUrl");
@@ -49,48 +58,42 @@ Cypress.Commands.add("apiLogin", (email: string, password: string) => {
     .then((res) => {
       expect(res.status).to.eq(200);
       const { accessToken, refreshToken, usuario } = res.body;
-      cy.window().then((win) => {
-        win.localStorage.setItem(STORAGE_KEY, accessToken);
-        win.localStorage.setItem(STORAGE_REFRESH, refreshToken);
-        win.localStorage.setItem(STORAGE_USER, JSON.stringify(usuario));
-      });
+      lastSession = { accessToken, refreshToken, usuario };
       return cy.wrap(accessToken);
     });
 });
 
-Cypress.Commands.add("loginAsAdmin", () => {
-  return cy.apiLogin("admin@uempresarial.edu.co", "Admin123*");
-});
-
-Cypress.Commands.add("loginAsCoordinador", () => {
-  return cy.apiLogin("coord@uempresarial.edu.co", "Coord123*");
-});
-
-Cypress.Commands.add("loginAsEstudiante", () => {
-  return cy.apiLogin("kelly@est.uempresarial.edu.co", "Estudiante123*");
-});
-
-Cypress.Commands.add("loginAsEmpresa", () => {
-  return cy.apiLogin("rrhh@coally.com", "Empresa123*");
-});
+Cypress.Commands.add("loginAsAdmin", () => cy.apiLogin("admin@uempresarial.edu.co", "Admin123*"));
+Cypress.Commands.add("loginAsCoordinador", () => cy.apiLogin("coord@uempresarial.edu.co", "Coord123*"));
+Cypress.Commands.add("loginAsEstudiante", () => cy.apiLogin("kelly@est.uempresarial.edu.co", "Estudiante123*"));
+Cypress.Commands.add("loginAsEmpresa", () => cy.apiLogin("rrhh@coally.com", "Empresa123*"));
 
 Cypress.Commands.add("seedIfNeeded", () => {
   const apiUrl = Cypress.env("apiUrl");
+  // /admin/seed exige rol ADMIN; autenticamos primero. El backend además
+  // auto-siembra al arrancar (SeedBootstrap), así que esto es un refuerzo.
   cy.request({
     method: "POST",
-    url: `${apiUrl}/admin/seed`,
+    url: `${apiUrl}/auth/login`,
+    body: { email: "admin@uempresarial.edu.co", password: "Admin123*" },
     failOnStatusCode: false,
-  }).then((res) => {
-    // /admin/seed es idempotente; aceptamos 200 o 4xx si ya está semillado
-    expect([200, 400, 409]).to.include(res.status);
+  }).then((login) => {
+    const token = login.status === 200 ? login.body.accessToken : null;
+    cy.request({
+      method: "POST",
+      url: `${apiUrl}/admin/seed`,
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      failOnStatusCode: false,
+    }).then((res) => {
+      expect([200, 400, 409]).to.include(res.status);
+    });
   });
 });
 
 Cypress.Commands.add("visitAuthed", (path: string) => {
   return cy.visit(path, {
     onBeforeLoad(win) {
-      // Asume que el frontend ya tiene el token en localStorage; si no, este
-      // hook se puede ampliar para inyectar headers en interceptores.
+      if (lastSession) writeAuthStorage(win, lastSession);
     },
   });
 });

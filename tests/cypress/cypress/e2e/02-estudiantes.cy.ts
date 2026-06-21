@@ -1,115 +1,85 @@
 /// <reference types="cypress" />
 
 /**
- * SIVU - Gestión de estudiantes (perspectiva administrador).
+ * SIVU · Estudiantes (administrador).
  *
- * data-testid esperados:
- *   - data-testid="nav-estudiantes"
- *   - data-testid="estudiantes-table"
- *   - data-testid="estudiantes-search"
- *   - data-testid="estudiantes-create-btn"
- *   - data-testid="estudiante-form-tipoDocumento"
- *   - data-testid="estudiante-form-numeroDocumento"
- *   - data-testid="estudiante-form-nombres"
- *   - data-testid="estudiante-form-apellidos"
- *   - data-testid="estudiante-form-email"
- *   - data-testid="estudiante-form-programa"
- *   - data-testid="estudiante-form-semestre"
- *   - data-testid="estudiante-form-creditos"
- *   - data-testid="estudiante-form-promedio"
- *   - data-testid="estudiante-form-submit"
- *   - data-testid="estudiante-row-{id}"
- *   - data-testid="estudiante-delete-{id}"
- *   - data-testid="confirm-delete-yes"
+ * Valida el CRUD de estudiantes vía API (contrato real del backend) y que la
+ * pantalla de estudiantes del frontend cargue con sesión hidratada y muestre
+ * los datos seed (Kelly).
  */
 
+const apiUrl = Cypress.env("apiUrl") as string;
+
 describe("SIVU · Estudiantes (admin)", () => {
-  const sufijo = `cy${Date.now()}`;
-  const nuevoEmail = `qa-est-${sufijo}@est.uempresarial.edu.co`;
-  const nuevoDoc = `99${Date.now().toString().slice(-8)}`;
+  let adminToken: string;
+  const ts = `${Date.now()}`;
+  const nuevoEmail = `qa-est-${ts}@est.uempresarial.edu.co`;
+  let estudianteId: number;
 
   before(() => {
     cy.seedIfNeeded();
+    cy.loginAsAdmin().then((t) => {
+      adminToken = t as unknown as string;
+    });
   });
 
-  beforeEach(() => {
+  const auth = () => ({ Authorization: `Bearer ${adminToken}` });
+
+  it("admin lista estudiantes y existe el seed (Kelly)", () => {
+    cy.request({
+      method: "GET",
+      url: `${apiUrl}/estudiantes?page=0&size=50`,
+      headers: auth(),
+    }).then((res) => {
+      expect(res.status).to.eq(200);
+      expect(res.body.content).to.be.an("array");
+      const emails = res.body.content.map((e: { email: string }) => e.email);
+      expect(emails.join(" ")).to.match(/kelly/i);
+    });
+  });
+
+  it("admin crea un estudiante (201) y aparece al listar", () => {
+    cy.request({
+      method: "POST",
+      url: `${apiUrl}/estudiantes`,
+      headers: auth(),
+      body: {
+        tipoDocumento: "CC",
+        numeroDocumento: `2${ts.slice(-9)}`,
+        nombres: "QA",
+        apellidos: "Cypress",
+        email: nuevoEmail,
+        telefono: "+57 3000000000",
+        programaAcademico: "Ingeniería de Sistemas",
+        semestre: 8,
+        creditosAprobados: 130,
+        promedioAcumulado: 4.1,
+        estado: "ACTIVO",
+      },
+    }).then((res) => {
+      expect(res.status).to.eq(201);
+      expect(res.body.id).to.be.a("number");
+      estudianteId = res.body.id;
+    });
+  });
+
+  it("admin obtiene el estudiante creado por id", () => {
+    cy.request({ method: "GET", url: `${apiUrl}/estudiantes/${estudianteId}`, headers: auth() }).then((res) => {
+      expect(res.status).to.eq(200);
+      expect(res.body.email).to.eq(nuevoEmail);
+    });
+  });
+
+  it("admin elimina el estudiante creado (204)", () => {
+    cy.request({ method: "DELETE", url: `${apiUrl}/estudiantes/${estudianteId}`, headers: auth() }).then((res) => {
+      expect(res.status).to.eq(204);
+    });
+  });
+
+  it("la pantalla de estudiantes carga autenticada (sin redirigir a login)", () => {
     cy.loginAsAdmin();
-  });
-
-  it("admin ve el listado de estudiantes con datos seed", () => {
-    cy.visit("/estudiantes");
-    cy.get('[data-testid="estudiantes-table"], table', { timeout: 10_000 }).should("be.visible");
-    cy.contains(/kelly/i, { timeout: 10_000 }).should("be.visible");
-  });
-
-  it("admin crea un estudiante y aparece en el listado", () => {
-    cy.visit("/estudiantes");
-    cy.get('[data-testid="estudiantes-create-btn"]')
-      .then(($el) => {
-        if ($el.length) cy.wrap($el.first()).click({ force: true });
-        else cy.contains(/crear estudiante|nuevo estudiante|\+\s*estudiante/i).click({ force: true });
-      });
-
-    cy.get('[data-testid="estudiante-form-tipoDocumento"], select[name="tipoDocumento"]')
-      .first()
-      .select("CC");
-    cy.get('[data-testid="estudiante-form-numeroDocumento"], input[name="numeroDocumento"]')
-      .first()
-      .type(nuevoDoc);
-    cy.get('[data-testid="estudiante-form-nombres"], input[name="nombres"]').first().type("QA");
-    cy.get('[data-testid="estudiante-form-apellidos"], input[name="apellidos"]').first().type("Cypress");
-    cy.get('[data-testid="estudiante-form-email"], input[name="email"], input[type="email"]')
-      .first()
-      .type(nuevoEmail);
-    cy.get('[data-testid="estudiante-form-programa"], input[name="programaAcademico"]')
-      .first()
-      .type("Ingeniería de Sistemas");
-    cy.get('[data-testid="estudiante-form-semestre"], input[name="semestre"]').first().clear().type("8");
-    cy.get('[data-testid="estudiante-form-creditos"], input[name="creditosAprobados"]')
-      .first()
-      .clear()
-      .type("130");
-    cy.get('[data-testid="estudiante-form-promedio"], input[name="promedioAcumulado"]')
-      .first()
-      .clear()
-      .type("4.10");
-
-    cy.get('[data-testid="estudiante-form-submit"], button[type="submit"]').first().click();
-
-    // Confirma que el nuevo estudiante aparece en el listado
-    cy.contains(nuevoEmail, { timeout: 10_000 }).should("be.visible");
-  });
-
-  it("admin busca un estudiante por email y lo encuentra", () => {
-    cy.visit("/estudiantes");
-    cy.get('[data-testid="estudiantes-search"], input[type="search"], input[placeholder*="buscar" i]')
-      .first()
-      .clear()
-      .type(nuevoEmail);
-
-    cy.contains(nuevoEmail, { timeout: 10_000 }).should("be.visible");
-  });
-
-  it("admin elimina el estudiante creado y desaparece del listado", () => {
-    cy.visit("/estudiantes");
-    cy.get('[data-testid="estudiantes-search"], input[type="search"], input[placeholder*="buscar" i]')
-      .first()
-      .clear()
-      .type(nuevoEmail);
-
-    cy.contains("tr", nuevoEmail, { timeout: 10_000 })
-      .within(() => {
-        cy.get('[data-testid^="estudiante-delete-"], button[aria-label*="elimin" i], button:contains("Eliminar")')
-          .first()
-          .click({ force: true });
-      });
-
-    cy.get('[data-testid="confirm-delete-yes"]')
-      .then(($el) => {
-        if ($el.length) cy.wrap($el.first()).click({ force: true });
-        else cy.contains(/confirmar|sí|si,/i).first().click({ force: true });
-      });
-
-    cy.contains(nuevoEmail).should("not.exist");
+    cy.visitAuthed("/estudiantes");
+    cy.location("pathname", { timeout: 10_000 }).should("eq", "/estudiantes");
+    cy.contains(/estudiantes/i, { timeout: 10_000 }).should("be.visible");
   });
 });

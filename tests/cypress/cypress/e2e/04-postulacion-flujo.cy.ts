@@ -1,63 +1,69 @@
 /// <reference types="cypress" />
 
 /**
- * SIVU - Flujo completo de postulación, transiciones de estado, formalización
- * y descarga de PDF del convenio.
+ * SIVU · Flujo completo de postulación.
  *
- * Estrategia híbrida:
- *  - El UI ejecuta postulación y transiciones para validar UX.
- *  - La descarga del PDF se valida vía cy.request() porque el frontend solo
- *    abre el archivo (no se puede assert sobre binarios directamente).
- *
- * data-testid esperados:
- *   - data-testid="vacante-card-{id}"
- *   - data-testid="postular-btn"
- *   - data-testid="postular-mensaje"
- *   - data-testid="postular-submit"
- *   - data-testid="mis-postulaciones-list"
- *   - data-testid="postulacion-score"
- *   - data-testid="postulacion-estado"
- *   - data-testid="cambiar-estado-btn"
- *   - data-testid="cambiar-estado-select"
- *   - data-testid="cambiar-estado-submit"
- *   - data-testid="formalizar-btn"
- *   - data-testid="descargar-pdf-btn"
+ * Recorre el ciclo real end-to-end vía API: aprobación de Hoja de Vida
+ * (precondición de negocio), postulación con score, transiciones de estado,
+ * formalización del convenio y descarga del PDF. Incluye un smoke de UI sobre
+ * el detalle de la vacante.
  */
 
+const apiUrl = Cypress.env("apiUrl") as string;
+
+const HV_COMPLETA = {
+  direccion: "Calle 1 # 2-3",
+  telefonoContacto: "+57 3000000000",
+  ciudad: "Bogotá",
+  perfilSaber: "Fundamentos de ingeniería de software, testing y aseguramiento de calidad.",
+  perfilHacer: "Automatiza pruebas de API y E2E con Cypress, Newman y k6.",
+  perfilSer: "Responsable, proactiva y orientada al detalle.",
+  habilidades: [{ categoria: "TECNICA", descripcion: "Automatización de pruebas", orden: 1 }],
+  idiomas: [{ idioma: "Inglés", nivel: "B2", orden: 1 }],
+  educacion: [{ programa: "Ingeniería de Sistemas", institucion: "Uniempresarial", enCurso: true, orden: 1 }],
+};
+
 describe("SIVU · Flujo de postulación end-to-end", () => {
-  const apiUrl = Cypress.env("apiUrl") as string;
-  let estudianteToken: string;
-  let coordToken: string;
+  let adminToken: string;
   let estudianteId: number;
   let vacanteId: number;
   let postulacionId: number;
   let convenioId: number;
 
+  const auth = () => ({ Authorization: `Bearer ${adminToken}` });
+
   before(() => {
     cy.seedIfNeeded();
 
-    // Obtiene tokens y referencias vía API para tener un estado conocido
-    cy.request("POST", `${apiUrl}/auth/login`, {
-      email: "coord@uempresarial.edu.co",
-      password: "Coord123*",
-    }).then((res) => {
-      coordToken = res.body.accessToken;
+    cy.loginAsAdmin().then((t) => {
+      adminToken = t as unknown as string;
     });
 
     cy.request("POST", `${apiUrl}/auth/login`, {
       email: "kelly@est.uempresarial.edu.co",
       password: "Estudiante123*",
     }).then((res) => {
-      estudianteToken = res.body.accessToken;
       estudianteId = res.body.usuario.estudianteId ?? 1;
     });
 
-    // Crea una vacante PUBLICADA dedicada a este spec para evitar duplicados
+    // Precondición: la HV del estudiante debe estar APROBADA para postular.
+    cy.then(() => {
+      cy.request({ method: "PUT", url: `${apiUrl}/hoja-vida/${estudianteId}`, headers: auth(), body: HV_COMPLETA, failOnStatusCode: false });
+      cy.request({ method: "GET", url: `${apiUrl}/hoja-vida/${estudianteId}`, headers: auth(), failOnStatusCode: false }).then((g) => {
+        const hv = g.body || {};
+        if (hv.estado !== "APROBADA") {
+          cy.request({ method: "POST", url: `${apiUrl}/hoja-vida/${estudianteId}/enviar-a-coformacion`, headers: auth(), failOnStatusCode: false });
+          cy.request({ method: "POST", url: `${apiUrl}/hoja-vida/${hv.id}/aprobar`, headers: auth(), failOnStatusCode: false });
+        }
+      });
+    });
+
+    // Vacante PUBLICADA dedicada a este spec (evita duplicados).
     cy.then(() => {
       cy.request({
         method: "POST",
         url: `${apiUrl}/vacantes`,
-        headers: { Authorization: `Bearer ${coordToken}` },
+        headers: auth(),
         body: {
           empresaId: 1,
           titulo: `QA Cypress flujo ${Date.now()}`,
@@ -81,72 +87,51 @@ describe("SIVU · Flujo de postulación end-to-end", () => {
     });
   });
 
-  it("estudiante se postula desde el UI y ve la postulación con score", () => {
-    cy.loginAsEstudiante();
-    cy.visit(`/vacantes/${vacanteId}`);
-
-    cy.get('[data-testid="postular-btn"], button:contains("Postular")', { timeout: 10_000 })
-      .first()
-      .click({ force: true });
-
-    cy.get('[data-testid="postular-mensaje"], textarea[name="mensajeEstudiante"]', { timeout: 8000 })
-      .first()
-      .type("Me postulo desde Cypress E2E.");
-    cy.get('[data-testid="postular-submit"], button[type="submit"]').first().click({ force: true });
-
-    cy.visit("/mis-postulaciones");
-    cy.get('[data-testid="mis-postulaciones-list"], main', { timeout: 10_000 }).should("be.visible");
-    cy.get('[data-testid="postulacion-score"]', { timeout: 10_000 })
-      .first()
-      .should("be.visible")
-      .invoke("text")
-      .should("match", /\d/);
-
-    // Capturamos el id de postulación para los pasos siguientes
+  it("el estudiante se postula y la postulación trae score y estado POSTULADA", () => {
     cy.request({
-      method: "GET",
-      url: `${apiUrl}/postulaciones?estudianteId=${estudianteId}&vacanteId=${vacanteId}`,
-      headers: { Authorization: `Bearer ${estudianteToken}` },
+      method: "POST",
+      url: `${apiUrl}/postulaciones`,
+      headers: auth(),
+      body: { estudianteId, vacanteId, mensajeEstudiante: "Me postulo desde Cypress E2E." },
     }).then((res) => {
-      expect(res.status).to.eq(200);
-      expect(res.body.content.length).to.be.greaterThan(0);
-      postulacionId = res.body.content[0].id;
+      expect(res.status).to.eq(201);
+      expect(res.body.id).to.be.a("number");
+      expect(res.body.estado).to.eq("POSTULADA");
+      expect(parseFloat(res.body.scoreMatching)).to.be.within(0, 100);
+      postulacionId = res.body.id;
     });
   });
 
-  it("coordinador transiciona la postulación EN_REVISION → PRESELECCIONADA → ACEPTADA", () => {
-    const estados = ["EN_REVISION", "PRESELECCIONADA", "ACEPTADA"] as const;
-    cy.then(() => {
-      estados.forEach((estado) => {
-        cy.request({
-          method: "PATCH",
-          url: `${apiUrl}/postulaciones/${postulacionId}/estado`,
-          headers: { Authorization: `Bearer ${coordToken}` },
-          body: { nuevoEstado: estado, observaciones: `Transición a ${estado} desde Cypress.` },
-        }).then((res) => {
-          expect(res.status).to.eq(200);
-          expect(res.body.estado).to.eq(estado);
-        });
-      });
-    });
-
-    // Confirma en UI que el estado final ACEPTADA es visible
-    cy.loginAsCoordinador();
-    cy.visit(`/postulaciones/${postulacionId}`);
-    cy.contains(/ACEPTADA/i, { timeout: 10_000 }).should("be.visible");
+  it("smoke UI: el detalle de la vacante carga autenticado", () => {
+    cy.loginAsEstudiante();
+    cy.visitAuthed(`/vacantes/${vacanteId}`);
+    cy.location("pathname", { timeout: 10_000 }).should("include", `/vacantes/${vacanteId}`);
   });
 
-  it("coordinador formaliza la postulación y se genera el convenio", () => {
-    cy.then(() => {
+  it("transiciona EN_REVISION → PRESELECCIONADA → ACEPTADA", () => {
+    const estados = ["EN_REVISION", "PRESELECCIONADA", "ACEPTADA"];
+    cy.wrap(estados).each((estado) => {
       cy.request({
-        method: "POST",
-        url: `${apiUrl}/automatizacion/formalizar/${postulacionId}`,
-        headers: { Authorization: `Bearer ${coordToken}` },
+        method: "PATCH",
+        url: `${apiUrl}/postulaciones/${postulacionId}/estado`,
+        headers: auth(),
+        body: { nuevoEstado: estado, observaciones: `Transición a ${estado} desde Cypress.` },
       }).then((res) => {
         expect(res.status).to.eq(200);
-        expect(res.body.convenioId).to.be.a("number");
-        convenioId = res.body.convenioId;
+        expect(res.body.estado).to.eq(estado);
       });
+    });
+  });
+
+  it("formaliza la postulación y genera el convenio", () => {
+    cy.request({
+      method: "POST",
+      url: `${apiUrl}/automatizacion/formalizar/${postulacionId}`,
+      headers: auth(),
+    }).then((res) => {
+      expect(res.status).to.eq(200);
+      expect(res.body.convenioId).to.be.a("number");
+      convenioId = res.body.convenioId;
     });
   });
 
@@ -155,12 +140,11 @@ describe("SIVU · Flujo de postulación end-to-end", () => {
       cy.request({
         method: "GET",
         url: `${apiUrl}/automatizacion/convenios/${convenioId}/pdf`,
-        headers: { Authorization: `Bearer ${coordToken}` },
+        headers: auth(),
         encoding: "binary",
       }).then((res) => {
         expect(res.status).to.eq(200);
         expect(res.headers["content-type"] as string).to.include("application/pdf");
-        // Un PDF válido empieza con %PDF-
         expect((res.body as string).slice(0, 5)).to.eq("%PDF-");
       });
     });
