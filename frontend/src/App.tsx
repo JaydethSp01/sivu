@@ -66,6 +66,7 @@ const EvaluacionProfesorPage    = lazy(() => import("@/features/trimestres/evalu
 const DisponibilidadPage        = lazy(() => import("@/features/agendamiento/disponibilidad-page").then(m => ({ default: m.DisponibilidadPage })));
 const ProponerReunionPage       = lazy(() => import("@/features/agendamiento/proponer-reunion-page").then(m => ({ default: m.ProponerReunionPage })));
 const BandejaReunionesPage      = lazy(() => import("@/features/agendamiento/bandeja-reuniones-page").then(m => ({ default: m.BandejaReunionesPage })));
+const EvaluacionTutorTokenPage  = lazy(() => import("@/features/evaluacion-externa/evaluacion-tutor-token-page").then(m => ({ default: m.EvaluacionTutorTokenPage })));
 
 function RouteFallback(): JSX.Element {
   return (
@@ -91,6 +92,9 @@ export function App(): JSX.Element {
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/403" element={<ForbiddenPage />} />
+
+            {/* Acceso externo del tutor empresarial por token (sin login) */}
+            <Route path="/evaluacion-tutor-externo" element={<EvaluacionTutorTokenPage />} />
 
             <Route element={<ProtectedRoute />}>
               <Route element={<AppShell />}>
