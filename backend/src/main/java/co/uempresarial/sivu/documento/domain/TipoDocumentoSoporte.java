@@ -7,5 +7,6 @@ public enum TipoDocumentoSoporte {
     EPS,
     FORMALIZACION,
     CERTIFICADO,
+    PLAN_ACTIVIDADES,
     OTRO
 }
