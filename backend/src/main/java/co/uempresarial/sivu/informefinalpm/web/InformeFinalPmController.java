@@ -2,8 +2,10 @@ package co.uempresarial.sivu.informefinalpm.web;
 
 import co.uempresarial.sivu.informefinalpm.pdf.InformeFinalPmPdfGenerator;
 import co.uempresarial.sivu.informefinalpm.service.InformeFinalPmService;
+import co.uempresarial.sivu.informefinalpm.web.dto.AltoImpactoRequest;
 import co.uempresarial.sivu.informefinalpm.web.dto.InformeFinalPmRequest;
 import co.uempresarial.sivu.informefinalpm.web.dto.InformeFinalPmResponse;
+import co.uempresarial.sivu.informefinalpm.web.dto.RegistrarNotaRequest;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -60,6 +62,30 @@ public class InformeFinalPmController {
     public ResponseEntity<InformeFinalPmResponse> rechazar(@PathVariable Long id,
                                                             @RequestBody Map<String, String> body) {
         return ResponseEntity.ok(service.rechazar(id, body.get("observaciones")));
+    }
+
+    @PatchMapping("/api/v1/informes-final-pm/{id}/nota-tutor")
+    @PreAuthorize("hasAnyRole('TUTOR','EMPRESA','COORDINADOR','ADMIN')")
+    @Operation(summary = "Registrar la nota individual del tutor empresarial (BI-07)")
+    public ResponseEntity<InformeFinalPmResponse> registrarNotaTutor(
+            @PathVariable Long id, @Valid @RequestBody RegistrarNotaRequest request) {
+        return ResponseEntity.ok(service.registrarNotaTutor(id, request.nota()));
+    }
+
+    @PatchMapping("/api/v1/informes-final-pm/{id}/nota-profesor")
+    @PreAuthorize("hasAnyRole('COORDINADOR','ADMIN')")
+    @Operation(summary = "Registrar la nota individual del profesor / docente acompañante (BI-07)")
+    public ResponseEntity<InformeFinalPmResponse> registrarNotaProfesor(
+            @PathVariable Long id, @Valid @RequestBody RegistrarNotaRequest request) {
+        return ResponseEntity.ok(service.registrarNotaProfesor(id, request.nota()));
+    }
+
+    @PatchMapping("/api/v1/informes-final-pm/{id}/alto-impacto")
+    @PreAuthorize("hasAnyRole('COORDINADOR','ADMIN')")
+    @Operation(summary = "Marcar / desmarcar el informe como Alto Impacto (BI-07)")
+    public ResponseEntity<InformeFinalPmResponse> marcarAltoImpacto(
+            @PathVariable Long id, @Valid @RequestBody AltoImpactoRequest request) {
+        return ResponseEntity.ok(service.marcarAltoImpacto(id, request.altoImpacto()));
     }
 
     @GetMapping("/api/v1/informes-final-pm/{id}/pdf")

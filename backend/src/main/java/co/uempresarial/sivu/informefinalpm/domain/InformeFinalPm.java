@@ -6,6 +6,7 @@ import co.uempresarial.sivu.trimestre.domain.PlanMejora;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 
 /**
@@ -115,4 +116,26 @@ public class InformeFinalPm extends BaseEntity {
     /** Cargo del tutor empresarial — aparece en la cabecera del informe. */
     @Column(name = "cargo_tutor_empresarial", length = 160)
     private String cargoTutorEmpresarial;
+
+    // --- BI-07 / RF-A04: calificación final GTC-FM-16 ---
+
+    /** Nota individual del tutor empresarial (0.0 – 5.0). La registra el tutor/empresa. */
+    @Column(name = "nota_tutor", precision = 3, scale = 2)
+    private BigDecimal notaTutor;
+
+    /** Nota individual del profesor / docente acompañante (0.0 – 5.0). La registra el profesor/coordinación. */
+    @Column(name = "nota_profesor", precision = 3, scale = 2)
+    private BigDecimal notaProfesor;
+
+    /**
+     * Nota promedio final = (notaTutor + notaProfesor) / 2.
+     * Calculada automáticamente cuando ambas notas están presentes — no editable manualmente.
+     */
+    @Column(name = "nota_promedio", precision = 3, scale = 2)
+    private BigDecimal notaPromedio;
+
+    /** Marca de "Alto Impacto" del informe. La establece el coordinador/admin. */
+    @Column(name = "alto_impacto", nullable = false)
+    @Builder.Default
+    private Boolean altoImpacto = false;
 }

@@ -17,6 +17,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.OffsetDateTime;
 
 @Service
@@ -25,6 +27,11 @@ import java.time.OffsetDateTime;
 public class InformeFinalPmService {
 
     private static final int PAGINAS_MAX = 15;
+
+    /** Nota mínima aprobatoria del Informe Final (escala 0–5). */
+    public static final BigDecimal NOTA_MINIMA_APROBACION = new BigDecimal("3.0");
+    private static final BigDecimal NOTA_MIN = BigDecimal.ZERO;
+    private static final BigDecimal NOTA_MAX = new BigDecimal("5.0");
 
     private final InformeFinalPmRepository repository;
     private final PlanMejoraRepository planMejoraRepository;
@@ -148,6 +155,61 @@ public class InformeFinalPmService {
             "[SIVU] Tu Informe Final del PM requiere ajustes",
             "Observaciones de la revisión:\n\n" + observaciones);
         return mapper.toResponse(i);
+    }
+
+    /**
+     * BI-07 / RF-A04 — Registra la nota individual del tutor empresarial.
+     * Recalcula la nota promedio automáticamente si ya existe la nota del profesor.
+     * No bloquea el guardado aunque la nota sea inferior a la mínima aprobatoria.
+     */
+    public InformeFinalPmResponse registrarNotaTutor(Long id, BigDecimal nota) {
+        InformeFinalPm i = obtenerEntidad(id);
+        i.setNotaTutor(validarNota(nota, "tutor"));
+        recalcularPromedio(i);
+        return mapper.toResponse(i);
+    }
+
+    /**
+     * BI-07 / RF-A04 — Registra la nota individual del profesor / docente acompañante.
+     * Recalcula la nota promedio automáticamente si ya existe la nota del tutor.
+     */
+    public InformeFinalPmResponse registrarNotaProfesor(Long id, BigDecimal nota) {
+        InformeFinalPm i = obtenerEntidad(id);
+        i.setNotaProfesor(validarNota(nota, "profesor"));
+        recalcularPromedio(i);
+        return mapper.toResponse(i);
+    }
+
+    /** BI-07 / RF-A04 — El coordinador/admin marca o desmarca el informe como "Alto Impacto". */
+    public InformeFinalPmResponse marcarAltoImpacto(Long id, boolean altoImpacto) {
+        InformeFinalPm i = obtenerEntidad(id);
+        i.setAltoImpacto(altoImpacto);
+        return mapper.toResponse(i);
+    }
+
+    private BigDecimal validarNota(BigDecimal nota, String quien) {
+        if (nota == null) {
+            throw new BusinessException("Debes indicar la nota del " + quien);
+        }
+        if (nota.compareTo(NOTA_MIN) < 0 || nota.compareTo(NOTA_MAX) > 0) {
+            throw new BusinessException("La nota del " + quien + " debe estar entre 0.0 y 5.0");
+        }
+        return nota.setScale(2, RoundingMode.HALF_UP);
+    }
+
+    /**
+     * Calcula la nota promedio = (notaTutor + notaProfesor) / 2 cuando ambas están
+     * presentes. El promedio NO es editable manualmente; siempre se deriva de las dos notas.
+     */
+    private void recalcularPromedio(InformeFinalPm i) {
+        if (i.getNotaTutor() != null && i.getNotaProfesor() != null) {
+            BigDecimal promedio = i.getNotaTutor()
+                .add(i.getNotaProfesor())
+                .divide(BigDecimal.valueOf(2), 2, RoundingMode.HALF_UP);
+            i.setNotaPromedio(promedio);
+        } else {
+            i.setNotaPromedio(null);
+        }
     }
 
     @Transactional(readOnly = true)
