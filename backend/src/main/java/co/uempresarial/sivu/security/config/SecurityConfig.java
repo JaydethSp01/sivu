@@ -46,6 +46,7 @@ public class SecurityConfig {
                     resp.sendError(HttpServletResponse.SC_FORBIDDEN, "Acceso denegado")))
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/v1/tutor-acceso/validar").permitAll()
                 .requestMatchers(
                     "/api/v1/auth/login",
                     "/api/v1/auth/register",
