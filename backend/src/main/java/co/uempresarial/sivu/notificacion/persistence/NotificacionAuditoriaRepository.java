@@ -20,13 +20,13 @@ public interface NotificacionAuditoriaRepository extends JpaRepository<Notificac
     @Query(
         value = """
             SELECT n FROM NotificacionAuditoria n
-            WHERE (:destinatario IS NULL OR LOWER(n.destinatarioEmail) LIKE LOWER(CONCAT('%', :destinatario, '%')))
+            WHERE (:destinatario IS NULL OR LOWER(n.destinatarioEmail) LIKE LOWER(CONCAT('%', CAST(:destinatario AS string), '%')))
               AND (:tipoEvento IS NULL OR n.tipoEvento = :tipoEvento)
             ORDER BY n.createdAt DESC
             """,
         countQuery = """
             SELECT COUNT(n) FROM NotificacionAuditoria n
-            WHERE (:destinatario IS NULL OR LOWER(n.destinatarioEmail) LIKE LOWER(CONCAT('%', :destinatario, '%')))
+            WHERE (:destinatario IS NULL OR LOWER(n.destinatarioEmail) LIKE LOWER(CONCAT('%', CAST(:destinatario AS string), '%')))
               AND (:tipoEvento IS NULL OR n.tipoEvento = :tipoEvento)
             """)
     Page<NotificacionAuditoria> buscar(@Param("destinatario") String destinatario,
