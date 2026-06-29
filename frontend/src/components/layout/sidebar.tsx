@@ -5,6 +5,8 @@ import {
   BookCopy,
   Briefcase,
   CalendarClock,
+  CalendarPlus,
+  CalendarRange,
   Factory,
   FileCog,
   Inbox as InboxIcon,
@@ -135,6 +137,16 @@ const GROUPS: NavGroup[] = [
     items: [
       { to: "/convenios", label: labelPracticas, icon: FileSignature },
       { to: "/documentos", label: labelDocumentos, icon: FileText },
+    ],
+  },
+  // 4b. Agendamiento colaborativo — franjas del docente y reuniones
+  //     estudiante ↔ tutor (RF-C01/C02/C03).
+  {
+    label: "Agendamiento",
+    items: [
+      { to: "/agendamiento/disponibilidad", label: "Disponibilidad docente", icon: CalendarClock, roles: ["ADMIN", "COORDINADOR"] },
+      { to: "/agendamiento/proponer", label: "Proponer reunión", icon: CalendarPlus, roles: ["ESTUDIANTE"] },
+      { to: "/agendamiento/reuniones", label: "Reuniones", icon: CalendarRange, roles: ["ESTUDIANTE", "ADMIN", "COORDINADOR"] },
     ],
   },
   // 5. Programa interno — plan B académico. Solo coord/admin gestionan; los

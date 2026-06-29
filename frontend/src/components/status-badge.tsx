@@ -61,6 +61,21 @@ const TUTOR_MAP: Record<string, { label: string; variant: BadgeVariant }> = {
   INACTIVO: { label: "Inactivo", variant: "muted" },
 };
 
+const DISPONIBILIDAD_MAP: Record<string, { label: string; variant: BadgeVariant }> = {
+  ACTIVA: { label: "Activa", variant: "success" },
+  OCUPADA: { label: "Ocupada", variant: "warning" },
+  CANCELADA: { label: "Cancelada", variant: "muted" },
+};
+
+const REUNION_MAP: Record<string, { label: string; variant: BadgeVariant }> = {
+  PROPUESTO: { label: "Propuesta enviada", variant: "warning" },
+  ACEPTADO: { label: "Aceptada", variant: "default" },
+  RECHAZADO: { label: "Rechazada", variant: "destructive" },
+  CONTRAOFERTA: { label: "Contraoferta", variant: "accent" },
+  CONFIRMADO: { label: "Confirmada", variant: "success" },
+  CANCELADO: { label: "Cancelada", variant: "muted" },
+};
+
 const MAPS = {
   estudiante: ESTUDIANTE_MAP,
   empresa: EMPRESA_MAP,
@@ -70,6 +85,8 @@ const MAPS = {
   convenio: CONVENIO_MAP,
   tutor: TUTOR_MAP,
   entrevista: ENTREVISTA_MAP,
+  disponibilidad: DISPONIBILIDAD_MAP,
+  reunion: REUNION_MAP,
 } as const;
 
 const DOT_BY_VARIANT: Record<BadgeVariant, string> = {

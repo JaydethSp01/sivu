@@ -1133,3 +1133,76 @@ export interface LlenarRequest {
   valores?: ValorCriterio[];
   observaciones?: string | null;
 }
+
+// ============================================================
+// Agendamiento colaborativo (RF-C01 / RF-C02 / RF-C03)
+// ============================================================
+
+export type ModalidadAgenda = "PRESENCIAL" | "VIRTUAL";
+export type EstadoDisponibilidad = "ACTIVA" | "OCUPADA" | "CANCELADA";
+export type EstadoAgendamiento =
+  | "PROPUESTO"
+  | "ACEPTADO"
+  | "RECHAZADO"
+  | "CONTRAOFERTA"
+  | "CONFIRMADO"
+  | "CANCELADO";
+
+export interface Disponibilidad {
+  id: number;
+  tutorId: number;
+  fecha: string; // YYYY-MM-DD
+  horaInicio: string; // HH:mm[:ss]
+  horaFin: string;
+  modalidad: ModalidadAgenda;
+  estado: EstadoDisponibilidad;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface DisponibilidadRequest {
+  tutorId: number;
+  fecha: string;
+  horaInicio: string;
+  horaFin: string;
+  modalidad: ModalidadAgenda;
+}
+
+export interface ReunionAgenda {
+  id: number;
+  convenioId: number;
+  estudianteId: number;
+  tutorId: number;
+  disponibilidadId: number | null;
+  fechaPropuesta: string;
+  horaInicio: string;
+  horaFin: string;
+  modalidad: ModalidadAgenda;
+  enlace: string | null;
+  estado: EstadoAgendamiento;
+  observaciones: string | null;
+  actaReunionId: number | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ProponerReunionRequest {
+  convenioId: number;
+  estudianteId: number;
+  tutorId: number;
+  fechaPropuesta: string;
+  horaInicio: string;
+  horaFin: string;
+  modalidad: ModalidadAgenda;
+  enlace?: string | null;
+  observaciones?: string | null;
+}
+
+export interface ContraofertaReunionRequest {
+  fechaPropuesta: string;
+  horaInicio: string;
+  horaFin: string;
+  modalidad?: ModalidadAgenda;
+  enlace?: string | null;
+  observaciones?: string | null;
+}

@@ -63,6 +63,9 @@ const PlanesMejoraPage          = lazy(() => import("@/features/trimestres/plane
 const InformeFinalPmPage        = lazy(() => import("@/features/trimestres/informe-final-pm-page").then(m => ({ default: m.InformeFinalPmPage })));
 const EvaluacionTutorPage       = lazy(() => import("@/features/trimestres/evaluacion-tutor-page").then(m => ({ default: m.EvaluacionTutorPage })));
 const EvaluacionProfesorPage    = lazy(() => import("@/features/trimestres/evaluacion-profesor-page").then(m => ({ default: m.EvaluacionProfesorPage })));
+const DisponibilidadPage        = lazy(() => import("@/features/agendamiento/disponibilidad-page").then(m => ({ default: m.DisponibilidadPage })));
+const ProponerReunionPage       = lazy(() => import("@/features/agendamiento/proponer-reunion-page").then(m => ({ default: m.ProponerReunionPage })));
+const BandejaReunionesPage      = lazy(() => import("@/features/agendamiento/bandeja-reuniones-page").then(m => ({ default: m.BandejaReunionesPage })));
 
 function RouteFallback(): JSX.Element {
   return (
@@ -138,6 +141,15 @@ export function App(): JSX.Element {
                 <Route path="convenios/:convenioId/trimestres/:trimestreId/evaluacion-tutor" element={<EvaluacionTutorPage />} />
                 <Route path="convenios/:convenioId/trimestres/:trimestreId/evaluacion-profesor" element={<EvaluacionProfesorPage />} />
 
+
+                {/* Agendamiento colaborativo (RF-C01/C02/C03) */}
+                <Route element={<RoleGuard allow={["ADMIN", "COORDINADOR"]} />}>
+                  <Route path="agendamiento/disponibilidad" element={<DisponibilidadPage />} />
+                </Route>
+                <Route element={<RoleGuard allow={["ESTUDIANTE", "ADMIN", "COORDINADOR"]} />}>
+                  <Route path="agendamiento/proponer" element={<ProponerReunionPage />} />
+                  <Route path="agendamiento/reuniones" element={<BandejaReunionesPage />} />
+                </Route>
 
                 <Route element={<RoleGuard allow={["ADMIN", "COORDINADOR", "EMPRESA", "MCP_AGENT"]} />}>
                   <Route path="tutores" element={<TutoresListPage />} />

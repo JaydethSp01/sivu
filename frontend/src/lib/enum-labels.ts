@@ -2,6 +2,8 @@ import type {
   AplicaA,
   AreaPractica,
   CategoriaHabilidad,
+  EstadoAgendamiento,
+  EstadoDisponibilidad,
   EstadoEmpresa,
   EstadoHojaVida,
   EstadoPlanActividades,
@@ -10,6 +12,7 @@ import type {
   EstadoTutor,
   EstadoVacante,
   Modalidad,
+  ModalidadAgenda,
   NivelIdioma,
   Recomendacion,
   Rol,
@@ -241,6 +244,26 @@ export const ESTADO_HOJA_VIDA_VARIANT: Record<
   ENVIADA: "warning",
   APROBADA: "success",
   RECHAZADA: "destructive",
+};
+
+export const MODALIDAD_AGENDA_LABELS: Record<ModalidadAgenda, string> = {
+  PRESENCIAL: "Presencial",
+  VIRTUAL: "Virtual",
+};
+
+export const ESTADO_DISPONIBILIDAD_LABELS: Record<EstadoDisponibilidad, string> = {
+  ACTIVA: "Activa",
+  OCUPADA: "Ocupada",
+  CANCELADA: "Cancelada",
+};
+
+export const ESTADO_AGENDAMIENTO_LABELS: Record<EstadoAgendamiento, string> = {
+  PROPUESTO: "Propuesta enviada",
+  ACEPTADO: "Aceptada",
+  RECHAZADO: "Rechazada",
+  CONTRAOFERTA: "Contraoferta",
+  CONFIRMADO: "Confirmada",
+  CANCELADO: "Cancelada",
 };
 
 export function humanize(value: string, map: Record<string, string>): string {
