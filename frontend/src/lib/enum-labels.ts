@@ -33,6 +33,7 @@ export const ROL_LABELS: Record<Rol, string> = {
   COORDINADOR: "Coformación",
   ESTUDIANTE: "Estudiante",
   EMPRESA: "Empresa",
+  TUTOR: "Tutor empresarial",
   MCP_AGENT: "Agente MCP",
 };
 

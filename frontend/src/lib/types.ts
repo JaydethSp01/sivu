@@ -1,4 +1,4 @@
-export type Rol = "ADMIN" | "COORDINADOR" | "ESTUDIANTE" | "EMPRESA" | "MCP_AGENT";
+export type Rol = "ADMIN" | "COORDINADOR" | "ESTUDIANTE" | "EMPRESA" | "TUTOR" | "MCP_AGENT";
 
 export interface UsuarioResumen {
   id: string;
@@ -853,6 +853,23 @@ export interface PlanActividadesRequest {
   pemObjetivoGeneral?: string | null;
   objetivos: PlanActividadesObjetivo[];
   meses: PlanActividadesMes[];
+}
+
+/** Tipo de comentario en el hilo de aprobación del Plan de Actividades. */
+export type PlanActividadesTipoComentario =
+  | "FEEDBACK"
+  | "RESPUESTA_APROBACION"
+  | "RESPUESTA_RECHAZO"
+  | "SISTEMA";
+
+/** Comentario del flujo de aprobación asociado a un Plan de Actividades. */
+export interface PlanActividadesComentario {
+  id: number;
+  autorNombre: string;
+  autorRol: Rol;
+  mensaje: string;
+  tipo: PlanActividadesTipoComentario;
+  createdAt: string;
 }
 
 export interface ActaAsistente {

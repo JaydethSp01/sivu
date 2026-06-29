@@ -2,7 +2,9 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { AlertTriangle, ArrowLeft, Download, Loader2, PenLine, Plus, Save, Sparkles, Trash2 } from "lucide-react";
+import { format, parseISO } from "date-fns";
+import { es } from "date-fns/locale";
+import { AlertTriangle, ArrowLeft, CheckCircle2, Download, Info, Loader2, MessageCircle, MessageSquare, PenLine, Plus, Save, Send, Sparkles, Trash2, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -12,13 +14,16 @@ import { Badge } from "@/components/ui/badge";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { api, extractApiMessage } from "@/lib/api";
 import { useAuthStore } from "@/lib/auth-store";
-import { ESTADO_PA_LABELS } from "@/lib/enum-labels";
+import { cn } from "@/lib/utils";
+import { ESTADO_PA_LABELS, ROL_LABELS } from "@/lib/enum-labels";
 import type {
   ParteFirmaTrimestre,
+  PlanActividadesComentario,
   PlanActividadesMes,
   PlanActividadesObjetivo,
   PlanActividadesRequest,
   PlanActividadesResponse,
+  PlanActividadesTipoComentario,
 } from "@/lib/types";
 
 function downloadPdf(url: string, filename: string): Promise<void> {
@@ -69,12 +74,15 @@ export function PlanActividadesPage(): JSX.Element {
   const qc = useQueryClient();
   const hasRole = useAuthStore((s) => s.hasRole);
   const canEdit = hasRole("ESTUDIANTE", "COORDINADOR", "ADMIN");
+  const canRevisar = hasRole("COORDINADOR", "ADMIN", "EMPRESA", "TUTOR");
+  const isEstudiante = hasRole("ESTUDIANTE");
 
   const [escenario, setEscenario] = useState("");
   const [pemDesc, setPemDesc] = useState("");
   const [pemObj, setPemObj] = useState("");
   const [objetivos, setObjetivos] = useState<PlanActividadesObjetivo[]>([]);
   const [meses, setMeses] = useState<PlanActividadesMes[]>([]);
+  const [nuevoComentario, setNuevoComentario] = useState("");
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["/trimestres/pa", trimestreId],
@@ -144,6 +152,42 @@ export function PlanActividadesPage(): JSX.Element {
       downloadPdf(`/trimestres/${trimestreId}/plan-actividades/pdf`, `pa-t${trimestreId}.pdf`),
     onError: (e) => toast.error(extractApiMessage(e)),
   });
+
+  const comentarios = useQuery({
+    queryKey: ["/trimestres/pa/comentarios", trimestreId],
+    enabled: !!trimestreId && !!data,
+    retry: false,
+    queryFn: async () =>
+      (
+        await api.get<PlanActividadesComentario[]>(
+          `/trimestres/${trimestreId}/plan-actividades/comentarios`
+        )
+      ).data,
+  });
+
+  const comentar = useMutation({
+    mutationFn: async (tipo: PlanActividadesTipoComentario) =>
+      api.post(`/trimestres/${trimestreId}/plan-actividades/comentarios`, {
+        mensaje: nuevoComentario.trim(),
+        tipo,
+      }),
+    onSuccess: () => {
+      toast.success("Comentario agregado");
+      setNuevoComentario("");
+      qc.invalidateQueries({ queryKey: ["/trimestres/pa/comentarios", trimestreId] });
+      qc.invalidateQueries({ queryKey: ["/trimestres/pa", trimestreId] });
+      qc.invalidateQueries({ queryKey: ["/convenios/trimestres", Number(convenioId)] });
+    },
+    onError: (e) => toast.error(extractApiMessage(e)),
+  });
+
+  const enviarComentario = (tipo: PlanActividadesTipoComentario) => {
+    if (!nuevoComentario.trim()) {
+      toast.error("Escribe un mensaje antes de enviar");
+      return;
+    }
+    comentar.mutate(tipo);
+  };
 
   if (isLoading) {
     return (
@@ -381,8 +425,166 @@ export function PlanActividadesPage(): JSX.Element {
           </CardContent>
         </Card>
       )}
+
+      {data && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <MessageSquare className="h-5 w-5" /> Comentarios del flujo de aprobación
+            </CardTitle>
+            <CardDescription>
+              Historial de retroalimentación entre el estudiante y los revisores (tutor empresarial y Coformación).
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {comentarios.isLoading ? (
+              <div className="flex items-center text-sm text-muted-foreground">
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Cargando comentarios...
+              </div>
+            ) : (comentarios.data?.length ?? 0) === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                Aún no hay comentarios en el flujo de aprobación.
+              </p>
+            ) : (
+              <ul className="space-y-3">
+                {comentarios.data!.map((c) => (
+                  <ComentarioItem key={c.id} c={c} />
+                ))}
+              </ul>
+            )}
+
+            {(canRevisar || isEstudiante) && (
+              <div className="space-y-2 rounded-md border p-3">
+                <Label htmlFor="nuevo-comentario">
+                  {canRevisar ? "Agregar revisión o comentario" : "Responder al revisor"}
+                </Label>
+                <Textarea
+                  id="nuevo-comentario"
+                  rows={3}
+                  value={nuevoComentario}
+                  onChange={(e) => setNuevoComentario(e.target.value)}
+                  placeholder={
+                    canRevisar
+                      ? "Escribe tu retroalimentación, aprobación o solicitud de cambios..."
+                      : "Escribe tu respuesta..."
+                  }
+                  disabled={comentar.isPending}
+                />
+                <div className="flex flex-wrap gap-2">
+                  {canRevisar ? (
+                    <>
+                      <Button
+                        size="sm"
+                        onClick={() => enviarComentario("RESPUESTA_APROBACION")}
+                        disabled={comentar.isPending}
+                        className="bg-success text-success-foreground hover:bg-success/90"
+                      >
+                        {comentar.isPending && comentar.variables === "RESPUESTA_APROBACION" ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <CheckCircle2 className="h-4 w-4" />
+                        )}
+                        Aprobar
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        onClick={() => enviarComentario("RESPUESTA_RECHAZO")}
+                        disabled={comentar.isPending}
+                      >
+                        {comentar.isPending && comentar.variables === "RESPUESTA_RECHAZO" ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <XCircle className="h-4 w-4" />
+                        )}
+                        Solicitar cambios
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => enviarComentario("FEEDBACK")}
+                        disabled={comentar.isPending}
+                      >
+                        {comentar.isPending && comentar.variables === "FEEDBACK" ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <MessageCircle className="h-4 w-4" />
+                        )}
+                        Comentario
+                      </Button>
+                    </>
+                  ) : (
+                    <Button
+                      size="sm"
+                      onClick={() => enviarComentario("FEEDBACK")}
+                      disabled={comentar.isPending}
+                    >
+                      {comentar.isPending ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Send className="h-4 w-4" />
+                      )}
+                      Enviar respuesta
+                    </Button>
+                  )}
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
+}
+
+function ComentarioItem({ c }: { c: PlanActividadesComentario }): JSX.Element {
+  if (c.tipo === "SISTEMA") {
+    return (
+      <li className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
+        <Info className="h-3 w-3" />
+        <span>{c.mensaje}</span>
+        <span className="text-muted-foreground/60">
+          · {format(parseISO(c.createdAt), "PPp", { locale: es })}
+        </span>
+      </li>
+    );
+  }
+
+  const tono =
+    c.tipo === "RESPUESTA_RECHAZO"
+      ? "border-destructive/40 bg-destructive/5"
+      : c.tipo === "RESPUESTA_APROBACION"
+        ? "border-success/40 bg-success/10"
+        : "border-border bg-muted/40";
+
+  return (
+    <li className={cn("rounded-md border p-3 space-y-1", tono)}>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex items-center gap-2 text-sm">
+          <span className="font-medium">{c.autorNombre}</span>
+          <Badge variant="secondary">{ROL_LABELS[c.autorRol] ?? c.autorRol}</Badge>
+          <TipoBadge tipo={c.tipo} />
+        </div>
+        <span className="text-xs text-muted-foreground">
+          {format(parseISO(c.createdAt), "PPp", { locale: es })}
+        </span>
+      </div>
+      <p className="text-sm whitespace-pre-wrap">{c.mensaje}</p>
+    </li>
+  );
+}
+
+function TipoBadge({ tipo }: { tipo: PlanActividadesTipoComentario }): JSX.Element | null {
+  switch (tipo) {
+    case "RESPUESTA_APROBACION":
+      return <Badge variant="success">Aprobación</Badge>;
+    case "RESPUESTA_RECHAZO":
+      return <Badge variant="destructive">Solicitud de cambios</Badge>;
+    case "FEEDBACK":
+      return <Badge variant="outline">Comentario</Badge>;
+    default:
+      return null;
+  }
 }
 
 function FirmaButton({ firmado, parte, titulo, disabled, onSign }: {
