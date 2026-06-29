@@ -3,6 +3,7 @@ package co.uempresarial.sivu.trimestre.web;
 import co.uempresarial.sivu.trimestre.domain.ParteFirmaTrimestre;
 import co.uempresarial.sivu.trimestre.pdf.EvaluacionTutorPdfGenerator;
 import co.uempresarial.sivu.trimestre.service.EvaluacionTutorTrimestreService;
+import co.uempresarial.sivu.trimestre.web.dto.EvaluacionTutorExternoResponse;
 import co.uempresarial.sivu.trimestre.web.dto.EvaluacionTutorRequest;
 import co.uempresarial.sivu.trimestre.web.dto.EvaluacionTutorResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -46,6 +47,25 @@ public class EvaluacionTutorTrimestreController {
     public ResponseEntity<EvaluacionTutorResponse> firmar(@PathVariable Long trimestreId,
                                                           @PathVariable ParteFirmaTrimestre parte) {
         return ResponseEntity.ok(service.firmar(trimestreId, parte));
+    }
+
+    // ───────── Acceso externo del tutor empresarial (token, sin cuenta institucional) ─────────
+
+    @GetMapping("/externo/validar")
+    @Operation(summary = "Validar token externo y obtener la ET actual (tutor sin cuenta)")
+    public ResponseEntity<EvaluacionTutorExternoResponse> validarExterno(@PathVariable Long trimestreId,
+                                                                         @RequestParam String token) {
+        return ResponseEntity.ok(service.validarAccesoExterno(trimestreId, token));
+    }
+
+    @PutMapping("/externo")
+    @Operation(summary = "Diligenciar/finalizar la ET con token externo (al finalizar consume el token)")
+    public ResponseEntity<EvaluacionTutorExternoResponse> guardarExterno(
+            @PathVariable Long trimestreId,
+            @RequestParam String token,
+            @RequestParam(defaultValue = "true") boolean finalizar,
+            @Valid @RequestBody EvaluacionTutorRequest request) {
+        return ResponseEntity.ok(service.guardarExterno(trimestreId, token, request, finalizar));
     }
 
     @GetMapping("/pdf")
