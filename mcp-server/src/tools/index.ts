@@ -14,6 +14,11 @@ import { register as registerMatching } from './matching-estudiante-vacante.js';
 import { register as registerAsistente } from './asistente-tecnico.js';
 import { register as registerLogsPipeline } from './revisar-logs-pipeline.js';
 import { register as registerRevisarInforme } from './revisar-informe-final.js';
+import { register as registerAgendamientoReuniones } from './consultar-agendamiento-reuniones.js';
+import { register as registerDisponibilidadDocente } from './consultar-disponibilidad-docente.js';
+import { register as registerAuditoriaNotificaciones } from './consultar-auditoria-notificaciones.js';
+import { register as registerEvaluacionTutor } from './consultar-evaluacion-tutor.js';
+import { register as registerInformeFinalNotas } from './consultar-informe-final-notas.js';
 
 export const TOOL_REGISTRARS: ReadonlyArray<(server: McpServer) => void> = [
   registerListarVacantes,
@@ -25,6 +30,12 @@ export const TOOL_REGISTRARS: ReadonlyArray<(server: McpServer) => void> = [
   registerAsistente,
   registerLogsPipeline,
   registerRevisarInforme,
+  // Proceso de Coformación (BI-17)
+  registerAgendamientoReuniones,
+  registerDisponibilidadDocente,
+  registerAuditoriaNotificaciones,
+  registerEvaluacionTutor,
+  registerInformeFinalNotas,
 ];
 
 export function registerAllTools(server: McpServer): number {
