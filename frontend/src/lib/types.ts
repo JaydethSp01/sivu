@@ -391,6 +391,13 @@ export interface InformeFinalPmResponse {
   fechaRevision?: string | null;
   revisadoPorNombre?: string | null;
   observacionesRevisor?: string | null;
+  // Calificación final (notas nuevas)
+  notaTutor?: number | string | null;
+  notaProfesor?: number | string | null;
+  notaPromedio?: number | string | null;
+  altoImpacto?: boolean | null;
+  cumpleNotaMinima?: boolean | null;
+  nivel?: string | null;
   firmadoEstudiante: boolean;
   firmadoTutorAcad: boolean;
   firmadoTutorEmp: boolean;
