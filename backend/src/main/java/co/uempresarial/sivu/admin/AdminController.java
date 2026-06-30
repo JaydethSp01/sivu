@@ -1,5 +1,6 @@
 package co.uempresarial.sivu.admin;
 
+import co.uempresarial.sivu.agendamiento.service.RecordatorioReunionScheduler;
 import co.uempresarial.sivu.automatizacion.service.AlertaPlazosService;
 import co.uempresarial.sivu.automatizacion.service.RecordatorioCvService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -22,6 +23,7 @@ public class AdminController {
     private final SeedService seedService;
     private final RecordatorioCvService recordatorioCvService;
     private final AlertaPlazosService alertaPlazosService;
+    private final RecordatorioReunionScheduler recordatorioReunionScheduler;
 
     @PostMapping("/seed")
     @PreAuthorize("hasRole('ADMIN')")
@@ -50,5 +52,17 @@ public class AdminController {
             "revisados", r.revisados(),
             "notificados", r.notificados(),
             "sinEmail", r.sinEmail()));
+    }
+
+    @PostMapping("/recordatorios/reuniones")
+    @PreAuthorize("hasAnyRole('ADMIN','COORDINADOR')")
+    @Operation(summary = "Forzar el job de recordatorios de reuniones CONFIRMADAS próximas (dentro de 24h) " +
+        "a estudiante y tutor (BI-11 / RF-D01)")
+    public ResponseEntity<Map<String, Object>> dispararRecordatoriosReuniones() {
+        var r = recordatorioReunionScheduler.enviarRecordatoriosProximos();
+        return ResponseEntity.ok(Map.of(
+            "revisadas", r.revisadas(),
+            "recordadas", r.recordadas(),
+            "sinDestinatario", r.sinDestinatario()));
     }
 }

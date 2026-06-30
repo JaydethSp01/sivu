@@ -79,4 +79,14 @@ public class AgendamientoReunion extends BaseEntity {
     /** Acta de reunión generada al confirmar (TODO: enlazar con módulo trimestre). */
     @Column(name = "acta_reunion_id")
     private Long actaReunionId;
+
+    /**
+     * BI-11 / RF-D01: marca de idempotencia para el recordatorio automático de
+     * reunión próxima (24h antes). Se pone en {@code true} cuando el scheduler ya
+     * despachó el recordatorio a estudiante y tutor, evitando reenviar en corridas
+     * posteriores del job.
+     */
+    @Column(name = "recordatorio_enviado", nullable = false)
+    @Builder.Default
+    private boolean recordatorioEnviado = false;
 }
