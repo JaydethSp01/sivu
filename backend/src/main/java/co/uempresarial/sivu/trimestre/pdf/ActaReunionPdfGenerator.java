@@ -48,46 +48,47 @@ public class ActaReunionPdfGenerator {
             document.open();
 
             document.add(encabezadoInstitucional(
-                "GAC-FM-11", "2", LocalDate.now().format(FECHA),
-                "ACTA DE REUNIÓN N° AC" + acta.getNumero()
-                    + "\nSEGUIMIENTO FASE EMPRESA"));
+                "GAC-FM-11", "2.0", LocalDate.now().format(FECHA), "1 de 1",
+                "Acta de acompañamiento fase coformación empresarial"));
             document.add(espacio(8));
 
-            // INFORMACION ESTUDIANTE
+            // INFORMACION DE ESTUDIANTE
             PdfPTable tEst = new PdfPTable(2);
             tEst.setWidthPercentage(100);
-            tEst.addCell(seccionCell("Información del estudiante", 2));
-            tEst.addCell(campoCell("Nombre", safe(e.getNombres()) + " " + safe(e.getApellidos())));
-            tEst.addCell(campoCell("Documento", safe(e.getTipoDocumento() != null ? e.getTipoDocumento().name() : "") + " " + safe(e.getNumeroDocumento())));
+            tEst.addCell(seccionCell("Información de estudiante", 2));
+            tEst.addCell(campoCell("Nombre del estudiante", safe(e.getNombres()) + " " + safe(e.getApellidos())));
+            tEst.addCell(campoCell("Documento identificación", safe(e.getTipoDocumento() != null ? e.getTipoDocumento().name() : "") + " " + safe(e.getNumeroDocumento())));
             tEst.addCell(campoCell("Programa", safe(e.getProgramaAcademico())));
-            tEst.addCell(campoCell("Trimestre", "T" + t.getNumero() + " · " + safe(t.getMateriaNucleo())));
+            tEst.addCell(campoCell("Semestre", e.getSemestre() == null ? "" : e.getSemestre().toString()));
             document.add(tEst);
             document.add(espacio(6));
 
-            // INFORMACION EMPRESA
-            PdfPTable tEmp = new PdfPTable(2);
+            // INFORMACIÓN DE LA EMPRESA COFORMADORA
+            PdfPTable tEmp = new PdfPTable(3);
             tEmp.setWidthPercentage(100);
-            tEmp.addCell(seccionCell("Información de la empresa", 2));
-            tEmp.addCell(campoCell("Razón social", safe(em.getRazonSocial())));
-            tEmp.addCell(campoCell("NIT", safe(em.getNit())));
-            tEmp.addCell(campoCell("Tutor empresarial", c.getTutorEmpresarial() != null
+            tEmp.addCell(seccionCell("Información de la empresa coformadora", 3));
+            tEmp.addCell(celdaTextoFondo("Razón social de la empresa", FUENTE_CAMPO, Element.ALIGN_CENTER, GRIS_SUAVE));
+            tEmp.addCell(celdaTextoFondo("Nombre del Tutor", FUENTE_CAMPO, Element.ALIGN_CENTER, GRIS_SUAVE));
+            tEmp.addCell(celdaTextoFondo("Nombre del Profesor Acompañante", FUENTE_CAMPO, Element.ALIGN_CENTER, GRIS_SUAVE));
+            tEmp.addCell(celdaTexto(safe(em.getRazonSocial()), FUENTE_TEXTO, Element.ALIGN_CENTER));
+            tEmp.addCell(celdaTexto(c.getTutorEmpresarial() != null
                 ? (safe(c.getTutorEmpresarial().getNombres()) + " " + safe(c.getTutorEmpresarial().getApellidos()))
-                : ""));
-            tEmp.addCell(campoCell("Profesor de acompañamiento", c.getTutorAcademico() != null
+                : "", FUENTE_TEXTO, Element.ALIGN_CENTER));
+            tEmp.addCell(celdaTexto(c.getTutorAcademico() != null
                 ? (safe(c.getTutorAcademico().getNombres()) + " " + safe(c.getTutorAcademico().getApellidos()))
-                : ""));
+                : "", FUENTE_TEXTO, Element.ALIGN_CENTER));
             document.add(tEmp);
             document.add(espacio(6));
 
-            // DATOS GENERALES REUNIÓN
+            // DATOS GENERALES DE LA REUNIÓN
             PdfPTable tDg = new PdfPTable(2);
             tDg.setWidthPercentage(100);
             tDg.addCell(seccionCell("Datos generales de la reunión", 2));
             tDg.addCell(campoCell("Fecha", acta.getFecha() != null ? acta.getFecha().format(FECHA) : ""));
             tDg.addCell(campoCell("Hora", safe(acta.getHora())));
-            tDg.addCell(campoCell("Lugar", safe(acta.getLugar())));
             tDg.addCell(campoCell("Tipo de reunión", acta.getTipoReunion() != null
                 ? acta.getTipoReunion().name() : ""));
+            tDg.addCell(campoCell("Lugar", safe(acta.getLugar())));
             PdfPCell asuntoLabel = new PdfPCell(new Phrase("Asunto", FUENTE_CAMPO));
             asuntoLabel.setBackgroundColor(GRIS_SUAVE);
             asuntoLabel.setPadding(4);
@@ -103,9 +104,9 @@ public class ActaReunionPdfGenerator {
             PdfPTable tAs = new PdfPTable(new float[]{3f, 2f, 3f});
             tAs.setWidthPercentage(100);
             tAs.addCell(seccionCell("Asistentes", 3));
-            tAs.addCell(celdaTextoFondo("Nombre", FUENTE_CAMPO, Element.ALIGN_CENTER, GRIS_SUAVE));
+            tAs.addCell(celdaTextoFondo("Nombres y apellidos", FUENTE_CAMPO, Element.ALIGN_CENTER, GRIS_SUAVE));
             tAs.addCell(celdaTextoFondo("Rol", FUENTE_CAMPO, Element.ALIGN_CENTER, GRIS_SUAVE));
-            tAs.addCell(celdaTextoFondo("Correo", FUENTE_CAMPO, Element.ALIGN_CENTER, GRIS_SUAVE));
+            tAs.addCell(celdaTextoFondo("Correo electrónico", FUENTE_CAMPO, Element.ALIGN_CENTER, GRIS_SUAVE));
             if (asistentes.isEmpty()) {
                 PdfPCell vacio = celdaTexto("(Sin asistentes registrados)", FUENTE_PEQUENO, Element.ALIGN_CENTER);
                 vacio.setColspan(3);
@@ -124,8 +125,8 @@ public class ActaReunionPdfGenerator {
             PdfPTable tTemas = new PdfPTable(new float[]{2.5f, 5f});
             tTemas.setWidthPercentage(100);
             tTemas.addCell(seccionCell("Aspectos de la reunión", 2));
-            tTemas.addCell(celdaTextoFondo("Tema", FUENTE_CAMPO, Element.ALIGN_CENTER, GRIS_SUAVE));
-            tTemas.addCell(celdaTextoFondo("Observaciones / compromisos", FUENTE_CAMPO, Element.ALIGN_CENTER, GRIS_SUAVE));
+            tTemas.addCell(celdaTextoFondo("Temas tratados", FUENTE_CAMPO, Element.ALIGN_CENTER, GRIS_SUAVE));
+            tTemas.addCell(celdaTextoFondo("Observaciones / Compromisos", FUENTE_CAMPO, Element.ALIGN_CENTER, GRIS_SUAVE));
             if (acta.getTemas().isEmpty()) {
                 PdfPCell vacio = celdaTexto("(Sin temas tratados)", FUENTE_PEQUENO, Element.ALIGN_CENTER);
                 vacio.setColspan(2);
@@ -147,23 +148,30 @@ public class ActaReunionPdfGenerator {
             document.add(tObs);
             document.add(espacio(10));
 
-            // FIRMAS
-            PdfPTable firmas = new PdfPTable(3);
+            // FIRMA ASISTENTES — tabla NOMBRE | FIRMA por cada asistente del acta
+            PdfPTable firmas = new PdfPTable(new float[]{1f, 1f});
             firmas.setWidthPercentage(100);
-            firmas.addCell(seccionCell("Firmas", 3));
-            firmas.addCell(firmaCell("Estudiante",
-                safe(e.getNombres()) + " " + safe(e.getApellidos()),
-                Boolean.TRUE.equals(acta.getFirmadoEstudiante())));
-            firmas.addCell(firmaCell("Tutor empresarial",
-                c.getTutorEmpresarial() != null
+            firmas.addCell(seccionCell("Firma asistentes", 2));
+            firmas.addCell(celdaTextoFondo("NOMBRE", FUENTE_CAMPO, Element.ALIGN_CENTER, GRIS_SUAVE));
+            firmas.addCell(celdaTextoFondo("FIRMA", FUENTE_CAMPO, Element.ALIGN_CENTER, GRIS_SUAVE));
+            if (asistentes.isEmpty()) {
+                firmas.addCell(firmaNombreCell(safe(e.getNombres()) + " " + safe(e.getApellidos()),
+                    Boolean.TRUE.equals(acta.getFirmadoEstudiante())));
+                firmas.addCell(firmaVaciaCell());
+                firmas.addCell(firmaNombreCell(c.getTutorEmpresarial() != null
                     ? (safe(c.getTutorEmpresarial().getNombres()) + " " + safe(c.getTutorEmpresarial().getApellidos()))
-                    : "",
-                Boolean.TRUE.equals(acta.getFirmadoTutor())));
-            firmas.addCell(firmaCell("Profesor",
-                c.getTutorAcademico() != null
+                    : "", Boolean.TRUE.equals(acta.getFirmadoTutor())));
+                firmas.addCell(firmaVaciaCell());
+                firmas.addCell(firmaNombreCell(c.getTutorAcademico() != null
                     ? (safe(c.getTutorAcademico().getNombres()) + " " + safe(c.getTutorAcademico().getApellidos()))
-                    : "",
-                Boolean.TRUE.equals(acta.getFirmadoProfesor())));
+                    : "", Boolean.TRUE.equals(acta.getFirmadoProfesor())));
+                firmas.addCell(firmaVaciaCell());
+            } else {
+                for (ActaReunionResponse.Asistente a : asistentes) {
+                    firmas.addCell(firmaNombreCell(safe(a.nombre()), false));
+                    firmas.addCell(firmaVaciaCell());
+                }
+            }
             document.add(firmas);
 
             Paragraph footer = new Paragraph(
@@ -180,18 +188,22 @@ public class ActaReunionPdfGenerator {
         return out.toByteArray();
     }
 
-    private PdfPCell firmaCell(String rol, String nombre, boolean firmado) {
+    private PdfPCell firmaNombreCell(String nombre, boolean firmado) {
         Paragraph p = new Paragraph();
-        p.add(new Phrase(rol + "\n", FUENTE_CAMPO));
-        p.add(new Phrase("\n_____________________________________\n", FUENTE_TEXTO));
-        p.add(new Phrase(nombre + "\n", FUENTE_TEXTO));
+        p.add(new Phrase(nombre + "\n", FUENTE_TEXTO_BOLD));
         p.add(new Phrase(firmado ? "[ FIRMADO ]" : "[ Pendiente ]",
             firmado ? FUENTE_TEXTO_BOLD : FUENTE_PEQUENO));
         PdfPCell c = new PdfPCell(p);
         c.setPadding(8);
-        c.setHorizontalAlignment(Element.ALIGN_CENTER);
+        c.setHorizontalAlignment(Element.ALIGN_LEFT);
         c.setVerticalAlignment(Element.ALIGN_MIDDLE);
-        c.setFixedHeight(80);
+        c.setFixedHeight(55);
+        return c;
+    }
+
+    private PdfPCell firmaVaciaCell() {
+        PdfPCell c = new PdfPCell(new Phrase(" ", FUENTE_TEXTO));
+        c.setFixedHeight(55);
         return c;
     }
 }

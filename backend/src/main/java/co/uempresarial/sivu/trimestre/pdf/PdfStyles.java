@@ -55,8 +55,18 @@ public final class PdfStyles {
     public static final Font FUENTE_HEADER_LOGO  = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 16, AZUL_UE);
     public static final Font FUENTE_HEADER_META  = FontFactory.getFont(FontFactory.HELVETICA, 7, Color.DARK_GRAY);
 
-    /** Encabezado institucional con marca, código y versión. */
+    /** Encabezado institucional con marca, código y versión (sin línea de página). */
     public static PdfPTable encabezadoInstitucional(String codigo, String version, String fecha, String titulo) {
+        return encabezadoInstitucional(codigo, version, fecha, null, titulo);
+    }
+
+    /**
+     * Encabezado institucional con marca, código, versión, fecha y "Página: X de Y".
+     * Si {@code pagina} es null no se imprime la fila de página (formatos de 1 página
+     * que no la muestran en el original).
+     */
+    public static PdfPTable encabezadoInstitucional(String codigo, String version, String fecha,
+                                                    String pagina, String titulo) {
         PdfPTable header = new PdfPTable(new float[]{2.2f, 4.5f, 2.5f});
         header.setWidthPercentage(100);
 
@@ -99,6 +109,10 @@ public final class PdfStyles {
         meta.addCell(metaCell(version, false));
         meta.addCell(metaCell("Fecha", true));
         meta.addCell(metaCell(fecha, false));
+        if (pagina != null) {
+            meta.addCell(metaCell("Página", true));
+            meta.addCell(metaCell(pagina, false));
+        }
         PdfPCell metaWrap = new PdfPCell(meta);
         metaWrap.setBorder(Rectangle.BOX);
         metaWrap.setBorderColor(GRIS_BORDE);
@@ -151,6 +165,18 @@ public final class PdfStyles {
         PdfPCell c = celdaTexto(texto, font, align);
         c.setBackgroundColor(bg);
         return c;
+    }
+
+    /** Nota institucional ("Información importante") en banda gris a ancho completo. */
+    public static PdfPTable notaImportante(String texto) {
+        PdfPTable t = new PdfPTable(1);
+        t.setWidthPercentage(100);
+        PdfPCell c = new PdfPCell(new Phrase(texto, FUENTE_PEQUENO));
+        c.setBackgroundColor(GRIS_SUAVE);
+        c.setPadding(5);
+        c.setHorizontalAlignment(Element.ALIGN_JUSTIFIED);
+        t.addCell(c);
+        return t;
     }
 
     public static Paragraph espacio(float h) {
