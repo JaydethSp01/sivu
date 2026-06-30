@@ -1,5 +1,7 @@
 package co.uempresarial.sivu.trimestre.web;
 
+import co.uempresarial.sivu.ia.service.InformeIAService;
+import co.uempresarial.sivu.ia.web.dto.IADtos.CoherenciaPlanResponse;
 import co.uempresarial.sivu.security.domain.Usuario;
 import co.uempresarial.sivu.security.service.CurrentUserService;
 import co.uempresarial.sivu.shared.exception.BusinessException;
@@ -32,6 +34,7 @@ public class PlanActividadesController {
     private final PlanActividadesService service;
     private final PlanActividadesPdfGenerator pdfGenerator;
     private final CurrentUserService currentUser;
+    private final InformeIAService informeIAService;
 
     @GetMapping
     @PreAuthorize("isAuthenticated()")
@@ -66,6 +69,15 @@ public class PlanActividadesController {
             .header(HttpHeaders.CONTENT_DISPOSITION,
                 "inline; filename=plan-actividades-t" + trimestreId + ".pdf")
             .body(pdf);
+    }
+
+    @PostMapping("/ia-coherencia")
+    @PreAuthorize("hasAnyRole('ESTUDIANTE','COORDINADOR','ADMIN')")
+    @Operation(summary = "Chequeo de coherencia con IA del Plan de Actividades: cruza objetivos y "
+        + "actividades por mes y devuelve advertencias/sugerencias. Usa el IA sidecar (plan Claude Code) "
+        + "con fallback heurístico local. Es INFORMATIVO: no bloquea la firma del plan.")
+    public ResponseEntity<CoherenciaPlanResponse> iaCoherencia(@PathVariable Long trimestreId) {
+        return ResponseEntity.ok(informeIAService.coherenciaPlan(trimestreId));
     }
 
     // ----- Hilo del flujo de aprobación tripartito (BI-04 / RF-A01) -----

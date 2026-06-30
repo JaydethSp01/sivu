@@ -1,5 +1,7 @@
 package co.uempresarial.sivu.informefinalpm.web;
 
+import co.uempresarial.sivu.ia.service.InformeIAService;
+import co.uempresarial.sivu.ia.web.dto.IADtos.FeedbackInformeResponse;
 import co.uempresarial.sivu.informefinalpm.pdf.InformeFinalPmPdfGenerator;
 import co.uempresarial.sivu.informefinalpm.service.InformeFinalPmService;
 import co.uempresarial.sivu.informefinalpm.web.dto.AltoImpactoRequest;
@@ -26,6 +28,7 @@ public class InformeFinalPmController {
 
     private final InformeFinalPmService service;
     private final InformeFinalPmPdfGenerator pdfGenerator;
+    private final InformeIAService informeIAService;
 
     @GetMapping("/api/v1/planes-mejora/{planMejoraId}/informe-final")
     @PreAuthorize("isAuthenticated()")
@@ -86,6 +89,15 @@ public class InformeFinalPmController {
     public ResponseEntity<InformeFinalPmResponse> marcarAltoImpacto(
             @PathVariable Long id, @Valid @RequestBody AltoImpactoRequest request) {
         return ResponseEntity.ok(service.marcarAltoImpacto(id, request.altoImpacto()));
+    }
+
+    @PostMapping("/api/v1/informes-final-pm/{id}/ia-feedback")
+    @PreAuthorize("hasAnyRole('ESTUDIANTE','COORDINADOR','ADMIN')")
+    @Operation(summary = "Feedback de IA sobre el Informe Final (12 secciones GTC-FM-16). "
+        + "Usa el plan de Claude Code vía el IA sidecar; si no responde, cae a un análisis heurístico local. "
+        + "Informativo: no cambia el estado del informe.")
+    public ResponseEntity<FeedbackInformeResponse> iaFeedback(@PathVariable Long id) {
+        return ResponseEntity.ok(informeIAService.revisar(id));
     }
 
     @GetMapping("/api/v1/informes-final-pm/{id}/pdf")
