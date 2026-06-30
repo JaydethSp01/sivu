@@ -49,7 +49,7 @@ function writeAuthStorage(win: Window, s: Session): void {
 Cypress.Commands.add("apiLogin", (email: string, password: string) => {
   const apiUrl = Cypress.env("apiUrl");
   return cy
-    .request({
+    .request<{ accessToken: string; refreshToken: string; usuario: unknown }>({
       method: "POST",
       url: `${apiUrl}/auth/login`,
       body: { email, password },
@@ -59,7 +59,7 @@ Cypress.Commands.add("apiLogin", (email: string, password: string) => {
       expect(res.status).to.eq(200);
       const { accessToken, refreshToken, usuario } = res.body;
       lastSession = { accessToken, refreshToken, usuario };
-      return cy.wrap(accessToken);
+      return accessToken;
     });
 });
 
