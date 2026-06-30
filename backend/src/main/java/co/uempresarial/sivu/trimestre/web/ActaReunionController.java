@@ -35,7 +35,7 @@ public class ActaReunionController {
     }
 
     @PostMapping("/api/v1/trimestres/{trimestreId}/actas")
-    @PreAuthorize("hasAnyRole('COORDINADOR','EMPRESA','ADMIN')")
+    @PreAuthorize("hasAnyRole('COORDINADOR','DOCENTE','ADMIN')")
     @Operation(summary = "Crear nueva acta para el trimestre")
     public ResponseEntity<ActaReunionResponse> crear(@PathVariable Long trimestreId,
                                                      @Valid @RequestBody ActaReunionRequest request) {
@@ -51,7 +51,7 @@ public class ActaReunionController {
     }
 
     @PutMapping("/api/v1/actas/{id}")
-    @PreAuthorize("hasAnyRole('COORDINADOR','EMPRESA','ADMIN')")
+    @PreAuthorize("hasAnyRole('COORDINADOR','DOCENTE','ADMIN')")
     @Operation(summary = "Actualizar un acta (reemplaza temas y asistentes)")
     public ResponseEntity<ActaReunionResponse> actualizar(@PathVariable Long id,
                                                           @Valid @RequestBody ActaReunionRequest request) {

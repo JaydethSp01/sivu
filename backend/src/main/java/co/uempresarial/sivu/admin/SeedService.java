@@ -281,10 +281,12 @@ public class SeedService {
             "Carmen", "Coordinadora", Set.of(Rol.COORDINADOR), null, null);
         crearSiNoExiste("kelly@est.uempresarial.edu.co", "Estudiante123*",
             "Kellyn", "Delgado", Set.of(Rol.ESTUDIANTE), kellyId, null);
-        crearSiNoExiste("rrhh@coally.com", "Empresa123*",
-            "RRHH", "Coally", Set.of(Rol.EMPRESA), null, coallyId);
-        crearSiNoExiste("cmendoza@uempresarial.edu.co", "Tutor123*",
-            "Carlos", "Mendoza", Set.of(Rol.TUTOR), null, null);
+        // Tutor empresarial (lado empresa): vinculado a la empresa para el scope por empresaId.
+        crearSiNoExiste("rrhh@coally.com", "Tutor123*",
+            "RRHH", "Coally", Set.of(Rol.TUTOR), null, coallyId);
+        // Docente acompañante (tutor académico Uniempresarial - Oficina de Coformación).
+        crearSiNoExiste("cmendoza@uempresarial.edu.co", "Docente123*",
+            "Carlos", "Mendoza", Set.of(Rol.DOCENTE), null, null);
         crearSiNoExiste("mcp_agent@sivu.uempresarial.edu.co", "Mcp_Agent123*",
             "Agente", "MCP", Set.of(Rol.MCP_AGENT), null, null);
     }

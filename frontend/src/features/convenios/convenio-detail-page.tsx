@@ -236,7 +236,7 @@ const PARTES_FIRMA: ParteFirmaConfig[] = [
   {
     parte: "EMPRESA",
     titulo: "Empresa",
-    rolesPermitidos: ["EMPRESA", "ADMIN"],
+    rolesPermitidos: ["TUTOR", "ADMIN"],
     icon: <Building2 className="h-4 w-4" />,
   },
   {

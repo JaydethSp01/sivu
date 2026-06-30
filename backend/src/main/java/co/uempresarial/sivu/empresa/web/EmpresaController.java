@@ -36,7 +36,7 @@ public class EmpresaController {
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN','COORDINADOR','EMPRESA')")
+    @PreAuthorize("hasAnyRole('ADMIN','COORDINADOR','TUTOR')")
     @Operation(summary = "Listar empresas con filtros y paginación")
     public ResponseEntity<PageResponse<EmpresaResponse>> listar(
         @RequestParam(required = false) String q,
@@ -47,14 +47,14 @@ public class EmpresaController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN','COORDINADOR','EMPRESA')")
+    @PreAuthorize("hasAnyRole('ADMIN','COORDINADOR','TUTOR')")
     @Operation(summary = "Obtener una empresa por id")
     public ResponseEntity<EmpresaResponse> obtener(@PathVariable Long id) {
         return ResponseEntity.ok(service.buscarPorId(id));
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN','COORDINADOR','EMPRESA')")
+    @PreAuthorize("hasAnyRole('ADMIN','COORDINADOR','TUTOR')")
     @Operation(summary = "Actualizar una empresa")
     public ResponseEntity<EmpresaResponse> actualizar(@PathVariable Long id,
                                                       @Valid @RequestBody EmpresaRequest request) {

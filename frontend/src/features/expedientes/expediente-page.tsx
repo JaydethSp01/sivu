@@ -643,7 +643,7 @@ export function ExpedientesIndexPage(): JSX.Element {
 
   const esCoordinacion = hasRole("ADMIN", "COORDINADOR");
   const esEstudiantePuro =
-    hasRole("ESTUDIANTE") && !hasRole("ADMIN", "COORDINADOR", "EMPRESA", "TUTOR");
+    hasRole("ESTUDIANTE") && !hasRole("ADMIN", "COORDINADOR", "DOCENTE", "TUTOR");
 
   const [estudianteId, setEstudianteId] = useState("");
   const [cohorteInput, setCohorteInput] = useState("");

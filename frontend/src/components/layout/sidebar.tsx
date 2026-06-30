@@ -32,23 +32,23 @@ interface NavGroup {
 
 // Helpers para etiquetas dinámicas según el rol del usuario logueado.
 function labelEstudiantes(roles: Rol[]): string {
-  return roles.includes("EMPRESA") && !roles.includes("ADMIN") && !roles.includes("COORDINADOR")
+  return roles.includes("TUTOR") && !roles.includes("ADMIN") && !roles.includes("COORDINADOR")
     ? "Mis practicantes"
     : "Estudiantes";
 }
 function labelPracticas(roles: Rol[]): string {
   // El estudiante ES quien hace la práctica; la empresa RECIBE practicantes.
   if (roles.includes("ADMIN") || roles.includes("COORDINADOR")) return "Prácticas";
-  if (roles.includes("EMPRESA")) return "Convenios";
+  if (roles.includes("TUTOR")) return "Convenios";
   return "Mi práctica";
 }
 function labelTutores(roles: Rol[]): string {
-  return roles.includes("EMPRESA") && !roles.includes("ADMIN") && !roles.includes("COORDINADOR")
+  return roles.includes("TUTOR") && !roles.includes("ADMIN") && !roles.includes("COORDINADOR")
     ? "Mis tutores"
     : "Tutores";
 }
 function labelDocumentos(roles: Rol[]): string {
-  return roles.includes("EMPRESA") && !roles.includes("ADMIN") && !roles.includes("COORDINADOR")
+  return roles.includes("TUTOR") && !roles.includes("ADMIN") && !roles.includes("COORDINADOR")
     ? "Documentos de mi empresa"
     : "Documentos";
 }
@@ -56,7 +56,7 @@ function labelExpediente(roles: Rol[]): string {
   return roles.includes("ESTUDIANTE") &&
     !roles.includes("ADMIN") &&
     !roles.includes("COORDINADOR") &&
-    !roles.includes("EMPRESA") &&
+    !roles.includes("DOCENTE") &&
     !roles.includes("TUTOR")
     ? "Mi expediente"
     : "Expediente";
@@ -71,8 +71,8 @@ const GROUPS: NavGroup[] = [
   {
     label: "Personas",
     items: [
-      { to: "/estudiantes", label: labelEstudiantes, icon: Users, roles: ["ADMIN", "COORDINADOR", "EMPRESA"] },
-      { to: "/tutores", label: labelTutores, icon: UserCog, roles: ["ADMIN", "COORDINADOR", "EMPRESA", "MCP_AGENT"] },
+      { to: "/estudiantes", label: labelEstudiantes, icon: Users, roles: ["ADMIN", "COORDINADOR", "DOCENTE", "TUTOR"] },
+      { to: "/tutores", label: labelTutores, icon: UserCog, roles: ["ADMIN", "COORDINADOR", "TUTOR", "MCP_AGENT"] },
     ],
   },
   // Empresas — registro de coformadoras y vista propia de la empresa.
@@ -80,7 +80,7 @@ const GROUPS: NavGroup[] = [
     label: "Empresas",
     items: [
       { to: "/empresas", label: "Empresas", icon: Building2, roles: ["ADMIN", "COORDINADOR"] },
-      { to: "/mi-empresa", label: "Mi empresa", icon: Building2, roles: ["EMPRESA"] },
+      { to: "/mi-empresa", label: "Mi empresa", icon: Building2, roles: ["TUTOR"] },
     ],
   },
   // Coformación — la práctica activa y todo su ciclo de seguimiento.
@@ -88,7 +88,7 @@ const GROUPS: NavGroup[] = [
     label: "Coformación",
     items: [
       { to: "/convenios", label: labelPracticas, icon: FileSignature },
-      { to: "/expedientes", label: labelExpediente, icon: FolderArchive, roles: ["ADMIN", "COORDINADOR", "ESTUDIANTE", "EMPRESA", "TUTOR"] },
+      { to: "/expedientes", label: labelExpediente, icon: FolderArchive, roles: ["ADMIN", "COORDINADOR", "ESTUDIANTE", "DOCENTE", "TUTOR"] },
       { to: "/documentos", label: labelDocumentos, icon: FileText },
     ],
   },
@@ -97,7 +97,7 @@ const GROUPS: NavGroup[] = [
   {
     label: "Agendamiento",
     items: [
-      { to: "/agendamiento/disponibilidad", label: "Disponibilidad docente", icon: CalendarClock, roles: ["ADMIN", "COORDINADOR"] },
+      { to: "/agendamiento/disponibilidad", label: "Disponibilidad docente", icon: CalendarClock, roles: ["ADMIN", "COORDINADOR", "DOCENTE"] },
       { to: "/agendamiento/proponer", label: "Proponer reunión", icon: CalendarPlus, roles: ["ESTUDIANTE"] },
       { to: "/agendamiento/reuniones", label: "Reuniones", icon: CalendarRange, roles: ["ESTUDIANTE", "ADMIN", "COORDINADOR"] },
     ],

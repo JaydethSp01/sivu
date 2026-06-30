@@ -23,7 +23,7 @@ public class EvaluacionController {
     private final EvaluacionService service;
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('COORDINADOR','EMPRESA','ADMIN')")
+    @PreAuthorize("hasAnyRole('COORDINADOR','TUTOR','DOCENTE','ADMIN')")
     @Operation(summary = "Registrar una evaluación (intermedia o final) realizada por un tutor")
     public ResponseEntity<EvaluacionResponse> crear(@Valid @RequestBody EvaluacionRequest request) {
         EvaluacionResponse r = service.crear(request);
@@ -38,7 +38,7 @@ public class EvaluacionController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('COORDINADOR','EMPRESA','ADMIN')")
+    @PreAuthorize("hasAnyRole('COORDINADOR','TUTOR','DOCENTE','ADMIN')")
     @Operation(summary = "Actualizar una evaluación")
     public ResponseEntity<EvaluacionResponse> actualizar(@PathVariable Long id, @Valid @RequestBody EvaluacionRequest request) {
         return ResponseEntity.ok(service.actualizar(id, request));

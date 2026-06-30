@@ -23,7 +23,7 @@ import java.util.List;
  * empresa, estado de cada documento por trimestre, notas por corte, nota final y PDFs descargables.</p>
  *
  * <p>Auto-scope: un ESTUDIANTE puro solo puede consultar su propio expediente (si pide otro → 403).
- * COORDINADOR/ADMIN/EMPRESA/TUTOR tienen acceso amplio.</p>
+ * COORDINADOR/ADMIN/DOCENTE/TUTOR tienen acceso amplio.</p>
  */
 @RestController
 @RequestMapping("/api/v1/expedientes")
@@ -35,7 +35,7 @@ public class ExpedienteController {
     private final ExpedienteService service;
 
     @GetMapping("/{estudianteId}")
-    @PreAuthorize("hasAnyRole('ESTUDIANTE','COORDINADOR','ADMIN','EMPRESA','TUTOR')")
+    @PreAuthorize("hasAnyRole('ESTUDIANTE','COORDINADOR','ADMIN','DOCENTE','TUTOR')")
     @Operation(summary = "Obtener el expediente consolidado de un estudiante "
         + "(opcionalmente acotado a un convenio con ?convenioId=).")
     public ResponseEntity<ExpedienteResponse> obtener(
@@ -46,7 +46,7 @@ public class ExpedienteController {
     }
 
     @GetMapping("/convenio/{convenioId}")
-    @PreAuthorize("hasAnyRole('ESTUDIANTE','COORDINADOR','ADMIN','EMPRESA','TUTOR')")
+    @PreAuthorize("hasAnyRole('ESTUDIANTE','COORDINADOR','ADMIN','DOCENTE','TUTOR')")
     @Operation(summary = "Obtener el expediente consolidado a partir de un convenio.")
     public ResponseEntity<ExpedienteResponse> obtenerPorConvenio(@PathVariable Long convenioId) {
         return ResponseEntity.ok(service.obtenerPorConvenio(convenioId));

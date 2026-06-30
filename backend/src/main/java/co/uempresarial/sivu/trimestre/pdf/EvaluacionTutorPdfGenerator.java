@@ -74,119 +74,129 @@ public class EvaluacionTutorPdfGenerator {
 
             document.add(encabezadoInstitucional(
                 "GAC-FM-007", "2.0", LocalDate.now().format(FECHA),
-                "DIRECCIÓN DE COFORMACIÓN EMPRESARIAL\nEVALUACIÓN POR PARTE DEL TUTOR"));
+                "DIRECCIÓN DE COFORMACION EMPRESARIAL\nEVALUACIÓN POR PARTE DEL TUTOR"));
             document.add(espacio(8));
 
-            // INFO ESTUDIANTE + EMPRESA
-            PdfPTable tInfo = new PdfPTable(2);
-            tInfo.setWidthPercentage(100);
-            tInfo.addCell(seccionCell("Información del estudiante y la empresa", 2));
-            tInfo.addCell(campoCell("Estudiante", safe(e.getNombres()) + " " + safe(e.getApellidos())));
-            tInfo.addCell(campoCell("Programa", safe(e.getProgramaAcademico())));
-            tInfo.addCell(campoCell("Empresa", safe(em.getRazonSocial())));
-            tInfo.addCell(campoCell("Trimestre", "T" + t.getNumero() + " · " + safe(t.getMateriaNucleo())));
-            tInfo.addCell(campoCell("Tutor empresarial", c.getTutorEmpresarial() != null
-                ? (safe(c.getTutorEmpresarial().getNombres()) + " " + safe(c.getTutorEmpresarial().getApellidos()))
-                : ""));
-            tInfo.addCell(campoCell("Fecha elaboración",
-                ev.getFechaElaboracion() != null ? ev.getFechaElaboracion().format(FECHA) : ""));
-            document.add(tInfo);
+            // INFORMACION DE ESTUDIANTE
+            PdfPTable tEst = new PdfPTable(2);
+            tEst.setWidthPercentage(100);
+            tEst.addCell(seccionCell("Información de estudiante", 2));
+            tEst.addCell(campoCell("Nombre del estudiante", safe(e.getNombres()) + " " + safe(e.getApellidos())));
+            tEst.addCell(campoCell("Documento de identidad", safe(e.getNumeroDocumento())));
+            tEst.addCell(campoCell("Programa", safe(e.getProgramaAcademico())));
+            tEst.addCell(campoCell("Semestre", e.getSemestre() == null ? "" : e.getSemestre().toString()));
+            document.add(tEst);
             document.add(espacio(6));
 
-            // ESCALA
-            PdfPTable tEsc = new PdfPTable(4);
+            // INFORMACIÓN DE LA EMPRESA COFORMADORA
+            PdfPTable tEmp = new PdfPTable(3);
+            tEmp.setWidthPercentage(100);
+            tEmp.addCell(seccionCell("Información de la empresa coformadora", 3));
+            tEmp.addCell(celdaTextoFondo("Razón social de la empresa", FUENTE_CAMPO, Element.ALIGN_CENTER, GRIS_SUAVE));
+            tEmp.addCell(celdaTextoFondo("Nombre del Tutor", FUENTE_CAMPO, Element.ALIGN_CENTER, GRIS_SUAVE));
+            tEmp.addCell(celdaTextoFondo("Nombre del Profesor Acompañante", FUENTE_CAMPO, Element.ALIGN_CENTER, GRIS_SUAVE));
+            tEmp.addCell(celdaTexto(safe(em.getRazonSocial()), FUENTE_TEXTO, Element.ALIGN_CENTER));
+            tEmp.addCell(celdaTexto(c.getTutorEmpresarial() != null
+                ? (safe(c.getTutorEmpresarial().getNombres()) + " " + safe(c.getTutorEmpresarial().getApellidos()))
+                : "", FUENTE_TEXTO, Element.ALIGN_CENTER));
+            tEmp.addCell(celdaTexto(c.getTutorAcademico() != null
+                ? (safe(c.getTutorAcademico().getNombres()) + " " + safe(c.getTutorAcademico().getApellidos()))
+                : "", FUENTE_TEXTO, Element.ALIGN_CENTER));
+            document.add(tEmp);
+            document.add(espacio(6));
+
+            // INFORMACION DE LA EVALUACIÓN — escala oficial
+            PdfPTable tEsc = new PdfPTable(1);
             tEsc.setWidthPercentage(100);
-            tEsc.addCell(seccionCell("Escala de calificación", 4));
-            tEsc.addCell(celdaTextoFondo("Insuficiente", FUENTE_CAMPO, Element.ALIGN_CENTER, GRIS_SUAVE));
-            tEsc.addCell(celdaTextoFondo("Aceptable", FUENTE_CAMPO, Element.ALIGN_CENTER, GRIS_SUAVE));
-            tEsc.addCell(celdaTextoFondo("Excelente", FUENTE_CAMPO, Element.ALIGN_CENTER, GRIS_SUAVE));
-            tEsc.addCell(celdaTextoFondo("Sobresaliente", FUENTE_CAMPO, Element.ALIGN_CENTER, GRIS_SUAVE));
-            tEsc.addCell(celdaTexto("0.0 a 2.9", FUENTE_TEXTO, Element.ALIGN_CENTER));
-            tEsc.addCell(celdaTexto("3.0 a 3.9", FUENTE_TEXTO, Element.ALIGN_CENTER));
-            tEsc.addCell(celdaTexto("4.0 a 4.5", FUENTE_TEXTO, Element.ALIGN_CENTER));
-            tEsc.addCell(celdaTexto("4.6 a 5.0", FUENTE_TEXTO, Element.ALIGN_CENTER));
+            tEsc.addCell(seccionCell("Información de la evaluación", 1));
+            tEsc.addCell(celdaTexto(
+                "Insuficiente: entre 0,0 y 2,9  -  Aceptable entre 3,0 y 3,9  -  "
+                + "Excelente entre 4,0 y 4,5  -  Sobresaliente entre 4,6 y 5,0",
+                FUENTE_TEXTO, Element.ALIGN_CENTER));
             document.add(tEsc);
             document.add(espacio(6));
 
             // CRITERIOS
-            PdfPTable tCri = new PdfPTable(new float[]{0.6f, 1.5f, 4.5f, 1.2f});
+            PdfPTable tCri = new PdfPTable(new float[]{2.0f, 4.5f, 1.2f});
             tCri.setWidthPercentage(100);
-            tCri.addCell(seccionCell("Criterios de evaluación", 4));
-            tCri.addCell(celdaTextoFondo("#", FUENTE_CAMPO, Element.ALIGN_CENTER, GRIS_SUAVE));
-            tCri.addCell(celdaTextoFondo("Criterio (peso)", FUENTE_CAMPO, Element.ALIGN_CENTER, GRIS_SUAVE));
+            tCri.addCell(celdaTextoFondo("Criterio", FUENTE_CAMPO, Element.ALIGN_CENTER, GRIS_SUAVE));
             tCri.addCell(celdaTextoFondo("Concepto a evaluar", FUENTE_CAMPO, Element.ALIGN_CENTER, GRIS_SUAVE));
             tCri.addCell(celdaTextoFondo("Calificación", FUENTE_CAMPO, Element.ALIGN_CENTER, GRIS_SUAVE));
 
-            // 1. CAPACIDADES (40%)
-            tCri.addCell(celdaTexto("1", FUENTE_TEXTO_BOLD, Element.ALIGN_CENTER));
-            tCri.addCell(celdaTexto("CAPACIDADES Y COMPETENCIAS\n(40%)", FUENTE_TEXTO_BOLD, Element.ALIGN_LEFT));
+            // 1. CAPACIDADES Y COMPETENCIAS (40%)
+            tCri.addCell(celdaTexto("1. CAPACIDADES Y COMPETENCIAS (40%)", FUENTE_TEXTO_BOLD, Element.ALIGN_LEFT));
             tCri.addCell(celdaTexto(CAPACIDADES_TEXTO, FUENTE_PEQUENO, Element.ALIGN_LEFT));
             tCri.addCell(celdaTexto(num(ev.getCapacidades()), FUENTE_TEXTO_BOLD, Element.ALIGN_CENTER));
 
-            // 2. ACTITUDES (40%)
-            tCri.addCell(celdaTexto("2", FUENTE_TEXTO_BOLD, Element.ALIGN_CENTER));
-            tCri.addCell(celdaTexto("ACTITUDES Y COMPORTAMIENTO\n(40%)", FUENTE_TEXTO_BOLD, Element.ALIGN_LEFT));
+            // 2. ACTITUDES Y COMPORTAMIENTO (40%)
+            tCri.addCell(celdaTexto("2. ACTITUDES Y COMPORTAMIENTO (40%)", FUENTE_TEXTO_BOLD, Element.ALIGN_LEFT));
             tCri.addCell(celdaTexto(ACTITUDES_TEXTO, FUENTE_PEQUENO, Element.ALIGN_LEFT));
             tCri.addCell(celdaTexto(num(ev.getActitudes()), FUENTE_TEXTO_BOLD, Element.ALIGN_CENTER));
 
-            // 3. APLICACIÓN DE HERRAMIENTAS (20%) — sub criterios
-            PdfPCell aplCab = celdaTexto("3", FUENTE_TEXTO_BOLD, Element.ALIGN_CENTER);
-            aplCab.setRowspan(3);
-            tCri.addCell(aplCab);
-            PdfPCell aplLabel = celdaTexto("APLICACIÓN DE HERRAMIENTAS\n(20%)", FUENTE_TEXTO_BOLD, Element.ALIGN_LEFT);
+            // 3. APLICACIÓN DE HERRAMIENTAS TECNICAS ACADEMICAS Y ELABORACION Y
+            //    SUSTENCIÓN DEL PLAN ESPECIAL DE MEJORA (20%) — sub criterios
+            PdfPCell aplLabel = celdaTexto(
+                "3. APLICACIÓN DE HERRAMIENTAS TECNICAS ACADEMICAS Y ELABORACION Y "
+                + "SUSTENCIÓN DEL PLAN ESPECIAL DE MEJORA (20%)", FUENTE_TEXTO_BOLD, Element.ALIGN_LEFT);
             aplLabel.setRowspan(3);
             tCri.addCell(aplLabel);
-            tCri.addCell(celdaTexto("(10%) " + APL_DESEMPENO, FUENTE_PEQUENO, Element.ALIGN_LEFT));
+            tCri.addCell(celdaTexto(APL_DESEMPENO + " (10%).", FUENTE_PEQUENO, Element.ALIGN_LEFT));
             tCri.addCell(celdaTexto(num(ev.getAplicacionDesempeno()), FUENTE_TEXTO_BOLD, Element.ALIGN_CENTER));
-            tCri.addCell(celdaTexto("(5%) " + APL_ELAB_PEM, FUENTE_PEQUENO, Element.ALIGN_LEFT));
+            tCri.addCell(celdaTexto(APL_ELAB_PEM + " (5%)", FUENTE_PEQUENO, Element.ALIGN_LEFT));
             tCri.addCell(celdaTexto(num(ev.getAplicacionElaboracionPem()), FUENTE_TEXTO_BOLD, Element.ALIGN_CENTER));
-            tCri.addCell(celdaTexto("(5%) " + APL_SUST_PEM, FUENTE_PEQUENO, Element.ALIGN_LEFT));
+            tCri.addCell(celdaTexto(APL_SUST_PEM + " (5%).", FUENTE_PEQUENO, Element.ALIGN_LEFT));
             tCri.addCell(celdaTexto(num(ev.getAplicacionSustentacionPem()), FUENTE_TEXTO_BOLD, Element.ALIGN_CENTER));
+
+            // NOTA PONDERADA
+            PdfPCell npLbl = celdaTextoFondo("NOTA PONDERADA", FUENTE_TEXTO_BOLD, Element.ALIGN_RIGHT, GRIS_SUAVE);
+            npLbl.setColspan(2);
+            tCri.addCell(npLbl);
+            tCri.addCell(celdaTexto(num(ev.getNotaPonderada()), FUENTE_TEXTO_BOLD, Element.ALIGN_CENTER));
+
+            // FECHA ELABORACION
+            PdfPCell feLbl = celdaTextoFondo("FECHA ELABORACION", FUENTE_TEXTO_BOLD, Element.ALIGN_RIGHT, GRIS_SUAVE);
+            feLbl.setColspan(2);
+            tCri.addCell(feLbl);
+            tCri.addCell(celdaTexto(
+                ev.getFechaElaboracion() != null ? ev.getFechaElaboracion().format(FECHA) : "—",
+                FUENTE_TEXTO, Element.ALIGN_CENTER));
 
             document.add(tCri);
             document.add(espacio(6));
 
-            // NOTA PONDERADA
-            PdfPTable tNp = new PdfPTable(new float[]{4f, 1.2f});
-            tNp.setWidthPercentage(100);
-            tNp.addCell(celdaTextoFondo("NOTA PONDERADA FINAL", FUENTE_TEXTO_BOLD, Element.ALIGN_RIGHT, GRIS_SUAVE));
-            tNp.addCell(celdaTexto(num(ev.getNotaPonderada()), FUENTE_TEXTO_BOLD, Element.ALIGN_CENTER));
-            document.add(tNp);
+            // OBSERVACIONES A LA CALIFICACION
+            PdfPTable tObsCal = new PdfPTable(1);
+            tObsCal.setWidthPercentage(100);
+            tObsCal.addCell(seccionCell("Observaciones a la calificación", 1));
+            tObsCal.addCell(celdaTexto(safe(ev.getObservaciones()), FUENTE_TEXTO, Element.ALIGN_LEFT));
+            document.add(tObsCal);
             document.add(espacio(6));
 
             // CONTINUIDAD
             PdfPTable tCont = new PdfPTable(new float[]{4f, 1f, 1f});
             tCont.setWidthPercentage(100);
             tCont.addCell(seccionCell("Continuidad con la empresa", 3));
-            tCont.addCell(celdaTexto("¿El estudiante tiene continuidad con la empresa?",
+            tCont.addCell(celdaTexto("EL ESTUDIANTE TIENE CONTINUIDAD CON LA EMPRESA (Marque con una X)",
                 FUENTE_TEXTO_BOLD, Element.ALIGN_LEFT));
             boolean si = Boolean.TRUE.equals(ev.getContinuidadConEmpresa());
             boolean no = Boolean.FALSE.equals(ev.getContinuidadConEmpresa());
-            tCont.addCell(celdaTexto("SÍ  " + (si ? "[X]" : "[ ]"),
+            tCont.addCell(celdaTexto("SI  " + (si ? "[X]" : "[ ]"),
                 FUENTE_TEXTO_BOLD, Element.ALIGN_CENTER));
             tCont.addCell(celdaTexto("NO  " + (no ? "[X]" : "[ ]"),
                 FUENTE_TEXTO_BOLD, Element.ALIGN_CENTER));
             document.add(tCont);
-            document.add(espacio(6));
-
-            // OBSERVACIONES
-            PdfPTable tObs = new PdfPTable(1);
-            tObs.setWidthPercentage(100);
-            tObs.addCell(seccionCell("Observaciones del proceso", 1));
-            tObs.addCell(celdaTexto(safe(ev.getObservaciones()), FUENTE_TEXTO, Element.ALIGN_LEFT));
-            document.add(tObs);
             document.add(espacio(10));
 
             // FIRMAS
             PdfPTable firmas = new PdfPTable(2);
             firmas.setWidthPercentage(100);
             firmas.addCell(seccionCell("Firmas", 2));
-            firmas.addCell(firmaCell("Tutor empresarial",
+            firmas.addCell(firmaCell("FIRMA DEL TUTOR",
                 c.getTutorEmpresarial() != null
                     ? (safe(c.getTutorEmpresarial().getNombres()) + " " + safe(c.getTutorEmpresarial().getApellidos()))
                     : "",
                 Boolean.TRUE.equals(ev.getFirmadoTutor())));
-            firmas.addCell(firmaCell("Estudiante",
+            firmas.addCell(firmaCell("FIRMA DEL ESTUDIANTE",
                 safe(e.getNombres()) + " " + safe(e.getApellidos()),
                 Boolean.TRUE.equals(ev.getFirmadoEstudiante())));
             document.add(firmas);

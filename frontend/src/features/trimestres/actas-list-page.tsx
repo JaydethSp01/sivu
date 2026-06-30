@@ -31,7 +31,7 @@ export function ActasListPage(): JSX.Element {
   const navigate = useNavigate();
   const qc = useQueryClient();
   const hasRole = useAuthStore((s) => s.hasRole);
-  const canCreate = hasRole("ADMIN", "COORDINADOR", "EMPRESA");
+  const canCreate = hasRole("ADMIN", "COORDINADOR", "DOCENTE", "TUTOR");
   const canDelete = hasRole("ADMIN", "COORDINADOR");
 
   const { data, isLoading } = useQuery({

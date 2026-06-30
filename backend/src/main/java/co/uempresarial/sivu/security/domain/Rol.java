@@ -4,7 +4,7 @@ public enum Rol {
     ADMIN,
     COORDINADOR,
     ESTUDIANTE,
-    EMPRESA,
+    DOCENTE,
     TUTOR,
     MCP_AGENT
 }

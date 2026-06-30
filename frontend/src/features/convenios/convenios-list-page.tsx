@@ -38,8 +38,8 @@ export function ConveniosListPage(): JSX.Element {
   const navigate = useNavigate();
   const hasRole = useAuthStore((s) => s.hasRole);
   const esCoordOAdmin = hasRole("ADMIN", "COORDINADOR");
-  const isStudentOnly = hasRole("ESTUDIANTE") && !esCoordOAdmin && !hasRole("EMPRESA");
-  const isEmpresaOnly = hasRole("EMPRESA") && !esCoordOAdmin;
+  const isStudentOnly = hasRole("ESTUDIANTE") && !esCoordOAdmin && !hasRole("TUTOR");
+  const isEmpresaOnly = hasRole("TUTOR") && !esCoordOAdmin;
   const [estado, setEstado] = useState<EstadoConvenio | "ALL">("ALL");
   const [page, setPage] = useState(0);
 

@@ -74,7 +74,7 @@ export function PlanActividadesPage(): JSX.Element {
   const qc = useQueryClient();
   const hasRole = useAuthStore((s) => s.hasRole);
   const canEdit = hasRole("ESTUDIANTE", "COORDINADOR", "ADMIN");
-  const canRevisar = hasRole("COORDINADOR", "ADMIN", "EMPRESA", "TUTOR");
+  const canRevisar = hasRole("COORDINADOR", "ADMIN", "DOCENTE", "TUTOR");
   const isEstudiante = hasRole("ESTUDIANTE");
 
   const [escenario, setEscenario] = useState("");

@@ -46,58 +46,66 @@ public class PlanActividadesPdfGenerator {
             document.open();
 
             document.add(encabezadoInstitucional(
-                "GAC-FM-10", "3", LocalDate.now().format(FECHA),
-                "PLAN DE ACTIVIDADES DEL ESTUDIANTE\nFASE EMPRESA"));
+                "GAC-FM-10", "2.0", LocalDate.now().format(FECHA), "1 de 1",
+                "Plan de actividades fase empresarial"));
             document.add(espacio(8));
 
-            // INFORMACION ESTUDIANTE
+            // INFORMACION DE ESTUDIANTE
             PdfPTable tEst = new PdfPTable(2);
             tEst.setWidthPercentage(100);
-            tEst.addCell(seccionCell("Información del estudiante", 2));
-            tEst.addCell(campoCell("Nombre", safe(e.getNombres()) + " " + safe(e.getApellidos())));
-            tEst.addCell(campoCell("Documento", safe(e.getTipoDocumento() != null ? e.getTipoDocumento().name() : "") + " " + safe(e.getNumeroDocumento())));
+            tEst.addCell(seccionCell("Información de estudiante", 2));
+            tEst.addCell(campoCell("Nombre del estudiante", safe(e.getNombres()) + " " + safe(e.getApellidos())));
+            tEst.addCell(campoCell("Documento de identidad", safe(e.getTipoDocumento() != null ? e.getTipoDocumento().name() : "") + " " + safe(e.getNumeroDocumento())));
             tEst.addCell(campoCell("Programa", safe(e.getProgramaAcademico())));
             tEst.addCell(campoCell("Semestre", e.getSemestre() == null ? "" : e.getSemestre().toString()));
-            tEst.addCell(campoCell("Correo", safe(e.getEmail())));
-            tEst.addCell(campoCell("Materia núcleo", safe(t.getMateriaNucleo())));
+            tEst.addCell(campoCell("Correo electrónico", safe(e.getEmail())));
+            tEst.addCell(campoCell("Teléfono celular", safe(e.getTelefono())));
+            tEst.addCell(campoCell("Fecha inicio fase empresa",
+                c.getFechaInicio() != null ? c.getFechaInicio().format(FECHA) : "—"));
+            tEst.addCell(campoCell("Materia núcleo del semestre", safe(t.getMateriaNucleo())));
             document.add(tEst);
             document.add(espacio(6));
 
-            // INFORMACION EMPRESA
+            // INFORMACIÓN DE LA EMPRESA COFORMADORA
             PdfPTable tEmp = new PdfPTable(2);
             tEmp.setWidthPercentage(100);
-            tEmp.addCell(seccionCell("Información de la empresa", 2));
-            tEmp.addCell(campoCell("Razón social", safe(em.getRazonSocial())));
-            tEmp.addCell(campoCell("NIT", safe(em.getNit())));
-            tEmp.addCell(campoCell("Sector", safe(em.getSector())));
-            tEmp.addCell(campoCell("Ciudad", safe(em.getCiudad())));
-            tEmp.addCell(campoCell("Tutor de la empresa", c.getTutorEmpresarial() != null
+            tEmp.addCell(seccionCell("Información de la empresa coformadora", 2));
+            tEmp.addCell(campoCell("Razón social de la empresa", safe(em.getRazonSocial())));
+            tEmp.addCell(campoCell("Dirección", safe(em.getDireccion())));
+            tEmp.addCell(campoCell("Teléfono empresa", safe(em.getTelefonoContacto())));
+            tEmp.addCell(campoCell("Nombre del tutor responsable", c.getTutorEmpresarial() != null
                 ? (safe(c.getTutorEmpresarial().getNombres()) + " " + safe(c.getTutorEmpresarial().getApellidos()))
                 : ""));
-            tEmp.addCell(campoCell("Escenario de coformación", safe(pa.getEscenarioCoformacion())));
+            tEmp.addCell(campoCell("Correo electrónico", c.getTutorEmpresarial() != null
+                ? safe(c.getTutorEmpresarial().getEmail()) : ""));
+            tEmp.addCell(campoCell("Teléfono tutor", c.getTutorEmpresarial() != null
+                ? safe(c.getTutorEmpresarial().getTelefono()) : ""));
             document.add(tEmp);
             document.add(espacio(6));
 
-            // INFORMACION PROFESOR
+            // INFORMACIÓN DEL PROFESOR ACOMPAÑANTE
             PdfPTable tProf = new PdfPTable(2);
             tProf.setWidthPercentage(100);
-            tProf.addCell(seccionCell("Información del profesor de acompañamiento", 2));
-            tProf.addCell(campoCell("Nombre", c.getTutorAcademico() != null
+            tProf.addCell(seccionCell("Información del profesor acompañante", 2));
+            tProf.addCell(campoCell("Nombre del profesor acompañante", c.getTutorAcademico() != null
                 ? (safe(c.getTutorAcademico().getNombres()) + " " + safe(c.getTutorAcademico().getApellidos()))
                 : ""));
-            tProf.addCell(campoCell("Correo", c.getTutorAcademico() != null
+            tProf.addCell(campoCell("Correo electrónico", c.getTutorAcademico() != null
                 ? safe(c.getTutorAcademico().getEmail()) : ""));
+            tProf.addCell(campoCell("Teléfono profesor acompañante", c.getTutorAcademico() != null
+                ? safe(c.getTutorAcademico().getTelefono()) : ""));
+            tProf.addCell(campoCell("Escenario de la coformación", safe(pa.getEscenarioCoformacion())));
             document.add(tProf);
             document.add(espacio(6));
 
-            // PEM
+            // IDENTIFICACIÓN PLAN ESPECIAL DE MEJORA
             PdfPTable tPem = new PdfPTable(2);
             tPem.setWidthPercentage(100);
-            tPem.addCell(seccionCell("Identificación del plan especial de mejora (PEM)", 2));
-            PdfPCell c1 = new PdfPCell(new Phrase("Descripción del escenario", FUENTE_CAMPO));
+            tPem.addCell(seccionCell("Identificación plan especial de mejora", 2));
+            PdfPCell c1 = new PdfPCell(new Phrase("Descripción del escenario / problema", FUENTE_CAMPO));
             c1.setBackgroundColor(GRIS_SUAVE);
             c1.setPadding(4);
-            PdfPCell c2 = new PdfPCell(new Phrase("Objetivo general del PEM", FUENTE_CAMPO));
+            PdfPCell c2 = new PdfPCell(new Phrase("Objetivo general del plan especial de mejora", FUENTE_CAMPO));
             c2.setBackgroundColor(GRIS_SUAVE);
             c2.setPadding(4);
             tPem.addCell(c1);
@@ -107,13 +115,13 @@ public class PlanActividadesPdfGenerator {
             document.add(tPem);
             document.add(espacio(6));
 
-            // OBJETIVOS DE APRENDIZAJE
+            // OBJETIVOS DE APRENDIZAJE FASE EMPRESARIAL
             PdfPTable tObj = new PdfPTable(new float[]{2.2f, 5.5f, 1f});
             tObj.setWidthPercentage(100);
-            tObj.addCell(seccionCell("Objetivos de aprendizaje", 3));
-            tObj.addCell(celdaTextoFondo("Escenario", FUENTE_CAMPO, Element.ALIGN_CENTER, GRIS_SUAVE));
-            tObj.addCell(celdaTextoFondo("Descripción", FUENTE_CAMPO, Element.ALIGN_CENTER, GRIS_SUAVE));
-            tObj.addCell(celdaTextoFondo("Selec.", FUENTE_CAMPO, Element.ALIGN_CENTER, GRIS_SUAVE));
+            tObj.addCell(seccionCell("Objetivos de aprendizaje fase empresarial", 3));
+            tObj.addCell(celdaTextoFondo("Escenario de la coformación", FUENTE_CAMPO, Element.ALIGN_CENTER, GRIS_SUAVE));
+            tObj.addCell(celdaTextoFondo("Objetivos de aprendizaje", FUENTE_CAMPO, Element.ALIGN_CENTER, GRIS_SUAVE));
+            tObj.addCell(celdaTextoFondo("Selección", FUENTE_CAMPO, Element.ALIGN_CENTER, GRIS_SUAVE));
             if (pa.getObjetivos().isEmpty()) {
                 PdfPCell vacio = celdaTexto("(Sin objetivos registrados)", FUENTE_PEQUENO, Element.ALIGN_CENTER);
                 vacio.setColspan(3);
@@ -127,16 +135,22 @@ public class PlanActividadesPdfGenerator {
                 }
             }
             document.add(tObj);
+            document.add(notaImportante(
+                "Información importante: Dentro de los objetivos de aprendizaje no se contemplan "
+                + "actividades como mensajería, consignaciones, actividades de aseo y servicios "
+                + "generales, favores personales y actividades de seguridad del establecimiento de "
+                + "comercio. Por tal razón, le solicitamos abstenerse de asignar estas "
+                + "responsabilidades al estudiante."));
             document.add(espacio(6));
 
-            // PLAN MENSUAL
+            // PLAN DE ACTIVIDADES MENSUAL
             PdfPTable tMes = new PdfPTable(new float[]{1f, 2.2f, 4.5f, 2.2f});
             tMes.setWidthPercentage(100);
             tMes.addCell(seccionCell("Plan de actividades mensual", 4));
             tMes.addCell(celdaTextoFondo("Mes", FUENTE_CAMPO, Element.ALIGN_CENTER, GRIS_SUAVE));
-            tMes.addCell(celdaTextoFondo("Área de rotación", FUENTE_CAMPO, Element.ALIGN_CENTER, GRIS_SUAVE));
-            tMes.addCell(celdaTextoFondo("Actividades", FUENTE_CAMPO, Element.ALIGN_CENTER, GRIS_SUAVE));
-            tMes.addCell(celdaTextoFondo("Tutor", FUENTE_CAMPO, Element.ALIGN_CENTER, GRIS_SUAVE));
+            tMes.addCell(celdaTextoFondo("Area de rotación en empresa", FUENTE_CAMPO, Element.ALIGN_CENTER, GRIS_SUAVE));
+            tMes.addCell(celdaTextoFondo("Actividades generales a desarrollar", FUENTE_CAMPO, Element.ALIGN_CENTER, GRIS_SUAVE));
+            tMes.addCell(celdaTextoFondo("Nombre del tutor a cargo", FUENTE_CAMPO, Element.ALIGN_CENTER, GRIS_SUAVE));
             if (pa.getMeses().isEmpty()) {
                 PdfPCell vacio = celdaTexto("(Sin plan mensual registrado)", FUENTE_PEQUENO, Element.ALIGN_CENTER);
                 vacio.setColspan(4);
@@ -152,21 +166,25 @@ public class PlanActividadesPdfGenerator {
                 }
             }
             document.add(tMes);
+            document.add(notaImportante(
+                "Información importante: Las funciones puramente operativas como almacenar, archivar, "
+                + "clasificar y ordenar deben tener un propósito formativo y una duración máxima "
+                + "establecida."));
             document.add(espacio(10));
 
             // FIRMAS
             PdfPTable firmas = new PdfPTable(3);
             firmas.setWidthPercentage(100);
             firmas.addCell(seccionCell("Firmas", 3));
-            firmas.addCell(firmaCell("Estudiante",
+            firmas.addCell(firmaCell("Firma del estudiante",
                 safe(e.getNombres()) + " " + safe(e.getApellidos()),
                 Boolean.TRUE.equals(pa.getFirmadoEstudiante())));
-            firmas.addCell(firmaCell("Tutor empresarial",
+            firmas.addCell(firmaCell("Firma del tutor responsable",
                 c.getTutorEmpresarial() != null
                     ? (safe(c.getTutorEmpresarial().getNombres()) + " " + safe(c.getTutorEmpresarial().getApellidos()))
                     : "",
                 Boolean.TRUE.equals(pa.getFirmadoTutor())));
-            firmas.addCell(firmaCell("Profesor de acompañamiento",
+            firmas.addCell(firmaCell("Firma profesor acompañante",
                 c.getTutorAcademico() != null
                     ? (safe(c.getTutorAcademico().getNombres()) + " " + safe(c.getTutorAcademico().getApellidos()))
                     : "",

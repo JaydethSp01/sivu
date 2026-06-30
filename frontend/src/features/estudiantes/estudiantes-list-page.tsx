@@ -33,7 +33,7 @@ export function EstudiantesListPage(): JSX.Element {
   const hasRole = useAuthStore((s) => s.hasRole);
   const canEdit = hasRole("ADMIN", "COORDINADOR");
   const canDelete = hasRole("ADMIN");
-  const isEmpresaOnly = hasRole("EMPRESA") && !hasRole("ADMIN", "COORDINADOR");
+  const isEmpresaOnly = hasRole("TUTOR") && !hasRole("ADMIN", "COORDINADOR");
 
   const [q, setQ] = useState("");
   const [estado, setEstado] = useState<EstadoEstudiante | "ALL">("ALL");

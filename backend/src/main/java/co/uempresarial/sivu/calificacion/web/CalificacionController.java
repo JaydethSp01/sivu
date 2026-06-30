@@ -29,7 +29,7 @@ public class CalificacionController {
     private final CorteCalculoService service;
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ESTUDIANTE','EMPRESA','COORDINADOR','ADMIN')")
+    @PreAuthorize("hasAnyRole('ESTUDIANTE','TUTOR','DOCENTE','COORDINADOR','ADMIN')")
     @Operation(summary = "Obtener el desglose calculado de la nota final del proceso (recalcula y persiste el consolidado)")
     public ResponseEntity<CalificacionDesgloseResponse> obtener(@PathVariable Long convenioId) {
         return ResponseEntity.ok(service.calcularYConsolidar(convenioId, true));

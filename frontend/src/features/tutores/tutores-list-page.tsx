@@ -42,7 +42,7 @@ export function TutoresListPage(): JSX.Element {
   const canEdit = hasRole("ADMIN", "COORDINADOR");
   const canDelete = hasRole("ADMIN");
   const canFilterEmpresa = hasRole("ADMIN", "COORDINADOR");
-  const isEmpresaOnly = hasRole("EMPRESA") && !hasRole("ADMIN", "COORDINADOR");
+  const isEmpresaOnly = hasRole("TUTOR") && !hasRole("ADMIN", "COORDINADOR");
 
   const [q, setQ] = useState("");
   const [tipo, setTipo] = useState<TipoTutor | "ALL">("ALL");

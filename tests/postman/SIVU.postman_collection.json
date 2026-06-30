@@ -258,7 +258,7 @@
           ]
         },
         {
-          "name": "Login empresa",
+          "name": "Login tutor empresarial",
           "request": {
             "auth": {
               "type": "noauth"
@@ -272,7 +272,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"rrhh@coally.com\",\n  \"password\": \"Empresa123*\"\n}"
+              "raw": "{\n  \"email\": \"rrhh@coally.com\",\n  \"password\": \"Tutor123*\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/auth/login",
@@ -293,8 +293,8 @@
                 "exec": [
                   "pm.test('Status 200', () => pm.response.to.have.status(200));",
                   "const json = pm.response.json();",
-                  "pm.test('Usuario tiene rol EMPRESA', () => pm.expect(json.usuario.roles).to.include('EMPRESA'));",
-                  "pm.environment.set('empresaToken', json.accessToken);"
+                  "pm.test('Usuario tiene rol TUTOR', () => pm.expect(json.usuario.roles).to.include('TUTOR'));",
+                  "pm.environment.set('tutor empresarialToken', json.accessToken);"
                 ]
               }
             }

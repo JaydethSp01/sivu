@@ -51,7 +51,7 @@ interface UsuarioAdmin {
   updatedAt: string;
 }
 
-const ROLES_DISPONIBLES: Rol[] = ["ADMIN", "COORDINADOR", "ESTUDIANTE", "EMPRESA", "MCP_AGENT"];
+const ROLES_DISPONIBLES: Rol[] = ["ADMIN", "COORDINADOR", "ESTUDIANTE", "DOCENTE", "TUTOR", "MCP_AGENT"];
 
 export function UsuariosAdminPage(): JSX.Element {
   const qc = useQueryClient();

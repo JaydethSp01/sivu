@@ -4,6 +4,9 @@ import co.uempresarial.sivu.estudiante.domain.Estudiante;
 import co.uempresarial.sivu.informefinalpm.domain.InformeFinalPm;
 import co.uempresarial.sivu.trimestre.pdf.PdfStyles;
 import com.lowagie.text.*;
+import com.lowagie.text.pdf.PdfContentByte;
+import com.lowagie.text.pdf.PdfPTable;
+import com.lowagie.text.pdf.PdfPageEventHelper;
 import com.lowagie.text.pdf.PdfWriter;
 import org.springframework.stereotype.Component;
 
@@ -14,7 +17,9 @@ import java.time.format.DateTimeFormatter;
 import java.util.Locale;
 
 /**
- * PDF Informe Final del Plan Especial de Mejora — formato Uniempresarial GTC-FM-16.
+ * PDF Informe Final del Plan de Mejora — formato institucional Uniempresarial
+ * GTC-FM-16 (Versión 3.0). Replica carátula, encabezado por página ("Página X de 15"),
+ * las 12 secciones numeradas oficiales y el bloque de firmas/calificación.
  */
 @Component
 public class InformeFinalPmPdfGenerator {
@@ -24,210 +29,231 @@ public class InformeFinalPmPdfGenerator {
 
     private static final BigDecimal NOTA_MINIMA = new BigDecimal("3.0");
 
+    private static final String CODIGO = "GTC-FM-16";
+    private static final String VERSION = "3.0";
+    private static final String FECHA_FORMATO = "03/04/2025";
+    private static final int TOTAL_PAGINAS = 15;
+
+    /** Encabezado institucional GTC-FM-16 repetido en cada página con "Página X de 15". */
+    private static final class HeaderPorPagina extends PdfPageEventHelper {
+        private final Short nivel;
+        HeaderPorPagina(Short nivel) { this.nivel = nivel; }
+
+        @Override
+        public void onEndPage(PdfWriter writer, Document doc) {
+            String titulo = "Informe Final de Plan de Mejora\nNivel "
+                + (nivel != null ? nivel : 3);
+            PdfPTable header = PdfStyles.encabezadoInstitucional(
+                CODIGO, VERSION, FECHA_FORMATO,
+                writer.getPageNumber() + " de " + TOTAL_PAGINAS, titulo);
+            header.setTotalWidth(doc.right() - doc.left());
+            PdfContentByte cb = writer.getDirectContent();
+            // Dibuja el encabezado en la banda superior, por encima del área de contenido.
+            header.writeSelectedRows(0, -1, doc.left(), doc.getPageSize().getHeight() - 28, cb);
+        }
+    }
+
     public byte[] generar(InformeFinalPm informe) {
-        Document doc = new Document(PageSize.LETTER, 60, 60, 60, 60);
+        // Margen superior amplio para alojar el encabezado institucional por página.
+        Document doc = new Document(PageSize.LETTER, 55, 55, 100, 55);
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         try {
-            PdfWriter.getInstance(doc, out);
+            PdfWriter writer = PdfWriter.getInstance(doc, out);
+            writer.setPageEvent(new HeaderPorPagina(informe.getNivel()));
             doc.open();
 
             Font small  = FontFactory.getFont(FontFactory.HELVETICA, 9);
             Font normal = FontFactory.getFont(FontFactory.HELVETICA, 11);
             Font bold   = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 11);
-            Font h2     = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 13);
-            Font titulo = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 16);
-            Font caratulaTitulo = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 24);
-            Font caratulaSub    = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 14);
+            Font h2     = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 12, PdfStyles.AZUL_UE);
+            Font caratulaTitulo = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 18, PdfStyles.AZUL_UE);
+            Font caratulaSub    = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 13);
 
-            // --- CARÁTULA (gap §6.3 del doc Coformación) ---
-            var pmCar = informe.getPlanMejora();
-            var trimCar = pmCar.getTrimestre();
-            var convCar = trimCar.getConvenio();
-            Estudiante estCar = convCar.getEstudiante();
-            String nombreCar = (safe(estCar.getNombres()) + " " + safe(estCar.getApellidos())).trim();
-
-            Paragraph inst = new Paragraph(
-                "FUNDACIÓN UNIVERSITARIA EMPRESARIAL\nDE LA CÁMARA DE COMERCIO DE BOGOTÁ",
-                bold);
-            inst.setAlignment(Element.ALIGN_CENTER);
-            doc.add(inst);
-            doc.add(spacer(8));
-            Paragraph cd = new Paragraph("Dirección de Coformación Empresarial", normal);
-            cd.setAlignment(Element.ALIGN_CENTER);
-            doc.add(cd);
-
-            doc.add(spacer(50));
-
-            Paragraph caratulaH = new Paragraph("INFORME FINAL", caratulaTitulo);
-            caratulaH.setAlignment(Element.ALIGN_CENTER);
-            doc.add(caratulaH);
-            Paragraph caratulaSubH = new Paragraph("PLAN ESPECIAL DE MEJORA", caratulaSub);
-            caratulaSubH.setAlignment(Element.ALIGN_CENTER);
-            doc.add(caratulaSubH);
-            doc.add(spacer(12));
-            if (informe.getNivel() != null) {
-                Paragraph nivelP = new Paragraph("NIVEL " + informe.getNivel(), caratulaSub);
-                nivelP.setAlignment(Element.ALIGN_CENTER);
-                doc.add(nivelP);
-            }
-            if (Boolean.TRUE.equals(informe.getAltoImpacto())) {
-                Font impactoFont = FontFactory.getFont(
-                    FontFactory.HELVETICA_BOLD, 13, PdfStyles.ROJO_UE);
-                Paragraph impactoP = new Paragraph("★ PROYECTO DE ALTO IMPACTO ★", impactoFont);
-                impactoP.setAlignment(Element.ALIGN_CENTER);
-                impactoP.setSpacingBefore(8);
-                doc.add(impactoP);
-            }
-
-            doc.add(spacer(40));
-
-            // Título del informe (campo nuevo §6.3)
-            String tituloInformeStr = informe.getTituloInforme();
-            if (tituloInformeStr == null || tituloInformeStr.isBlank()) {
-                tituloInformeStr = safe(pmCar.getTitulo());
-            }
-            Paragraph tInf = new Paragraph("\"" + tituloInformeStr + "\"", caratulaSub);
-            tInf.setAlignment(Element.ALIGN_CENTER);
-            doc.add(tInf);
-
-            doc.add(spacer(60));
-
-            Paragraph autor = new Paragraph("Presentado por:", normal);
-            autor.setAlignment(Element.ALIGN_CENTER);
-            doc.add(autor);
-            Paragraph autorN = new Paragraph(nombreCar, bold);
-            autorN.setAlignment(Element.ALIGN_CENTER);
-            doc.add(autorN);
-            Paragraph prog = new Paragraph(safe(estCar.getProgramaAcademico()), normal);
-            prog.setAlignment(Element.ALIGN_CENTER);
-            doc.add(prog);
-
-            doc.add(spacer(20));
-
-            Paragraph emp = new Paragraph("Empresa:", normal);
-            emp.setAlignment(Element.ALIGN_CENTER);
-            doc.add(emp);
-            Paragraph empN = new Paragraph(safe(convCar.getEmpresa().getRazonSocial()), bold);
-            empN.setAlignment(Element.ALIGN_CENTER);
-            doc.add(empN);
-            if (convCar.getTutorEmpresarial() != null) {
-                String tutorEmpStr = safe(convCar.getTutorEmpresarial().getNombres()) + " "
-                    + safe(convCar.getTutorEmpresarial().getApellidos());
-                if (informe.getCargoTutorEmpresarial() != null && !informe.getCargoTutorEmpresarial().isBlank()) {
-                    tutorEmpStr += " · " + informe.getCargoTutorEmpresarial();
-                } else if (convCar.getTutorEmpresarial().getCargo() != null) {
-                    tutorEmpStr += " · " + convCar.getTutorEmpresarial().getCargo();
-                }
-                Paragraph te = new Paragraph("Tutor empresarial: " + tutorEmpStr, small);
-                te.setAlignment(Element.ALIGN_CENTER);
-                doc.add(te);
-            }
-
-            doc.add(spacer(40));
-            Paragraph fecha = new Paragraph("Bogotá D.C. — " + LocalDate.now().format(FECHA), small);
-            fecha.setAlignment(Element.ALIGN_CENTER);
-            doc.add(fecha);
-
-            doc.newPage();
-            // --- FIN CARÁTULA ---
-
-            // Header institucional GTC-FM-16 — encabezado con marca, código y versión
-            // (PdfStyles, consistencia oficial RNF-01).
-            doc.add(PdfStyles.encabezadoInstitucional(
-                "GTC-FM-16", "V.01", LocalDate.now().format(FECHA),
-                "INFORME FINAL DEL PLAN ESPECIAL DE MEJORA"
-                    + (informe.getNivel() != null ? "\nNivel " + informe.getNivel() : "")));
-
-            doc.add(spacer(16));
-
-            Paragraph title = new Paragraph("INFORME FINAL DEL PLAN ESPECIAL DE MEJORA", titulo);
-            title.setAlignment(Element.ALIGN_CENTER);
-            doc.add(title);
-            doc.add(spacer(12));
-
-            // Identificación del PM y estudiante
             var pm = informe.getPlanMejora();
             var trimestre = pm.getTrimestre();
             var convenio = trimestre.getConvenio();
             Estudiante est = convenio.getEstudiante();
             String nombre = (safe(est.getNombres()) + " " + safe(est.getApellidos())).trim();
+            String tutorEmp = convenio.getTutorEmpresarial() != null
+                ? (safe(convenio.getTutorEmpresarial().getNombres()) + " "
+                   + safe(convenio.getTutorEmpresarial().getApellidos())).trim()
+                : "—";
+            String profesor = convenio.getTutorAcademico() != null
+                ? (safe(convenio.getTutorAcademico().getNombres()) + " "
+                   + safe(convenio.getTutorAcademico().getApellidos())).trim()
+                : "—";
 
-            doc.add(seccion("Identificación", h2));
-            doc.add(linea("Título del PM:", safe(pm.getTitulo()), bold, normal));
-            doc.add(linea("Estudiante:", nombre, bold, normal));
-            doc.add(linea("Programa:", safe(est.getProgramaAcademico()), bold, normal));
-            doc.add(linea("Empresa:", safe(convenio.getEmpresa().getRazonSocial()), bold, normal));
-            doc.add(linea("Trimestre:", "T" + safe(trimestre.getNumero()) + " — " + safe(trimestre.getMateriaNucleo()),
-                bold, normal));
-            doc.add(linea("Páginas declaradas:", safe(informe.getNumeroPaginas()) + " (máx. 15)", bold, normal));
+            String tituloInformeStr = informe.getTituloInforme();
+            if (tituloInformeStr == null || tituloInformeStr.isBlank()) {
+                tituloInformeStr = safe(pm.getTitulo());
+            }
+
+            // ===================== CARÁTULA (Página 1 de 15) =====================
+            Paragraph rotulo = new Paragraph(
+                "Título del Informe Final de Plan de Mejora Nivel "
+                    + (informe.getNivel() != null ? informe.getNivel() : 3), caratulaSub);
+            rotulo.setAlignment(Element.ALIGN_CENTER);
+            doc.add(spacer(30));
+            doc.add(rotulo);
+            doc.add(spacer(30));
+
+            Paragraph tInf = new Paragraph(tituloInformeStr, caratulaTitulo);
+            tInf.setAlignment(Element.ALIGN_CENTER);
+            doc.add(tInf);
+
+            if (Boolean.TRUE.equals(informe.getAltoImpacto())) {
+                Font impactoFont = FontFactory.getFont(
+                    FontFactory.HELVETICA_BOLD, 12, PdfStyles.ROJO_UE);
+                Paragraph impactoP = new Paragraph("PROYECTO DE ALTO IMPACTO", impactoFont);
+                impactoP.setAlignment(Element.ALIGN_CENTER);
+                impactoP.setSpacingBefore(10);
+                doc.add(impactoP);
+            }
+
+            doc.add(spacer(80));
+
+            doc.add(caratulaLinea("Nombre del estudiante: ", nombre, bold, normal));
+            doc.add(caratulaLinea("Programa académico: ", safe(est.getProgramaAcademico()), bold, normal));
+            doc.add(caratulaLinea("Profesor acompañante: ", profesor, bold, normal));
+
+            doc.add(spacer(30));
+            Paragraph fecha = new Paragraph(LocalDate.now().format(FECHA), normal);
+            fecha.setAlignment(Element.ALIGN_CENTER);
+            doc.add(fecha);
+
+            doc.newPage();
+
+            // ===================== PÁGINA 2: datos + nota aclaratoria =====================
+            Paragraph rotulo2 = new Paragraph(
+                "Título del Informe Final de Plan de Mejora Nivel "
+                    + (informe.getNivel() != null ? informe.getNivel() : 3), bold);
+            rotulo2.setAlignment(Element.ALIGN_CENTER);
+            doc.add(rotulo2);
+            Paragraph t2 = new Paragraph(tituloInformeStr, normal);
+            t2.setAlignment(Element.ALIGN_CENTER);
+            doc.add(t2);
+            doc.add(spacer(14));
+
+            doc.add(seccion("Información del Estudiante", h2));
+            doc.add(linea("Nombre del Estudiante:", nombre, bold, normal));
+            doc.add(linea("Programa Académico:", safe(est.getProgramaAcademico()), bold, normal));
+            doc.add(linea("Semestre:", est.getSemestre() == null ? "—" : est.getSemestre().toString(), bold, normal));
+            doc.add(linea("Promoción:", "—", bold, normal));
+            doc.add(spacer(8));
+
+            doc.add(seccion("Información de la Empresa", h2));
+            doc.add(linea("Razón Social:", safe(convenio.getEmpresa().getRazonSocial()), bold, normal));
+            doc.add(linea("Nombre del Tutor Empresarial:", tutorEmp, bold, normal));
+            String cargo = informe.getCargoTutorEmpresarial();
+            if ((cargo == null || cargo.isBlank()) && convenio.getTutorEmpresarial() != null) {
+                cargo = convenio.getTutorEmpresarial().getCargo();
+            }
+            doc.add(linea("Cargo del Tutor:", (cargo == null || cargo.isBlank()) ? "—" : cargo, bold, normal));
+            doc.add(linea("Email del Tutor:",
+                convenio.getTutorEmpresarial() != null && convenio.getTutorEmpresarial().getEmail() != null
+                    ? convenio.getTutorEmpresarial().getEmail() : "—", bold, normal));
             doc.add(spacer(10));
 
-            // Secciones
-            addSeccion(doc, h2, normal, "Resumen Ejecutivo", informe.getResumenEjecutivo());
-            addSeccion(doc, h2, normal, "Contextualización de la Empresa", informe.getContextualizacion());
-            addSeccion(doc, h2, normal, "Planteamiento del Problema", informe.getPlanteamientoProblema());
-            addSeccion(doc, h2, normal, "Marco Teórico", informe.getMarcoTeorico());
-            addSeccion(doc, h2, normal, "Objetivo General", informe.getObjetivoGeneral());
-            addSeccion(doc, h2, normal, "Objetivos Específicos", informe.getObjetivosEspecificos());
-            addSeccion(doc, h2, normal, "Diagnóstico (DOFA / PESTEL / Ishikawa)", informe.getDiagnostico());
-            addSeccion(doc, h2, normal, "Metodología", informe.getMetodologia());
-            addSeccion(doc, h2, normal, "Propuesta de Solución", informe.getPropuestaSolucion());
-            addSeccion(doc, h2, normal, "Factibilidad", informe.getFactibilidad());
-            addSeccion(doc, h2, normal, "Conclusiones", informe.getConclusiones());
-            // GAP 3 / RF-A04 #1: secciones del editor estructurado (se muestran si tienen contenido)
-            addSeccionSiPresente(doc, h2, normal, "Contextualización de la Empresa", informe.getContextualizacionEmpresa());
-            addSeccionSiPresente(doc, h2, normal, "Objetivos", informe.getObjetivos());
-            addSeccionSiPresente(doc, h2, normal, "Justificación", informe.getJustificacion());
-            addSeccionSiPresente(doc, h2, normal, "Resultados", informe.getResultados());
-            addSeccionSiPresente(doc, h2, normal, "Referencias (APA)", informe.getReferenciasApa());
+            doc.add(seccion("Nota aclaratoria", h2));
+            Paragraph nota = new Paragraph(
+                "Estimado estudiante: para la aprobación del Informe de Plan de Mejora como opción "
+                + "de trabajo de grado, debe diligenciar todos los parámetros contemplados en este "
+                + "documento. Tenga en cuenta que su evaluación está a cargo del profesor de "
+                + "acompañamiento y del tutor de la empresa, quienes verificarán la presentación y "
+                + "completitud del Informe. Recuerde que, para su aprobación, este producto deberá "
+                + "obtener una nota igual o superior a 3.0, y en su elaboración no deberá superar las "
+                + "15 páginas de desarrollo.", normal);
+            nota.setAlignment(Element.ALIGN_JUSTIFIED);
+            doc.add(nota);
+
+            doc.newPage();
+
+            // ===================== DESARROLLO: 12 secciones numeradas =====================
+            Paragraph devTitulo = new Paragraph(
+                "Informe Final de Plan de Mejora Nivel "
+                    + (informe.getNivel() != null ? informe.getNivel() : 3),
+                FontFactory.getFont(FontFactory.HELVETICA_BOLD, 13, PdfStyles.AZUL_UE));
+            devTitulo.setAlignment(Element.ALIGN_CENTER);
+            devTitulo.setSpacingAfter(10);
+            doc.add(devTitulo);
+
+            String contextualizacion = informe.getContextualizacionEmpresa() != null
+                    && !informe.getContextualizacionEmpresa().isBlank()
+                ? informe.getContextualizacionEmpresa()
+                : informe.getContextualizacion();
+            String objEspecificos = informe.getObjetivosEspecificos() != null
+                    && !informe.getObjetivosEspecificos().isBlank()
+                ? informe.getObjetivosEspecificos()
+                : informe.getObjetivos();
+
+            addSeccion(doc, h2, normal, "1. Resumen Ejecutivo", informe.getResumenEjecutivo());
+            addSeccion(doc, h2, normal, "2. Contextualización de la Empresa Coformadora", contextualizacion);
+            addSeccion(doc, h2, normal, "3. Planteamiento del Problema", informe.getPlanteamientoProblema());
+            addSeccion(doc, h2, normal, "4. Marco Teórico", informe.getMarcoTeorico());
+
+            doc.add(seccion("5. Objetivo General y Objetivos Específicos", h2));
+            addSub(doc, bold, normal, "5.1 Objetivo General:", informe.getObjetivoGeneral());
+            addSub(doc, bold, normal, "5.2 Objetivos Específicos:", objEspecificos);
+
+            addSeccion(doc, h2, normal, "6. Diagnóstico Empresarial", informe.getDiagnostico());
+
+            addSeccion(doc, h2, normal, "7. Metodología del Plan de Mejora", informe.getMetodologia());
+            if (informe.getPropuestaSolucion() != null && !informe.getPropuestaSolucion().isBlank()) {
+                addSub(doc, bold, normal, "7.1 Propuesta de Solución:", informe.getPropuestaSolucion());
+            }
+
+            addSeccion(doc, h2, normal, "8. Justificación del Plan de Mejora", informe.getJustificacion());
+            addSeccion(doc, h2, normal, "9. Factibilidad del Plan de Mejora", informe.getFactibilidad());
+            addSeccion(doc, h2, normal, "10. Resultados", informe.getResultados());
+            addSeccion(doc, h2, normal, "11. Conclusiones", informe.getConclusiones());
+            addSeccion(doc, h2, normal, "12. Referencias bibliográficas", informe.getReferenciasApa());
             if (informe.getAnexos() != null && !informe.getAnexos().isBlank()) {
                 addSeccion(doc, h2, normal, "Anexos", informe.getAnexos());
             }
 
-            // Estado y revisión
-            doc.add(spacer(12));
-            doc.add(seccion("Estado del Informe", h2));
-            doc.add(linea("Estado actual:", informe.getEstado().name(), bold, normal));
-            if (informe.getFechaEntrega() != null) {
-                doc.add(linea("Fecha de entrega:", informe.getFechaEntrega().toLocalDate().format(FECHA), bold, normal));
-            }
-            if (informe.getRevisadoPorNombre() != null) {
-                doc.add(linea("Revisor:", informe.getRevisadoPorNombre(), bold, normal));
-            }
-            if (informe.getObservacionesRevisor() != null && !informe.getObservacionesRevisor().isBlank()) {
-                doc.add(spacer(6));
-                doc.add(new Paragraph("Observaciones del revisor:", bold));
-                Paragraph obs = new Paragraph(informe.getObservacionesRevisor(), normal);
-                obs.setAlignment(Element.ALIGN_JUSTIFIED);
-                doc.add(obs);
-            }
+            // ===================== FIRMAS Y CALIFICACIÓN =====================
+            doc.add(spacer(16));
+            doc.add(firmaLinea("Nombre del estudiante:", nombre,
+                Boolean.TRUE.equals(informe.getFirmadoEstudiante()), bold, normal));
+            doc.add(spacer(10));
+            doc.add(firmaLinea("Nombre del tutor empresarial:", tutorEmp,
+                Boolean.TRUE.equals(informe.getFirmadoTutorEmp()), bold, normal));
+            doc.add(new Paragraph("Firma de aprobación del tutor empresarial: "
+                + (Boolean.TRUE.equals(informe.getFirmadoTutorEmp()) ? "[ FIRMADO ]" : "_______________"), normal));
+            doc.add(spacer(10));
+            doc.add(firmaLinea("Nombre del profesor de acompañamiento:", profesor,
+                Boolean.TRUE.equals(informe.getFirmadoTutorAcad()), bold, normal));
+            doc.add(new Paragraph("Firma de aprobación del profesor de acompañamiento: "
+                + (Boolean.TRUE.equals(informe.getFirmadoTutorAcad()) ? "[ FIRMADO ]" : "_______________"), normal));
 
-            // Calificación Final (BI-07 / RF-A04 GTC-FM-16)
-            doc.add(spacer(12));
-            doc.add(seccion("Calificación Final (GTC-FM-16)", h2));
-            doc.add(linea("Nota del Tutor Empresarial:", nota(informe.getNotaTutor()), bold, normal));
-            doc.add(linea("Nota del Profesor (Docente Acompañante):", nota(informe.getNotaProfesor()), bold, normal));
-            doc.add(linea("Nota Promedio Final:",
-                informe.getNotaPromedio() != null
-                    ? nota(informe.getNotaPromedio()) + " / 5.0"
-                    : "— (pendiente de ambas notas)",
-                bold, normal));
+            doc.add(spacer(14));
+            doc.add(linea("Nota del profesor:", nota(informe.getNotaProfesor()), bold, normal));
+            doc.add(linea("Nota del tutor:", nota(informe.getNotaTutor()), bold, normal));
+            doc.add(linea("Nota definitiva del Plan de Mejora (valor promediado entre nota de profesor y tutor):",
+                informe.getNotaPromedio() != null ? nota(informe.getNotaPromedio()) : "—", bold, normal));
             if (informe.getNotaPromedio() != null) {
                 boolean aprueba = informe.getNotaPromedio().compareTo(NOTA_MINIMA) >= 0;
-                doc.add(linea("Resultado (mín. 3.0):",
-                    aprueba ? "APROBADO" : "NO APROBADO", bold, normal));
+                doc.add(linea("Resultado (nota mínima 3.0):", aprueba ? "APROBADO" : "NO APROBADO", bold, normal));
             }
-            doc.add(linea("Proyecto de Alto Impacto:",
-                Boolean.TRUE.equals(informe.getAltoImpacto()) ? "SÍ ★" : "No", bold, normal));
+            boolean alto = Boolean.TRUE.equals(informe.getAltoImpacto());
+            doc.add(linea("El plan de mejora es de alto impacto (Marque con una X):",
+                "SI: " + (alto ? "[X]" : "[ ]") + "    No: " + (!alto ? "[X]" : "[ ]"), bold, normal));
 
-            // Firmas
-            doc.add(spacer(24));
-            doc.add(seccion("Firmas", h2));
-            doc.add(firmaLinea("Estudiante:", nombre, Boolean.TRUE.equals(informe.getFirmadoEstudiante()), bold, normal));
-            doc.add(firmaLinea("Tutor Académico (Docente Acompañante):", "—",
-                Boolean.TRUE.equals(informe.getFirmadoTutorAcad()), bold, normal));
-            doc.add(firmaLinea("Tutor Empresarial:", "—",
-                Boolean.TRUE.equals(informe.getFirmadoTutorEmp()), bold, normal));
+            doc.add(spacer(10));
+            Paragraph notaImpacto = new Paragraph(
+                "Nota: El Plan de Mejora de Alto Impacto se considera así porque la empresa puede "
+                + "implementarlo directamente, generando mejoras concretas y alineadas con sus "
+                + "objetivos estratégicos.", small);
+            notaImpacto.setAlignment(Element.ALIGN_JUSTIFIED);
+            doc.add(notaImpacto);
+
+            doc.add(spacer(8));
+            doc.add(seccion("Observaciones de los evaluadores", h2));
+            String obsEval = informe.getObservacionesRevisor();
+            Paragraph obs = new Paragraph(
+                (obsEval == null || obsEval.isBlank()) ? "—" : obsEval, normal);
+            obs.setAlignment(Element.ALIGN_JUSTIFIED);
+            doc.add(obs);
 
             doc.close();
         } catch (DocumentException ex) {
@@ -238,7 +264,7 @@ public class InformeFinalPmPdfGenerator {
 
     private static Paragraph seccion(String texto, Font h2) {
         Paragraph p = new Paragraph(texto, h2);
-        p.setSpacingBefore(8);
+        p.setSpacingBefore(10);
         p.setSpacingAfter(4);
         return p;
     }
@@ -252,6 +278,13 @@ public class InformeFinalPmPdfGenerator {
         return p;
     }
 
+    private static Paragraph caratulaLinea(String etiqueta, String valor, Font bold, Font normal) {
+        Paragraph p = linea(etiqueta, valor, bold, normal);
+        p.setAlignment(Element.ALIGN_CENTER);
+        p.setSpacingAfter(6);
+        return p;
+    }
+
     private static void addSeccion(Document doc, Font h2, Font normal, String titulo, String contenido)
         throws DocumentException {
         doc.add(seccion(titulo, h2));
@@ -261,20 +294,25 @@ public class InformeFinalPmPdfGenerator {
         doc.add(p);
     }
 
-    private static void addSeccionSiPresente(Document doc, Font h2, Font normal, String titulo, String contenido)
+    private static void addSub(Document doc, Font bold, Font normal, String titulo, String contenido)
         throws DocumentException {
-        if (contenido != null && !contenido.isBlank()) {
-            addSeccion(doc, h2, normal, titulo, contenido);
-        }
+        Paragraph t = new Paragraph(titulo, bold);
+        t.setSpacingBefore(4);
+        t.setSpacingAfter(2);
+        doc.add(t);
+        Paragraph p = new Paragraph(contenido == null || contenido.isBlank() ? "—" : contenido, normal);
+        p.setAlignment(Element.ALIGN_JUSTIFIED);
+        p.setSpacingAfter(6);
+        doc.add(p);
     }
 
     private static Paragraph firmaLinea(String etiqueta, String nombre, boolean firmado, Font bold, Font normal) {
         Phrase ph = new Phrase();
         ph.add(new Chunk(etiqueta + " ", bold));
         ph.add(new Chunk(nombre, normal));
-        ph.add(new Chunk("  —  " + (firmado ? "[FIRMADO ✓]" : "[ pendiente ]"), normal));
+        ph.add(new Chunk("  —  " + (firmado ? "[ FIRMADO ]" : "[ pendiente ]"), normal));
         Paragraph p = new Paragraph(ph);
-        p.setSpacingAfter(4);
+        p.setSpacingAfter(2);
         return p;
     }
 

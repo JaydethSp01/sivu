@@ -35,7 +35,7 @@ public class TutorController {
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN','COORDINADOR','EMPRESA','ESTUDIANTE','MCP_AGENT')")
+    @PreAuthorize("hasAnyRole('ADMIN','COORDINADOR','TUTOR','DOCENTE','ESTUDIANTE','MCP_AGENT')")
     @Operation(summary = "Listar tutores con filtros")
     public ResponseEntity<PageResponse<TutorResponse>> listar(
         @RequestParam(required = false) String q,
