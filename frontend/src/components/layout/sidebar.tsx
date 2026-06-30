@@ -37,20 +37,11 @@ function labelEstudiantes(roles: Rol[]): string {
     : "Estudiantes";
 }
 function labelPracticas(roles: Rol[]): string {
-  // El estudiante ES quien hace la práctica; la empresa RECIBE practicantes.
-  if (roles.includes("ADMIN") || roles.includes("COORDINADOR")) return "Prácticas";
+  // El estudiante ES quien hace la práctica; el docente y la oficina la acompañan;
+  // el tutor empresarial la recibe en su empresa.
+  if (roles.includes("ADMIN") || roles.includes("COORDINADOR") || roles.includes("DOCENTE")) return "Prácticas";
   if (roles.includes("TUTOR")) return "Convenios";
   return "Mi práctica";
-}
-function labelTutores(roles: Rol[]): string {
-  return roles.includes("TUTOR") && !roles.includes("ADMIN") && !roles.includes("COORDINADOR")
-    ? "Mis tutores"
-    : "Tutores";
-}
-function labelDocumentos(roles: Rol[]): string {
-  return roles.includes("TUTOR") && !roles.includes("ADMIN") && !roles.includes("COORDINADOR")
-    ? "Documentos de mi empresa"
-    : "Documentos";
 }
 function labelExpediente(roles: Rol[]): string {
   return roles.includes("ESTUDIANTE") &&
@@ -72,7 +63,9 @@ const GROUPS: NavGroup[] = [
     label: "Personas",
     items: [
       { to: "/estudiantes", label: labelEstudiantes, icon: Users, roles: ["ADMIN", "COORDINADOR", "DOCENTE", "TUTOR"] },
-      { to: "/tutores", label: labelTutores, icon: UserCog, roles: ["ADMIN", "COORDINADOR", "TUTOR", "MCP_AGENT"] },
+      // Listado de tutores empresariales: lo administra la Oficina de Coformación,
+      // no el tutor mismo (un tutor no gestiona a otros tutores).
+      { to: "/tutores", label: "Tutores", icon: UserCog, roles: ["ADMIN", "COORDINADOR", "MCP_AGENT"] },
     ],
   },
   // Empresas — registro de coformadoras y vista propia de la empresa.
@@ -89,7 +82,9 @@ const GROUPS: NavGroup[] = [
     items: [
       { to: "/convenios", label: labelPracticas, icon: FileSignature },
       { to: "/expedientes", label: labelExpediente, icon: FolderArchive, roles: ["ADMIN", "COORDINADOR", "ESTUDIANTE", "DOCENTE", "TUTOR"] },
-      { to: "/documentos", label: labelDocumentos, icon: FileText },
+      // Repositorio de documentos de soporte (EPS, certificados, etc.): lo gestionan
+      // la Oficina/Admin y el propio estudiante; no aplica al tutor ni al docente.
+      { to: "/documentos", label: "Documentos", icon: FileText, roles: ["ADMIN", "COORDINADOR", "ESTUDIANTE"] },
     ],
   },
   // Agendamiento colaborativo — franjas del docente y reuniones
@@ -99,7 +94,7 @@ const GROUPS: NavGroup[] = [
     items: [
       { to: "/agendamiento/disponibilidad", label: "Disponibilidad docente", icon: CalendarClock, roles: ["ADMIN", "COORDINADOR", "DOCENTE"] },
       { to: "/agendamiento/proponer", label: "Proponer reunión", icon: CalendarPlus, roles: ["ESTUDIANTE"] },
-      { to: "/agendamiento/reuniones", label: "Reuniones", icon: CalendarRange, roles: ["ESTUDIANTE", "ADMIN", "COORDINADOR"] },
+      { to: "/agendamiento/reuniones", label: "Reuniones", icon: CalendarRange, roles: ["ESTUDIANTE", "DOCENTE", "ADMIN", "COORDINADOR"] },
     ],
   },
   // Administración — gestión de usuarios del sistema.

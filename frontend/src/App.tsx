@@ -89,7 +89,9 @@ export function App(): JSX.Element {
                   <Route path="estudiantes/:id/edit" element={<EstudianteFormPage />} />
                 </Route>
 
-                <Route element={<RoleGuard allow={["ADMIN", "COORDINADOR", "TUTOR"]} />}>
+                {/* El registro/edición de empresas coformadoras lo gestiona la
+                    Oficina de Coformación; el tutor sólo ve su propia empresa (/mi-empresa). */}
+                <Route element={<RoleGuard allow={["ADMIN", "COORDINADOR"]} />}>
                   <Route path="empresas" element={<EmpresasListPage />} />
                   <Route path="empresas/:id" element={<EmpresaDetailPage />} />
                   <Route path="empresas/new" element={<EmpresaFormPage />} />
@@ -100,10 +102,13 @@ export function App(): JSX.Element {
                   <Route path="mi-empresa" element={<MiEmpresaPage />} />
                 </Route>
 
-                <Route path="documentos" element={<DocumentosListPage />} />
-                <Route path="documentos/:id" element={<DocumentoDetailPage />} />
-                <Route path="documentos/new" element={<DocumentoFormPage />} />
-                <Route path="documentos/:id/edit" element={<DocumentoFormPage />} />
+                {/* Documentos de soporte (EPS, certificados…): Oficina/Admin y el estudiante. */}
+                <Route element={<RoleGuard allow={["ADMIN", "COORDINADOR", "ESTUDIANTE"]} />}>
+                  <Route path="documentos" element={<DocumentosListPage />} />
+                  <Route path="documentos/:id" element={<DocumentoDetailPage />} />
+                  <Route path="documentos/new" element={<DocumentoFormPage />} />
+                  <Route path="documentos/:id/edit" element={<DocumentoFormPage />} />
+                </Route>
 
                 {/* Expediente Digital Unificado (BI-16 / RF-B01) */}
                 <Route element={<RoleGuard allow={["ADMIN", "COORDINADOR", "ESTUDIANTE", "DOCENTE", "TUTOR"]} />}>
@@ -130,12 +135,17 @@ export function App(): JSX.Element {
                 <Route element={<RoleGuard allow={["ADMIN", "COORDINADOR", "DOCENTE"]} />}>
                   <Route path="agendamiento/disponibilidad" element={<DisponibilidadPage />} />
                 </Route>
+                {/* El estudiante propone; el docente acompañante responde
+                    (aceptar/rechazar/contraofertar) en la bandeja de reuniones. */}
                 <Route element={<RoleGuard allow={["ESTUDIANTE", "ADMIN", "COORDINADOR"]} />}>
                   <Route path="agendamiento/proponer" element={<ProponerReunionPage />} />
+                </Route>
+                <Route element={<RoleGuard allow={["ESTUDIANTE", "DOCENTE", "ADMIN", "COORDINADOR"]} />}>
                   <Route path="agendamiento/reuniones" element={<BandejaReunionesPage />} />
                 </Route>
 
-                <Route element={<RoleGuard allow={["ADMIN", "COORDINADOR", "TUTOR", "MCP_AGENT"]} />}>
+                {/* Listado de tutores: lo administra la Oficina de Coformación, no el tutor. */}
+                <Route element={<RoleGuard allow={["ADMIN", "COORDINADOR", "MCP_AGENT"]} />}>
                   <Route path="tutores" element={<TutoresListPage />} />
                   <Route path="tutores/:id" element={<TutorDetailPage />} />
                 </Route>
