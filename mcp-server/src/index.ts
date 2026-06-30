@@ -29,10 +29,12 @@ async function main(): Promise<void> {
         tools: {},
       },
       instructions:
-        'Servidor MCP de SIVU (Sistema de Vinculación Universitaria). ' +
-        'Expone tools para consultar vacantes, estudiantes, postulaciones, ' +
-        'estadísticas, matching y logs de pipeline. Las tools devuelven texto ' +
-        'plano o markdown listo para mostrar al usuario.',
+        'Servidor MCP de SIVU (Sistema de Vinculación Universitaria) — ' +
+        'proceso de Coformación. Expone tools para consultar estadísticas, ' +
+        'agendamiento de reuniones, disponibilidad docente, auditoría de ' +
+        'notificaciones, evaluación del tutor, notas del informe final del PM, ' +
+        'revisión del informe final y logs del pipeline. Las tools devuelven ' +
+        'texto plano o markdown listo para mostrar al usuario.',
     },
   );
 
