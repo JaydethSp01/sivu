@@ -107,7 +107,7 @@ export function BandejaReunionesPage(): JSX.Element {
     queryKey: ["/agendamiento/reuniones", filtro],
     enabled: filtro != null,
     queryFn: async () =>
-      (await api.get<ReunionAgenda[]>("/agendamiento/reuniones", { params: filtro as Record<string, number> })).data,
+      (await api.get<ReunionAgenda[]>("/agendamiento/reuniones", { params: filtro as unknown as Record<string, number> })).data,
   });
 
   const ordenadas = useMemo(
