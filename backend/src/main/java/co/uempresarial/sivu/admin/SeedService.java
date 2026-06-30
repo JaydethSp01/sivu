@@ -274,25 +274,28 @@ public class SeedService {
             .map(Estudiante::getId).orElse(null);
         Long coallyId = empresaRepository.findByNit("900111222-3")
             .map(Empresa::getId).orElse(null);
+        // Entidad Tutor académico del docente acompañante: habilita su scope estricto.
+        Long docenteTutorId = tutorRepository.findByEmailIgnoreCase("cmendoza@uempresarial.edu.co")
+            .map(co.uempresarial.sivu.tutor.domain.Tutor::getId).orElse(null);
 
         crearSiNoExiste("admin@uempresarial.edu.co", "Admin123*",
-            "Admin", "SIVU", Set.of(Rol.ADMIN), null, null);
+            "Admin", "SIVU", Set.of(Rol.ADMIN), null, null, null);
         crearSiNoExiste("coord@uempresarial.edu.co", "Coord123*",
-            "Carmen", "Coordinadora", Set.of(Rol.COORDINADOR), null, null);
+            "Carmen", "Coordinadora", Set.of(Rol.COORDINADOR), null, null, null);
         crearSiNoExiste("kelly@est.uempresarial.edu.co", "Estudiante123*",
-            "Kellyn", "Delgado", Set.of(Rol.ESTUDIANTE), kellyId, null);
+            "Kellyn", "Delgado", Set.of(Rol.ESTUDIANTE), kellyId, null, null);
         // Tutor empresarial (lado empresa): vinculado a la empresa para el scope por empresaId.
         crearSiNoExiste("rrhh@coally.com", "Tutor123*",
-            "RRHH", "Coally", Set.of(Rol.TUTOR), null, coallyId);
-        // Docente acompañante (tutor académico Uniempresarial - Oficina de Coformación).
+            "RRHH", "Coally", Set.of(Rol.TUTOR), null, coallyId, null);
+        // Docente acompañante: vinculado a su entidad Tutor ACADEMICO para el scope estricto.
         crearSiNoExiste("cmendoza@uempresarial.edu.co", "Docente123*",
-            "Carlos", "Mendoza", Set.of(Rol.DOCENTE), null, null);
+            "Carlos", "Mendoza", Set.of(Rol.DOCENTE), null, null, docenteTutorId);
         crearSiNoExiste("mcp_agent@sivu.uempresarial.edu.co", "Mcp_Agent123*",
-            "Agente", "MCP", Set.of(Rol.MCP_AGENT), null, null);
+            "Agente", "MCP", Set.of(Rol.MCP_AGENT), null, null, null);
     }
 
     private void crearSiNoExiste(String email, String password, String nombres, String apellidos,
-                                 Set<Rol> roles, Long estudianteId, Long empresaId) {
+                                 Set<Rol> roles, Long estudianteId, Long empresaId, Long tutorId) {
         if (usuarioRepository.existsByEmailIgnoreCase(email)) return;
         Usuario u = Usuario.builder()
             .email(email.toLowerCase())
@@ -302,9 +305,11 @@ public class SeedService {
             .roles(new HashSet<>(roles))
             .estudianteId(estudianteId)
             .empresaId(empresaId)
+            .tutorId(tutorId)
             .activo(true)
             .build();
         usuarioRepository.save(u);
-        log.info("Usuario seed creado: {} (estudianteId={}, empresaId={})", email, estudianteId, empresaId);
+        log.info("Usuario seed creado: {} (estudianteId={}, empresaId={}, tutorId={})",
+            email, estudianteId, empresaId, tutorId);
     }
 }

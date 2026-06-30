@@ -144,6 +144,7 @@ public class AuthService {
             u.getApellidos(),
             u.getRoles(),
             u.getEstudianteId(),
-            u.getEmpresaId());
+            u.getEmpresaId(),
+            u.getTutorId());
     }
 }

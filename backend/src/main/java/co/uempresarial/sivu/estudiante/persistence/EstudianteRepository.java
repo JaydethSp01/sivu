@@ -36,9 +36,13 @@ public interface EstudianteRepository extends JpaRepository<Estudiante, Long> {
           AND (:empresaId IS NULL OR e.id IN (
                 SELECT c.estudiante.id FROM Convenio c
                 WHERE c.empresa.id = :empresaId))
+          AND (:tutorAcademicoId IS NULL OR e.id IN (
+                SELECT c2.estudiante.id FROM Convenio c2
+                WHERE c2.tutorAcademico.id = :tutorAcademicoId))
         """)
     Page<Estudiante> buscar(@Param("q") String q,
                             @Param("estado") EstadoEstudiante estado,
                             @Param("empresaId") Long empresaId,
+                            @Param("tutorAcademicoId") Long tutorAcademicoId,
                             Pageable pageable);
 }

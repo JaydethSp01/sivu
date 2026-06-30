@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { addDays, addWeeks } from "date-fns";
 import {
@@ -43,6 +43,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { api, extractApiMessage } from "@/lib/api";
+import { useAuthStore } from "@/lib/auth-store";
 import type {
   Disponibilidad,
   DisponibilidadRequest,
@@ -77,7 +78,15 @@ const EMPTY_FORM: FranjaFormState = {
 
 export function DisponibilidadPage(): JSX.Element {
   const qc = useQueryClient();
-  const [tutorId, setTutorId] = useState<number | null>(null);
+  const hasRole = useAuthStore((s) => s.hasRole);
+  const usuario = useAuthStore((s) => s.usuario);
+  // El docente puro gestiona SOLO sus propias franjas: se fija su tutorId y se oculta el selector.
+  const esDocentePuro = hasRole("DOCENTE") && !hasRole("ADMIN", "COORDINADOR");
+  const [tutorId, setTutorId] = useState<number | null>(esDocentePuro ? usuario?.tutorId ?? null : null);
+
+  useEffect(() => {
+    if (esDocentePuro && usuario?.tutorId != null) setTutorId(usuario.tutorId);
+  }, [esDocentePuro, usuario?.tutorId]);
   const [lunes, setLunes] = useState<Date>(() => inicioSemana(new Date()));
   const [dialogOpen, setDialogOpen] = useState(false);
   const [form, setForm] = useState<FranjaFormState>(EMPTY_FORM);
@@ -190,22 +199,33 @@ export function DisponibilidadPage(): JSX.Element {
 
       <Card>
         <CardContent className="flex flex-col gap-4 p-4 sm:flex-row sm:items-end sm:justify-between">
-          <div className="w-full sm:max-w-sm">
-            <Label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              Docente / tutor
-            </Label>
-            <Combobox
-              items={tutores.data ?? []}
-              value={tutorId}
-              onChange={(v) => setTutorId(v)}
-              placeholder="Selecciona un docente"
-              searchPlaceholder="Buscar docente..."
-              getKey={(t) => t.id}
-              getLabel={(t) => `${t.nombres} ${t.apellidos}`}
-              getSecondary={(t) => t.email}
-              allowClear
-            />
-          </div>
+          {esDocentePuro ? (
+            <div className="w-full sm:max-w-sm">
+              <Label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                Mis franjas
+              </Label>
+              <p className="text-sm text-muted-foreground">
+                Gestionas tu propia disponibilidad de acompañamiento.
+              </p>
+            </div>
+          ) : (
+            <div className="w-full sm:max-w-sm">
+              <Label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                Docente / tutor
+              </Label>
+              <Combobox
+                items={tutores.data ?? []}
+                value={tutorId}
+                onChange={(v) => setTutorId(v)}
+                placeholder="Selecciona un docente"
+                searchPlaceholder="Buscar docente..."
+                getKey={(t) => t.id}
+                getLabel={(t) => `${t.nombres} ${t.apellidos}`}
+                getSecondary={(t) => t.email}
+                allowClear
+              />
+            </div>
+          )}
           <div className="flex items-center justify-between gap-2 sm:justify-end">
             <Button variant="outline" size="icon" onClick={() => setLunes((d) => addWeeks(d, -1))} aria-label="Semana anterior">
               <ChevronLeft className="h-4 w-4" />

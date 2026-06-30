@@ -67,14 +67,17 @@ public class EstudianteService {
 
     @Transactional(readOnly = true)
     public PageResponse<EstudianteResponse> listar(String q, EstadoEstudiante estado, Pageable pageable) {
-        // Auto-scope: si el usuario es EMPRESA pura, solo ve estudiantes con
-        // postulaciones a vacantes de su empresa. Si su empresaId es null devolvemos
-        // vacío (-1 garantiza que el filtro no matchee).
+        // Auto-scope estricto: el tutor empresarial solo ve a sus practicantes (por empresa);
+        // el docente acompañante solo a sus estudiantes asignados (por convenio.tutorAcademico).
+        // Si la entidad propia es null devolvemos vacío (-1 garantiza que el filtro no matchee).
         Long empresaId = null;
+        Long tutorAcademicoId = null;
         if (currentUser.esEmpresaPura()) {
             empresaId = currentUser.currentEmpresaId().orElse(-1L);
+        } else if (currentUser.esDocentePuro()) {
+            tutorAcademicoId = currentUser.currentTutorId().orElse(-1L);
         }
-        return PageResponse.of(repository.buscar(q, estado, empresaId, pageable).map(mapper::toResponse));
+        return PageResponse.of(repository.buscar(q, estado, empresaId, tutorAcademicoId, pageable).map(mapper::toResponse));
     }
 
     public Estudiante obtener(Long id) {

@@ -463,12 +463,33 @@ public class ExpedienteService {
         return documento == null ? null : documento.getId();
     }
 
-    /** Auto-scope: un ESTUDIANTE puro solo puede consultar su propio expediente. */
+    /**
+     * Auto-scope estricto sobre expedientes (RNF-04):
+     *  - ESTUDIANTE puro: solo su propio expediente.
+     *  - DOCENTE puro: solo estudiantes que acompaña (convenio.tutorAcademico = él).
+     *  - TUTOR empresarial puro: solo estudiantes con convenio en su empresa.
+     *  ADMIN/COORDINADOR: acceso amplio (sin restricción).
+     */
     private void verificarPropiedadEstudiante(Long estudianteId) {
+        if (estudianteId == null) {
+            return;
+        }
         if (currentUser.esEstudiantePuro()) {
             Long propio = currentUser.currentEstudianteId().orElse(null);
             if (propio == null || !Objects.equals(propio, estudianteId)) {
                 throw new AccessDeniedException("No puede consultar el expediente de otro estudiante");
+            }
+        } else if (currentUser.esDocentePuro()) {
+            Long tutorId = currentUser.currentTutorId().orElse(null);
+            if (tutorId == null
+                || !convenioRepository.existsByEstudianteIdAndTutorAcademicoId(estudianteId, tutorId)) {
+                throw new AccessDeniedException("No puede consultar el expediente de un estudiante que no acompaña");
+            }
+        } else if (currentUser.esEmpresaPura()) {
+            Long empresaId = currentUser.currentEmpresaId().orElse(null);
+            if (empresaId == null
+                || !convenioRepository.existsByEstudianteIdAndEmpresaId(estudianteId, empresaId)) {
+                throw new AccessDeniedException("No puede consultar el expediente de un estudiante de otra empresa");
             }
         }
     }

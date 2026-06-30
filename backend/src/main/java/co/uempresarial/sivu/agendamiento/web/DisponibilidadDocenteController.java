@@ -42,14 +42,14 @@ public class DisponibilidadDocenteController {
     }
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('COORDINADOR','ADMIN')")
+    @PreAuthorize("hasAnyRole('COORDINADOR','ADMIN','DOCENTE')")
     @Operation(summary = "Crear una franja de disponibilidad (valida no solapamiento)")
     public ResponseEntity<DisponibilidadResponse> crear(@Valid @RequestBody DisponibilidadRequest request) {
         return ResponseEntity.ok(service.crear(request));
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('COORDINADOR','ADMIN')")
+    @PreAuthorize("hasAnyRole('COORDINADOR','ADMIN','DOCENTE')")
     @Operation(summary = "Actualizar una franja de disponibilidad")
     public ResponseEntity<DisponibilidadResponse> actualizar(@PathVariable Long id,
                                                              @Valid @RequestBody DisponibilidadRequest request) {
@@ -57,7 +57,7 @@ public class DisponibilidadDocenteController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyRole('COORDINADOR','ADMIN')")
+    @PreAuthorize("hasAnyRole('COORDINADOR','ADMIN','DOCENTE')")
     @Operation(summary = "Eliminar una franja de disponibilidad")
     public ResponseEntity<Void> eliminar(@PathVariable Long id) {
         service.eliminar(id);

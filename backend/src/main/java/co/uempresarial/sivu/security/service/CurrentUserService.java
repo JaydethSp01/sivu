@@ -40,6 +40,11 @@ public class CurrentUserService {
         return current().map(Usuario::getEstudianteId);
     }
 
+    /** Entidad Tutor del usuario (académico para el docente, empresarial para el tutor). */
+    public Optional<Long> currentTutorId() {
+        return current().map(Usuario::getTutorId);
+    }
+
     public boolean hasRole(Rol rol) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth == null) return false;
@@ -60,5 +65,13 @@ public class CurrentUserService {
     /** Equivalente para estudiantes (uso futuro al hacer auto-scope para ESTUDIANTE). */
     public boolean esEstudiantePuro() {
         return hasRole(Rol.ESTUDIANTE) && !hasRole(Rol.ADMIN) && !hasRole(Rol.COORDINADOR);
+    }
+
+    /**
+     * "Docente puro": docente acompañante (rol DOCENTE) sin rol privilegiado. Para estos se aplica
+     * el scope estricto por su entidad Tutor académico (solo sus estudiantes/reuniones/franjas).
+     */
+    public boolean esDocentePuro() {
+        return hasRole(Rol.DOCENTE) && !hasRole(Rol.ADMIN) && !hasRole(Rol.COORDINADOR);
     }
 }

@@ -38,6 +38,9 @@ public class Usuario {
     // FKs lógicas hacia entidades JPA en Postgres (sin integridad referencial cross-DB).
     private Long estudianteId;
     private Long empresaId;
+    /** Entidad Tutor vinculada: ACADEMICO para el docente acompañante, EMPRESARIAL para el tutor.
+     *  Habilita el auto-scope estricto del docente (solo sus estudiantes/reuniones/franjas). */
+    private Long tutorId;
 
     @Builder.Default
     private boolean activo = true;

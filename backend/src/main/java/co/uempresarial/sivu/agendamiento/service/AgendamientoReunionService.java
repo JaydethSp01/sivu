@@ -15,6 +15,7 @@ import co.uempresarial.sivu.convenio.persistence.ConvenioRepository;
 import co.uempresarial.sivu.estudiante.domain.Estudiante;
 import co.uempresarial.sivu.estudiante.persistence.EstudianteRepository;
 import co.uempresarial.sivu.notificacion.service.NotificacionCoformacionService;
+import co.uempresarial.sivu.security.service.CurrentUserService;
 import co.uempresarial.sivu.shared.exception.BusinessException;
 import co.uempresarial.sivu.shared.exception.ResourceNotFoundException;
 import co.uempresarial.sivu.trimestre.domain.EstadoTrimestre;
@@ -26,6 +27,7 @@ import co.uempresarial.sivu.tutor.domain.Tutor;
 import co.uempresarial.sivu.tutor.persistence.TutorRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -64,6 +66,7 @@ public class AgendamientoReunionService {
     private final ActaReunionService actaReunionService;
     private final AgendamientoMapper mapper;
     private final NotificacionCoformacionService notificacionCoformacion;
+    private final CurrentUserService currentUser;
 
     private static final String REF_AGENDAMIENTO = "AGENDAMIENTO";
 
@@ -181,20 +184,21 @@ public class AgendamientoReunionService {
 
     @Transactional(readOnly = true)
     public List<AgendamientoResponse> listarPorEstudiante(Long estudianteId) {
-        return repository.findByEstudianteIdOrderByFechaPropuestaDesc(estudianteId)
-            .stream().map(mapper::toResponse).toList();
+        return mapearConScope(repository.findByEstudianteIdOrderByFechaPropuestaDesc(estudianteId));
     }
 
     @Transactional(readOnly = true)
     public List<AgendamientoResponse> listarPorTutor(Long tutorId) {
-        return repository.findByTutorIdOrderByFechaPropuestaDesc(tutorId)
-            .stream().map(mapper::toResponse).toList();
+        // El docente puro solo consulta sus propias reuniones.
+        if (currentUser.esDocentePuro()) {
+            tutorId = currentUser.currentTutorId().orElse(-1L);
+        }
+        return mapearConScope(repository.findByTutorIdOrderByFechaPropuestaDesc(tutorId));
     }
 
     @Transactional(readOnly = true)
     public List<AgendamientoResponse> listarPorConvenio(Long convenioId) {
-        return repository.findByConvenioIdOrderByFechaPropuestaDesc(convenioId)
-            .stream().map(mapper::toResponse).toList();
+        return mapearConScope(repository.findByConvenioIdOrderByFechaPropuestaDesc(convenioId));
     }
 
     // ---------- helpers ----------
@@ -299,8 +303,40 @@ public class AgendamientoReunionService {
     }
 
     private AgendamientoReunion obtenerEntidad(Long id) {
-        return repository.findById(id)
+        AgendamientoReunion r = repository.findById(id)
             .orElseThrow(() -> new ResourceNotFoundException("Reunión agendada", id));
+        verificarAcceso(r);
+        return r;
+    }
+
+    /** Auto-scope estricto: el docente/estudiante puro solo accede a SUS reuniones. */
+    private void verificarAcceso(AgendamientoReunion r) {
+        if (currentUser.esDocentePuro()) {
+            Long t = currentUser.currentTutorId().orElse(null);
+            if (t == null || !t.equals(r.getTutorId())) {
+                throw new AccessDeniedException("No puede gestionar reuniones de otro docente");
+            }
+        } else if (currentUser.esEstudiantePuro()) {
+            Long e = currentUser.currentEstudianteId().orElse(null);
+            if (e == null || !e.equals(r.getEstudianteId())) {
+                throw new AccessDeniedException("No puede gestionar reuniones de otro estudiante");
+            }
+        }
+    }
+
+    /** Mapea filtrando por el scope del actor (docente/estudiante puro ven solo lo suyo). */
+    private List<AgendamientoResponse> mapearConScope(List<AgendamientoReunion> reuniones) {
+        return reuniones.stream().filter(this::puedeVer).map(mapper::toResponse).toList();
+    }
+
+    private boolean puedeVer(AgendamientoReunion r) {
+        if (currentUser.esDocentePuro()) {
+            return currentUser.currentTutorId().map(t -> t.equals(r.getTutorId())).orElse(false);
+        }
+        if (currentUser.esEstudiantePuro()) {
+            return currentUser.currentEstudianteId().map(e -> e.equals(r.getEstudianteId())).orElse(false);
+        }
+        return true;
     }
 
     private void exigirEstado(AgendamientoReunion r, Set<EstadoAgendamiento> permitidos, String accion) {

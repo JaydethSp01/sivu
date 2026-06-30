@@ -8,6 +8,8 @@ export interface UsuarioResumen {
   roles: Rol[];
   estudianteId: number | null;
   empresaId: number | null;
+  /** Entidad Tutor vinculada (académico para DOCENTE, empresarial para TUTOR). */
+  tutorId: number | null;
 }
 
 export interface AuthResponse {

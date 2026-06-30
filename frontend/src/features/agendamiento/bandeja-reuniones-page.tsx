@@ -56,6 +56,8 @@ export function BandejaReunionesPage(): JSX.Element {
   // propuestas: aceptar, rechazar o contraofertar.
   const isDocente = hasRole("ADMIN", "COORDINADOR", "DOCENTE");
   const isStudentOnly = hasRole("ESTUDIANTE") && !isDocente;
+  // Docente puro: ve SOLO sus propias reuniones (sin selector de docente).
+  const esDocentePuro = hasRole("DOCENTE") && !hasRole("ADMIN", "COORDINADOR");
 
   const [tutorFiltro, setTutorFiltro] = useState<number | null>(null);
 
@@ -96,14 +98,17 @@ export function BandejaReunionesPage(): JSX.Element {
     return m;
   }, [convenios.data]);
 
-  // El estudiante ve sus reuniones; el docente/coord elige un tutor.
+  // El estudiante ve sus reuniones; el docente puro las suyas (auto); admin/coord eligen un docente.
   const filtro = useMemo(() => {
     if (isStudentOnly && usuario?.estudianteId) {
       return { estudianteId: usuario.estudianteId };
     }
+    if (esDocentePuro) {
+      return usuario?.tutorId != null ? { tutorId: usuario.tutorId } : null;
+    }
     if (tutorFiltro != null) return { tutorId: tutorFiltro };
     return null;
-  }, [isStudentOnly, usuario?.estudianteId, tutorFiltro]);
+  }, [isStudentOnly, esDocentePuro, usuario?.estudianteId, usuario?.tutorId, tutorFiltro]);
 
   const reuniones = useQuery({
     queryKey: ["/agendamiento/reuniones", filtro],
@@ -204,7 +209,7 @@ export function BandejaReunionesPage(): JSX.Element {
         icon={CalendarRange}
       />
 
-      {isDocente && (
+      {isDocente && !esDocentePuro && (
         <Card>
           <CardContent className="p-4">
             <Label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-muted-foreground">
@@ -230,11 +235,13 @@ export function BandejaReunionesPage(): JSX.Element {
       {sinFiltro ? (
         <EmptyState
           icon={CalendarRange}
-          title={isDocente ? "Selecciona un docente" : "No hay reuniones"}
+          title={esDocentePuro ? "Sin reuniones" : isDocente ? "Selecciona un docente" : "No hay reuniones"}
           description={
-            isDocente
-              ? "Elige un tutor/docente para ver las reuniones agendadas con sus estudiantes."
-              : "Aún no tienes reuniones. Propón una desde la sección Proponer reunión."
+            esDocentePuro
+              ? "Aún no tienes reuniones de acompañamiento propuestas por tus estudiantes."
+              : isDocente
+                ? "Elige un tutor/docente para ver las reuniones agendadas con sus estudiantes."
+                : "Aún no tienes reuniones. Propón una desde la sección Proponer reunión."
           }
         />
       ) : reuniones.isLoading ? (
