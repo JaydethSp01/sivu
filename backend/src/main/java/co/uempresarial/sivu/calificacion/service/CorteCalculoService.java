@@ -14,6 +14,7 @@ import co.uempresarial.sivu.shared.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
@@ -57,6 +58,7 @@ public class CorteCalculoService {
      * bloqueado) y devuelve el desglose trazable. Aplica auto-scope por dueño cuando lo pide
      * el controlador (estudiante/empresa solo ven la suya).
      */
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public CalificacionDesgloseResponse calcularYConsolidar(Long convenioId, boolean enforceOwnership) {
         Convenio convenio = convenioRepository.findById(convenioId)
             .orElseThrow(() -> new ResourceNotFoundException("Convenio", convenioId));
