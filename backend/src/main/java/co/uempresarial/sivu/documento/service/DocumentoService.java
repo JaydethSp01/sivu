@@ -1,6 +1,6 @@
 package co.uempresarial.sivu.documento.service;
 
-import co.uempresarial.sivu.automatizacion.service.NotificacionService;
+import co.uempresarial.sivu.notificacion.service.NotificacionService;
 import co.uempresarial.sivu.catalogo.requisito.domain.TipoRequisitoDocumental;
 import co.uempresarial.sivu.catalogo.requisito.persistence.TipoRequisitoDocumentalRepository;
 import co.uempresarial.sivu.documento.domain.Documento;
@@ -15,8 +15,6 @@ import co.uempresarial.sivu.empresa.domain.Empresa;
 import co.uempresarial.sivu.empresa.persistence.EmpresaRepository;
 import co.uempresarial.sivu.estudiante.domain.Estudiante;
 import co.uempresarial.sivu.estudiante.persistence.EstudianteRepository;
-import co.uempresarial.sivu.postulacion.domain.Postulacion;
-import co.uempresarial.sivu.postulacion.persistence.PostulacionRepository;
 import co.uempresarial.sivu.security.service.CurrentUserService;
 import co.uempresarial.sivu.shared.exception.BusinessException;
 import co.uempresarial.sivu.shared.exception.ResourceNotFoundException;
@@ -45,7 +43,6 @@ public class DocumentoService {
     private final DocumentoRepository repository;
     private final EstudianteRepository estudianteRepository;
     private final EmpresaRepository empresaRepository;
-    private final PostulacionRepository postulacionRepository;
     private final TipoRequisitoDocumentalRepository tipoRequisitoRepository;
     private final NotificacionService notificacionService;
     private final DocumentoMapper mapper;
@@ -58,9 +55,6 @@ public class DocumentoService {
         Documento entity = mapper.toEntity(request);
         if (request.estudianteId() != null) {
             entity.setEstudiante(resolverEstudiante(request.estudianteId()));
-        }
-        if (request.postulacionId() != null) {
-            entity.setPostulacion(resolverPostulacion(request.postulacionId()));
         }
         if (entity.getEstado() == null) {
             entity.setEstado(EstadoDocumento.RECIBIDO);
@@ -77,7 +71,6 @@ public class DocumentoService {
     public DocumentoResponse subir(MultipartFile archivo,
                                    TipoDocumentoSoporte tipo,
                                    Long estudianteId,
-                                   Long postulacionId,
                                    Long empresaId,
                                    Long tipoRequisitoId,
                                    java.time.LocalDate fechaVigenciaInicio,
@@ -109,7 +102,6 @@ public class DocumentoService {
             .fechaVigenciaFin(fechaVigenciaFin)
             .build();
         if (estudianteId != null) doc.setEstudiante(resolverEstudiante(estudianteId));
-        if (postulacionId != null) doc.setPostulacion(resolverPostulacion(postulacionId));
         if (empresaId != null) doc.setEmpresa(resolverEmpresa(empresaId));
         if (tipoRequisitoId != null) doc.setTipoRequisito(resolverTipoRequisito(tipoRequisitoId));
 
@@ -132,9 +124,6 @@ public class DocumentoService {
         mapper.updateEntity(request, existing);
         if (request.estudianteId() != null) {
             existing.setEstudiante(resolverEstudiante(request.estudianteId()));
-        }
-        if (request.postulacionId() != null) {
-            existing.setPostulacion(resolverPostulacion(request.postulacionId()));
         }
         return mapper.toResponse(existing);
     }
@@ -211,11 +200,6 @@ public class DocumentoService {
     private Estudiante resolverEstudiante(Long estudianteId) {
         return estudianteRepository.findById(estudianteId)
             .orElseThrow(() -> new ResourceNotFoundException("Estudiante", estudianteId));
-    }
-
-    private Postulacion resolverPostulacion(Long postulacionId) {
-        return postulacionRepository.findById(postulacionId)
-            .orElseThrow(() -> new ResourceNotFoundException("Postulacion", postulacionId));
     }
 
     private Empresa resolverEmpresa(Long empresaId) {

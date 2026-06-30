@@ -8,7 +8,6 @@ import co.uempresarial.sivu.catalogo.modalidad.web.dto.ModalidadResponse;
 import co.uempresarial.sivu.shared.exception.BusinessException;
 import co.uempresarial.sivu.shared.exception.ResourceNotFoundException;
 import co.uempresarial.sivu.shared.pagination.PageResponse;
-import co.uempresarial.sivu.vacante.persistence.VacanteRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -22,7 +21,6 @@ import java.util.List;
 public class ModalidadService {
 
     private final ModalidadVinculacionRepository repository;
-    private final VacanteRepository vacanteRepository;
     private final ModalidadMapper mapper;
 
     public ModalidadResponse crear(ModalidadRequest request) {
@@ -49,9 +47,6 @@ public class ModalidadService {
     public void eliminar(Long id) {
         if (!repository.existsById(id)) {
             throw new ResourceNotFoundException("Modalidad", id);
-        }
-        if (vacanteRepository.existsByModalidadVinculacionId(id)) {
-            throw new BusinessException("No se puede eliminar la modalidad porque hay vacantes asociadas");
         }
         repository.deleteById(id);
     }

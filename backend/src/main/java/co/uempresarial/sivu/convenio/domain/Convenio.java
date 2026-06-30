@@ -3,10 +3,8 @@ package co.uempresarial.sivu.convenio.domain;
 import co.uempresarial.sivu.documento.domain.Documento;
 import co.uempresarial.sivu.empresa.domain.Empresa;
 import co.uempresarial.sivu.estudiante.domain.Estudiante;
-import co.uempresarial.sivu.postulacion.domain.Postulacion;
 import co.uempresarial.sivu.shared.audit.BaseEntity;
 import co.uempresarial.sivu.tutor.domain.Tutor;
-import co.uempresarial.sivu.vacante.domain.Vacante;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
@@ -17,6 +15,11 @@ import lombok.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
+/**
+ * Representa una práctica de Coformación. La Oficina de Coformación la crea
+ * directamente asignando estudiante + empresa + tutor académico (docente
+ * acompañante) + tutor empresarial. No depende de vacantes ni postulaciones.
+ */
 @Getter
 @Setter
 @NoArgsConstructor
@@ -30,10 +33,6 @@ public class Convenio extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @OneToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "postulacion_id", nullable = false, unique = true)
-    private Postulacion postulacion;
-
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "estudiante_id", nullable = false)
     private Estudiante estudiante;
@@ -41,10 +40,6 @@ public class Convenio extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "empresa_id", nullable = false)
     private Empresa empresa;
-
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "vacante_id", nullable = false)
-    private Vacante vacante;
 
     @Column(name = "numero_convenio", nullable = false, unique = true, length = 40)
     @NotBlank

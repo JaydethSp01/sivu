@@ -6,7 +6,6 @@ import co.uempresarial.sivu.documento.web.dto.DocumentoRequest;
 import co.uempresarial.sivu.documento.web.dto.DocumentoResponse;
 import co.uempresarial.sivu.empresa.domain.Empresa;
 import co.uempresarial.sivu.estudiante.domain.Estudiante;
-import co.uempresarial.sivu.postulacion.domain.Postulacion;
 import org.mapstruct.*;
 
 @Mapper(componentModel = "spring",
@@ -15,8 +14,6 @@ public interface DocumentoMapper {
 
     @Mapping(target = "estudianteId", source = "estudiante.id")
     @Mapping(target = "estudiante", source = "estudiante", qualifiedByName = "toEstudianteResumen")
-    @Mapping(target = "postulacionId", source = "postulacion.id")
-    @Mapping(target = "postulacion", source = "postulacion", qualifiedByName = "toPostulacionResumen")
     @Mapping(target = "empresaId", source = "empresa.id")
     @Mapping(target = "empresa", source = "empresa", qualifiedByName = "toEmpresaResumen")
     @Mapping(target = "tipoRequisitoId", source = "tipoRequisito.id")
@@ -27,7 +24,6 @@ public interface DocumentoMapper {
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "estudiante", ignore = true)
-    @Mapping(target = "postulacion", ignore = true)
     @Mapping(target = "empresa", ignore = true)
     @Mapping(target = "tipoRequisito", ignore = true)
     @Mapping(target = "estado", ignore = true)
@@ -38,7 +34,6 @@ public interface DocumentoMapper {
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "estudiante", ignore = true)
-    @Mapping(target = "postulacion", ignore = true)
     @Mapping(target = "empresa", ignore = true)
     @Mapping(target = "tipoRequisito", ignore = true)
     @Mapping(target = "estado", ignore = true)
@@ -51,13 +46,6 @@ public interface DocumentoMapper {
         if (estudiante == null) return null;
         String nombreCompleto = (estudiante.getNombres() + " " + estudiante.getApellidos()).trim();
         return new DocumentoResponse.EstudianteResumen(estudiante.getId(), nombreCompleto);
-    }
-
-    @Named("toPostulacionResumen")
-    default DocumentoResponse.PostulacionResumen toPostulacionResumen(Postulacion postulacion) {
-        if (postulacion == null) return null;
-        return new DocumentoResponse.PostulacionResumen(postulacion.getId(),
-            "Postulación #" + postulacion.getId());
     }
 
     @Named("toEmpresaResumen")

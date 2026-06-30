@@ -40,12 +40,11 @@ public class DocumentoController {
 
     @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("isAuthenticated()")
-    @Operation(summary = "Subir un archivo (multipart) y registrar el documento. Asocia opcionalmente a estudiante, postulación, empresa, requisito y fechas de vigencia (EPS, certificados, etc).")
+    @Operation(summary = "Subir un archivo (multipart) y registrar el documento. Asocia opcionalmente a estudiante, empresa, requisito y fechas de vigencia (EPS, certificados, etc).")
     public ResponseEntity<DocumentoResponse> subir(
         @RequestPart("archivo") MultipartFile archivo,
         @RequestParam TipoDocumentoSoporte tipo,
         @RequestParam(required = false) Long estudianteId,
-        @RequestParam(required = false) Long postulacionId,
         @RequestParam(required = false) Long empresaId,
         @RequestParam(required = false) Long tipoRequisitoId,
         @RequestParam(required = false)
@@ -55,7 +54,7 @@ public class DocumentoController {
         @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE)
         java.time.LocalDate fechaVigenciaFin
     ) {
-        DocumentoResponse created = service.subir(archivo, tipo, estudianteId, postulacionId,
+        DocumentoResponse created = service.subir(archivo, tipo, estudianteId,
             empresaId, tipoRequisitoId, fechaVigenciaInicio, fechaVigenciaFin);
         return ResponseEntity.created(URI.create("/api/v1/documentos/" + created.id())).body(created);
     }

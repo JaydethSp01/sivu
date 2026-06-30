@@ -14,15 +14,13 @@ import java.util.Optional;
 public interface ConvenioRepository extends JpaRepository<Convenio, Long> {
 
     @EntityGraph(attributePaths = {
-        "estudiante", "empresa", "vacante", "postulacion",
+        "estudiante", "empresa",
         "documentoPdf", "certificadoPdf", "tutorAcademico", "tutorEmpresarial"
     })
     @Override
     Optional<Convenio> findById(Long id);
 
     Optional<Convenio> findByNumeroConvenio(String numero);
-
-    Optional<Convenio> findByPostulacionId(Long postulacionId);
 
     boolean existsByNumeroConvenio(String numero);
 
@@ -38,7 +36,7 @@ public interface ConvenioRepository extends JpaRepository<Convenio, Long> {
      * que el mapper de respuesta necesita.
      */
     @EntityGraph(attributePaths = {
-        "estudiante", "empresa", "vacante",
+        "estudiante", "empresa",
         "documentoPdf", "certificadoPdf", "tutorAcademico", "tutorEmpresarial"
     })
     @Query(

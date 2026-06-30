@@ -13,8 +13,6 @@ import co.uempresarial.sivu.empresa.domain.Empresa;
 import co.uempresarial.sivu.empresa.persistence.EmpresaRepository;
 import co.uempresarial.sivu.estudiante.domain.Estudiante;
 import co.uempresarial.sivu.estudiante.persistence.EstudianteRepository;
-import co.uempresarial.sivu.postulacion.domain.Postulacion;
-import co.uempresarial.sivu.postulacion.persistence.PostulacionRepository;
 import co.uempresarial.sivu.security.service.CurrentUserService;
 import co.uempresarial.sivu.shared.exception.BusinessException;
 import co.uempresarial.sivu.shared.exception.ResourceNotFoundException;
@@ -22,8 +20,6 @@ import co.uempresarial.sivu.shared.pagination.PageResponse;
 import co.uempresarial.sivu.tutor.domain.TipoTutor;
 import co.uempresarial.sivu.tutor.domain.Tutor;
 import co.uempresarial.sivu.tutor.persistence.TutorRepository;
-import co.uempresarial.sivu.vacante.domain.Vacante;
-import co.uempresarial.sivu.vacante.persistence.VacanteRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -39,15 +35,17 @@ import java.util.UUID;
 public class ConvenioService {
 
     private final ConvenioRepository repository;
-    private final PostulacionRepository postulacionRepository;
     private final EstudianteRepository estudianteRepository;
     private final EmpresaRepository empresaRepository;
-    private final VacanteRepository vacanteRepository;
     private final DocumentoRepository documentoRepository;
     private final TutorRepository tutorRepository;
     private final ConvenioMapper mapper;
     private final CurrentUserService currentUser;
 
+    /**
+     * Crea la práctica de Coformación directamente (sin vacante ni postulación):
+     * la Oficina de Coformación asigna estudiante + empresa + tutores.
+     */
     public ConvenioResponse crear(ConvenioRequest request) {
         String numeroSolicitado = request.numeroConvenio();
         boolean autogenerar = numeroSolicitado == null || numeroSolicitado.isBlank();
@@ -56,10 +54,14 @@ public class ConvenioService {
         }
 
         Convenio entity = mapper.toEntity(request);
-        entity.setPostulacion(resolverPostulacion(request.postulacionId()));
         entity.setEstudiante(resolverEstudiante(request.estudianteId()));
         entity.setEmpresa(resolverEmpresa(request.empresaId()));
-        entity.setVacante(resolverVacante(request.vacanteId()));
+        if (request.tutorAcademicoId() != null) {
+            entity.setTutorAcademico(resolverTutorTipado(request.tutorAcademicoId(), TipoTutor.ACADEMICO));
+        }
+        if (request.tutorEmpresarialId() != null) {
+            entity.setTutorEmpresarial(resolverTutorTipado(request.tutorEmpresarialId(), TipoTutor.EMPRESARIAL));
+        }
         if (request.documentoPdfId() != null) {
             entity.setDocumentoPdf(resolverDocumento(request.documentoPdfId()));
         }
@@ -97,10 +99,6 @@ public class ConvenioService {
 
         mapper.updateEntity(request, existing);
 
-        if (request.postulacionId() != null
-            && !request.postulacionId().equals(existing.getPostulacion().getId())) {
-            existing.setPostulacion(resolverPostulacion(request.postulacionId()));
-        }
         if (request.estudianteId() != null
             && !request.estudianteId().equals(existing.getEstudiante().getId())) {
             existing.setEstudiante(resolverEstudiante(request.estudianteId()));
@@ -109,9 +107,11 @@ public class ConvenioService {
             && !request.empresaId().equals(existing.getEmpresa().getId())) {
             existing.setEmpresa(resolverEmpresa(request.empresaId()));
         }
-        if (request.vacanteId() != null
-            && !request.vacanteId().equals(existing.getVacante().getId())) {
-            existing.setVacante(resolverVacante(request.vacanteId()));
+        if (request.tutorAcademicoId() != null) {
+            existing.setTutorAcademico(resolverTutorTipado(request.tutorAcademicoId(), TipoTutor.ACADEMICO));
+        }
+        if (request.tutorEmpresarialId() != null) {
+            existing.setTutorEmpresarial(resolverTutorTipado(request.tutorEmpresarialId(), TipoTutor.EMPRESARIAL));
         }
         if (request.documentoPdfId() != null) {
             existing.setDocumentoPdf(resolverDocumento(request.documentoPdfId()));
@@ -154,18 +154,10 @@ public class ConvenioService {
     public ConvenioResponse asignarTutores(Long id, Long tutorAcademicoId, Long tutorEmpresarialId) {
         Convenio convenio = obtener(id);
         if (tutorAcademicoId != null) {
-            Tutor t = resolverTutor(tutorAcademicoId);
-            if (t.getTipo() != TipoTutor.ACADEMICO) {
-                throw new BusinessException("El tutor " + tutorAcademicoId + " no es ACADEMICO");
-            }
-            convenio.setTutorAcademico(t);
+            convenio.setTutorAcademico(resolverTutorTipado(tutorAcademicoId, TipoTutor.ACADEMICO));
         }
         if (tutorEmpresarialId != null) {
-            Tutor t = resolverTutor(tutorEmpresarialId);
-            if (t.getTipo() != TipoTutor.EMPRESARIAL) {
-                throw new BusinessException("El tutor " + tutorEmpresarialId + " no es EMPRESARIAL");
-            }
-            convenio.setTutorEmpresarial(t);
+            convenio.setTutorEmpresarial(resolverTutorTipado(tutorEmpresarialId, TipoTutor.EMPRESARIAL));
         }
         return mapper.toResponse(convenio);
     }
@@ -218,11 +210,6 @@ public class ConvenioService {
             .orElseThrow(() -> new ResourceNotFoundException("Convenio", id));
     }
 
-    private Postulacion resolverPostulacion(Long postulacionId) {
-        return postulacionRepository.findById(postulacionId)
-            .orElseThrow(() -> new ResourceNotFoundException("Postulacion", postulacionId));
-    }
-
     private Estudiante resolverEstudiante(Long estudianteId) {
         return estudianteRepository.findById(estudianteId)
             .orElseThrow(() -> new ResourceNotFoundException("Estudiante", estudianteId));
@@ -233,18 +220,17 @@ public class ConvenioService {
             .orElseThrow(() -> new ResourceNotFoundException("Empresa", empresaId));
     }
 
-    private Vacante resolverVacante(Long vacanteId) {
-        return vacanteRepository.findById(vacanteId)
-            .orElseThrow(() -> new ResourceNotFoundException("Vacante", vacanteId));
-    }
-
     private Documento resolverDocumento(Long documentoId) {
         return documentoRepository.findById(documentoId)
             .orElseThrow(() -> new ResourceNotFoundException("Documento", documentoId));
     }
 
-    private Tutor resolverTutor(Long tutorId) {
-        return tutorRepository.findById(tutorId)
+    private Tutor resolverTutorTipado(Long tutorId, TipoTutor tipoEsperado) {
+        Tutor t = tutorRepository.findById(tutorId)
             .orElseThrow(() -> new ResourceNotFoundException("Tutor", tutorId));
+        if (t.getTipo() != tipoEsperado) {
+            throw new BusinessException("El tutor " + tutorId + " no es " + tipoEsperado);
+        }
+        return t;
     }
 }

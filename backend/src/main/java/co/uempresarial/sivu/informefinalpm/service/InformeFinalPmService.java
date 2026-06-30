@@ -1,6 +1,6 @@
 package co.uempresarial.sivu.informefinalpm.service;
 
-import co.uempresarial.sivu.automatizacion.service.NotificacionService;
+import co.uempresarial.sivu.notificacion.service.NotificacionService;
 import co.uempresarial.sivu.informefinalpm.domain.EstadoInformeFinalPm;
 import co.uempresarial.sivu.informefinalpm.domain.InformeFinalPm;
 import co.uempresarial.sivu.informefinalpm.pdf.InformeFinalPmPdfGenerator;

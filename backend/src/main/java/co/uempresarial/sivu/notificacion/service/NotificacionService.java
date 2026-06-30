@@ -1,4 +1,4 @@
-package co.uempresarial.sivu.automatizacion.service;
+package co.uempresarial.sivu.notificacion.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
