@@ -400,9 +400,58 @@ function EmpresaDashboard(): JSX.Element {
   );
 }
 
+function DocenteDashboard(): JSX.Element {
+  // El docente acompañante consulta a sus estudiantes y prácticas; gestiona su
+  // disponibilidad y responde las reuniones que le proponen. Sólo se consultan
+  // endpoints que su rol puede leer (no /empresas, que es de la Oficina).
+  const estudiantes = useCount("/estudiantes");
+  const convenios = useCount("/convenios", { estado: "ACTIVO" });
+
+  const accesos = [
+    { to: "/agendamiento/disponibilidad", label: "Mi disponibilidad", desc: "Publica tus franjas para reuniones de acompañamiento.", icon: CalendarClock },
+    { to: "/agendamiento/reuniones", label: "Reuniones", desc: "Acepta, rechaza o contraoferta las propuestas de tus estudiantes.", icon: ClipboardList },
+    { to: "/estudiantes", label: "Estudiantes", desc: "Consulta a los practicantes que acompañas.", icon: Users },
+    { to: "/expedientes", label: "Expedientes", desc: "Revisa documentos y notas por corte.", icon: FolderArchive },
+  ];
+
+  return (
+    <div className="space-y-6">
+      <PageHeader
+        title="Panel del docente acompañante"
+        description="Tus estudiantes, tu disponibilidad y las reuniones de acompañamiento."
+        icon={GraduationCap}
+      />
+
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Kpi label="Estudiantes" value={estudiantes.data ?? "—"} icon={Users} tone="primary" />
+        <Kpi label="Prácticas activas" value={convenios.data ?? "—"} icon={GraduationCap} tone="secondary" />
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2">
+        {accesos.map((a) => (
+          <Card key={a.to} className="transition-colors hover:border-primary/50">
+            <Link to={a.to}>
+              <CardHeader className="flex flex-row items-start gap-3">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary-soft text-primary shadow-xs">
+                  <a.icon className="h-5 w-5" />
+                </div>
+                <div className="min-w-0">
+                  <CardTitle className="text-base">{a.label}</CardTitle>
+                  <CardDescription>{a.desc}</CardDescription>
+                </div>
+              </CardHeader>
+            </Link>
+          </Card>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export function DashboardPage(): JSX.Element {
   const hasRole = useAuthStore((s) => s.hasRole);
   if (hasRole("ADMIN", "COORDINADOR")) return <AdminDashboard />;
+  if (hasRole("DOCENTE")) return <DocenteDashboard />;
   if (hasRole("TUTOR")) return <EmpresaDashboard />;
   if (hasRole("ESTUDIANTE")) return <EstudianteDashboard />;
   return (

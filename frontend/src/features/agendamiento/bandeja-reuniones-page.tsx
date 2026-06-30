@@ -52,7 +52,9 @@ export function BandejaReunionesPage(): JSX.Element {
   const qc = useQueryClient();
   const hasRole = useAuthStore((s) => s.hasRole);
   const usuario = useAuthStore((s) => s.usuario);
-  const isDocente = hasRole("ADMIN", "COORDINADOR");
+  // El docente acompañante (y la Oficina/Admin) gestiona el lado receptor de las
+  // propuestas: aceptar, rechazar o contraofertar.
+  const isDocente = hasRole("ADMIN", "COORDINADOR", "DOCENTE");
   const isStudentOnly = hasRole("ESTUDIANTE") && !isDocente;
 
   const [tutorFiltro, setTutorFiltro] = useState<number | null>(null);
