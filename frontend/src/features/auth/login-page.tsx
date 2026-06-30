@@ -41,7 +41,8 @@ const DEMO_CREDS: DemoCred[] = [
   { rol: "Admin", emoji: "👑", email: "admin@uempresarial.edu.co", password: "Admin123*" },
   { rol: "Coordinación", emoji: "🎓", email: "coord@uempresarial.edu.co", password: "Coord123*" },
   { rol: "Estudiante", emoji: "📚", email: "kelly@est.uempresarial.edu.co", password: "Estudiante123*" },
-  { rol: "Empresa", emoji: "🏢", email: "rrhh@coally.com", password: "Empresa123*" },
+  { rol: "Docente", emoji: "🧑‍🏫", email: "cmendoza@uempresarial.edu.co", password: "Docente123*" },
+  { rol: "Tutor", emoji: "🏢", email: "rrhh@coally.com", password: "Tutor123*" },
 ];
 
 export function LoginPage(): JSX.Element {

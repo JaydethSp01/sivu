@@ -15,7 +15,7 @@ declare global {
       loginAsAdmin(): Chainable<string>;
       loginAsCoordinador(): Chainable<string>;
       loginAsEstudiante(): Chainable<string>;
-      loginAsEmpresa(): Chainable<string>;
+      loginAsTutor(): Chainable<string>;
       /** POST /admin/seed autenticado como admin; idempotente. */
       seedIfNeeded(): Chainable<void>;
       /** Visita una ruta del frontend con la sesión del último apiLogin ya hidratada. */
@@ -66,7 +66,7 @@ Cypress.Commands.add("apiLogin", (email: string, password: string) => {
 Cypress.Commands.add("loginAsAdmin", () => cy.apiLogin("admin@uempresarial.edu.co", "Admin123*"));
 Cypress.Commands.add("loginAsCoordinador", () => cy.apiLogin("coord@uempresarial.edu.co", "Coord123*"));
 Cypress.Commands.add("loginAsEstudiante", () => cy.apiLogin("kelly@est.uempresarial.edu.co", "Estudiante123*"));
-Cypress.Commands.add("loginAsEmpresa", () => cy.apiLogin("rrhh@coally.com", "Empresa123*"));
+Cypress.Commands.add("loginAsTutor", () => cy.apiLogin("rrhh@coally.com", "Tutor123*"));
 
 Cypress.Commands.add("seedIfNeeded", () => {
   const apiUrl = Cypress.env("apiUrl");
