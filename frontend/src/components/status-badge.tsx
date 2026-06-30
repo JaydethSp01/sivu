@@ -54,6 +54,15 @@ const CONVENIO_MAP: Record<string, { label: string; variant: BadgeVariant }> = {
   ACTIVO: { label: "Activo", variant: "success" },
   FINALIZADO: { label: "Finalizado", variant: "default" },
   CANCELADO: { label: "Cancelado", variant: "destructive" },
+  SIN_CONVENIO: { label: "Sin convenio", variant: "muted" },
+};
+
+const SECCION_EXPEDIENTE_MAP: Record<string, { label: string; variant: BadgeVariant }> = {
+  NO_INICIADO: { label: "No iniciado", variant: "muted" },
+  PENDIENTE: { label: "Pendiente", variant: "warning" },
+  EN_REVISION: { label: "En revisión", variant: "secondary" },
+  FIRMADO: { label: "Firmado", variant: "success" },
+  PDF_GENERADO: { label: "PDF generado", variant: "default" },
 };
 
 const TUTOR_MAP: Record<string, { label: string; variant: BadgeVariant }> = {
@@ -87,6 +96,7 @@ const MAPS = {
   entrevista: ENTREVISTA_MAP,
   disponibilidad: DISPONIBILIDAD_MAP,
   reunion: REUNION_MAP,
+  expedienteSeccion: SECCION_EXPEDIENTE_MAP,
 } as const;
 
 const DOT_BY_VARIANT: Record<BadgeVariant, string> = {

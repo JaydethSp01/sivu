@@ -67,6 +67,8 @@ const DisponibilidadPage        = lazy(() => import("@/features/agendamiento/dis
 const ProponerReunionPage       = lazy(() => import("@/features/agendamiento/proponer-reunion-page").then(m => ({ default: m.ProponerReunionPage })));
 const BandejaReunionesPage      = lazy(() => import("@/features/agendamiento/bandeja-reuniones-page").then(m => ({ default: m.BandejaReunionesPage })));
 const EvaluacionTutorTokenPage  = lazy(() => import("@/features/evaluacion-externa/evaluacion-tutor-token-page").then(m => ({ default: m.EvaluacionTutorTokenPage })));
+const ExpedientesIndexPage      = lazy(() => import("@/features/expedientes/expediente-page").then(m => ({ default: m.ExpedientesIndexPage })));
+const ExpedientePage            = lazy(() => import("@/features/expedientes/expediente-page").then(m => ({ default: m.ExpedientePage })));
 
 function RouteFallback(): JSX.Element {
   return (
@@ -133,6 +135,12 @@ export function App(): JSX.Element {
                 <Route path="documentos/:id" element={<DocumentoDetailPage />} />
                 <Route path="documentos/new" element={<DocumentoFormPage />} />
                 <Route path="documentos/:id/edit" element={<DocumentoFormPage />} />
+
+                {/* Expediente Digital Unificado (BI-16 / RF-B01) */}
+                <Route element={<RoleGuard allow={["ADMIN", "COORDINADOR", "ESTUDIANTE", "EMPRESA", "TUTOR"]} />}>
+                  <Route path="expedientes" element={<ExpedientesIndexPage />} />
+                  <Route path="expedientes/:estudianteId" element={<ExpedientePage />} />
+                </Route>
 
                 <Route path="convenios" element={<ConveniosListPage />} />
                 <Route path="convenios/:id" element={<ConvenioDetailPage />} />

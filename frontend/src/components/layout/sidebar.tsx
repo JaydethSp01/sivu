@@ -8,6 +8,7 @@ import {
   CalendarPlus,
   CalendarRange,
   Factory,
+  FolderArchive,
   FileCog,
   Inbox as InboxIcon,
   FileSignature,
@@ -83,6 +84,15 @@ function labelTutores(roles: Rol[]): string {
     ? "Mis tutores"
     : "Tutores";
 }
+function labelExpediente(roles: Rol[]): string {
+  return roles.includes("ESTUDIANTE") &&
+    !roles.includes("ADMIN") &&
+    !roles.includes("COORDINADOR") &&
+    !roles.includes("EMPRESA") &&
+    !roles.includes("TUTOR")
+    ? "Mi expediente"
+    : "Expediente";
+}
 
 // Solo el Dashboard queda como ítem principal; el resto se agrupa por dominio
 // para que cada rol vea un menú razonable y no una lista plana de 22 items.
@@ -136,6 +146,7 @@ const GROUPS: NavGroup[] = [
     label: "Procesos & soportes",
     items: [
       { to: "/convenios", label: labelPracticas, icon: FileSignature },
+      { to: "/expedientes", label: labelExpediente, icon: FolderArchive, roles: ["ADMIN", "COORDINADOR", "ESTUDIANTE", "EMPRESA", "TUTOR"] },
       { to: "/documentos", label: labelDocumentos, icon: FileText },
     ],
   },
