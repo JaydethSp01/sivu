@@ -394,6 +394,21 @@ export interface InformeFinalPmResponse {
   justificacion?: string | null;
   resultados?: string | null;
   referenciasApa?: string | null;
+  // Fidelidad estructural GTC-FM-16 — tablas de las secciones 6 y 7
+  pestelPolitico?: string | null;
+  pestelEconomico?: string | null;
+  pestelSocial?: string | null;
+  pestelTecnologico?: string | null;
+  ventajaCompetitiva?: string | null;
+  internoCapacidadDirectiva?: string | null;
+  internoCapacidadTecnologica?: string | null;
+  internoCapacidadTecnica?: string | null;
+  internoTalentoHumano?: string | null;
+  metodologiaQue?: string | null;
+  metodologiaComo?: string | null;
+  metodologiaCuando?: string | null;
+  metodologiaDonde?: string | null;
+  metodologiaConQuien?: string | null;
   estado: EstadoInformeFinalPm;
   fechaEntrega?: string | null;
   fechaRevision?: string | null;
@@ -443,6 +458,21 @@ export interface InformeFinalSeccionesRequest {
   resultados: string;
   conclusiones: string;
   referenciasApa: string;
+  // Fidelidad estructural GTC-FM-16 — tablas de las secciones 6 y 7
+  pestelPolitico: string;
+  pestelEconomico: string;
+  pestelSocial: string;
+  pestelTecnologico: string;
+  ventajaCompetitiva: string;
+  internoCapacidadDirectiva: string;
+  internoCapacidadTecnologica: string;
+  internoCapacidadTecnica: string;
+  internoTalentoHumano: string;
+  metodologiaQue: string;
+  metodologiaComo: string;
+  metodologiaCuando: string;
+  metodologiaDonde: string;
+  metodologiaConQuien: string;
 }
 
 export interface EntrevistaRequest {
@@ -918,6 +948,7 @@ export interface ActaReunionResponse {
   lugar: string | null;
   asunto: string | null;
   tipoReunion: TipoReunion;
+  modalidad: "VIRTUAL" | "PRESENCIAL";
   asistentes: ActaAsistente[];
   observaciones: string | null;
   firmadoEstudiante: boolean;
@@ -936,6 +967,7 @@ export interface ActaReunionRequest {
   lugar?: string | null;
   asunto?: string | null;
   tipoReunion: TipoReunion;
+  modalidad: "VIRTUAL" | "PRESENCIAL";
   asistentes: ActaAsistente[];
   observaciones?: string | null;
   temas: ActaTema[];

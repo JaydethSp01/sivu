@@ -27,10 +27,11 @@ import static co.uempresarial.sivu.trimestre.pdf.PdfStyles.*;
 @Component
 public class PlanActividadesPdfGenerator {
 
-    private static final DateTimeFormatter FECHA = DateTimeFormatter.ofPattern("yyyy-MM-dd", new Locale("es", "CO"));
+    private static final DateTimeFormatter FECHA = DateTimeFormatter.ofPattern("dd-MMM-yy", new Locale("es", "CO"));
+    // Fecha de control de versión del formato GAC-FM-10 (constante, no la de generación).
+    private static final String FECHA_VERSION = "15/11/2023";
     private static final String[] MESES = {
-        "", "Mes 1", "Mes 2", "Mes 3", "Mes 4", "Mes 5", "Mes 6",
-        "Mes 7", "Mes 8", "Mes 9", "Mes 10", "Mes 11", "Mes 12"
+        "", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"
     };
 
     public byte[] generar(PlanActividades pa) {
@@ -46,7 +47,7 @@ public class PlanActividadesPdfGenerator {
             document.open();
 
             document.add(encabezadoInstitucional(
-                "GAC-FM-10", "2.0", LocalDate.now().format(FECHA), "1 de 1",
+                "GAC-FM-10", "2.0", FECHA_VERSION, "1 de 1",
                 "Plan de actividades fase empresarial"));
             document.add(espacio(8));
 

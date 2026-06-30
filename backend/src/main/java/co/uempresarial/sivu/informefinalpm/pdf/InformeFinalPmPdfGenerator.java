@@ -5,6 +5,7 @@ import co.uempresarial.sivu.informefinalpm.domain.InformeFinalPm;
 import co.uempresarial.sivu.trimestre.pdf.PdfStyles;
 import com.lowagie.text.*;
 import com.lowagie.text.pdf.PdfContentByte;
+import com.lowagie.text.pdf.PdfPCell;
 import com.lowagie.text.pdf.PdfPTable;
 import com.lowagie.text.pdf.PdfPageEventHelper;
 import com.lowagie.text.pdf.PdfWriter;
@@ -100,15 +101,7 @@ public class InformeFinalPmPdfGenerator {
             Paragraph tInf = new Paragraph(tituloInformeStr, caratulaTitulo);
             tInf.setAlignment(Element.ALIGN_CENTER);
             doc.add(tInf);
-
-            if (Boolean.TRUE.equals(informe.getAltoImpacto())) {
-                Font impactoFont = FontFactory.getFont(
-                    FontFactory.HELVETICA_BOLD, 12, PdfStyles.ROJO_UE);
-                Paragraph impactoP = new Paragraph("PROYECTO DE ALTO IMPACTO", impactoFont);
-                impactoP.setAlignment(Element.ALIGN_CENTER);
-                impactoP.setSpacingBefore(10);
-                doc.add(impactoP);
-            }
+            // El flag "Alto Impacto" va en su sección dedicada (no en la carátula), como el template oficial.
 
             doc.add(spacer(80));
 
@@ -195,9 +188,61 @@ public class InformeFinalPmPdfGenerator {
             addSub(doc, bold, normal, "5.1 Objetivo General:", informe.getObjetivoGeneral());
             addSub(doc, bold, normal, "5.2 Objetivos Específicos:", objEspecificos);
 
-            addSeccion(doc, h2, normal, "6. Diagnóstico Empresarial", informe.getDiagnostico());
+            // ---- 6. Diagnóstico Empresarial (tablas institucionales GTC-FM-16) ----
+            doc.add(seccion("6. Diagnóstico Empresarial", h2));
+            // Texto introductorio opcional: conserva el texto plano previo si existe.
+            if (informe.getDiagnostico() != null && !informe.getDiagnostico().isBlank()) {
+                Paragraph introDx = new Paragraph(informe.getDiagnostico(), normal);
+                introDx.setAlignment(Element.ALIGN_JUSTIFIED);
+                introDx.setSpacingAfter(6);
+                doc.add(introDx);
+            }
 
-            addSeccion(doc, h2, normal, "7. Metodología del Plan de Mejora", informe.getMetodologia());
+            doc.add(subtitulo("6.1 Diagnóstico Externo", bold));
+            addTabla(doc,
+                "Tabla 1 — Tabla de Recolección de Datos para el Diagnóstico Externo",
+                "Descripción del Factor", "Análisis del Factor",
+                new String[][]{
+                    {"Político", informe.getPestelPolitico()},
+                    {"Económico", informe.getPestelEconomico()},
+                    {"Social", informe.getPestelSocial()},
+                    {"Tecnológico", informe.getPestelTecnologico()},
+                });
+
+            addSub(doc, bold, normal,
+                "6.1.1 Diagnóstico de la Ventaja Competitiva", informe.getVentajaCompetitiva());
+
+            doc.add(subtitulo("6.2 Diagnóstico Interno o del Área Funcional", bold));
+            addTabla(doc,
+                "Tabla 2 — Tabla de Recolección de Datos para el Análisis Interno o del Área Funcional",
+                "Descripción del Factor", "Análisis del Factor",
+                new String[][]{
+                    {"Capacidad directiva (Analiza el liderazgo, motivación, gestión y toma de decisiones)",
+                        informe.getInternoCapacidadDirectiva()},
+                    {"Capacidad tecnológica (Analiza software, hardware, tecnología avanzada o tecnología obsoleta)",
+                        informe.getInternoCapacidadTecnologica()},
+                    {"Capacidad técnica (Analiza la estructura o ambiente físico y capacidad instalada del área)",
+                        informe.getInternoCapacidadTecnica()},
+                    {"Capacidad de talento humano (Analiza ambiente laboral, capacitación y desarrollo personal de los colaboradores, experiencia de servicio)",
+                        informe.getInternoTalentoHumano()},
+                });
+
+            // ---- 7. Metodología del Plan de Mejora (Tabla 3 — 5W) ----
+            doc.add(seccion("7. Metodología del Plan de Mejora", h2));
+            if (informe.getMetodologia() != null && !informe.getMetodologia().isBlank()) {
+                Paragraph introMet = new Paragraph(informe.getMetodologia(), normal);
+                introMet.setAlignment(Element.ALIGN_JUSTIFIED);
+                introMet.setSpacingAfter(6);
+                doc.add(introMet);
+            }
+            addTabla(doc, "Tabla 3 — Metodología del Plan de Mejora", null, null,
+                new String[][]{
+                    {"¿Qué hacer?", informe.getMetodologiaQue()},
+                    {"¿Cómo hacerlo?", informe.getMetodologiaComo()},
+                    {"¿Cuándo hacerlo?", informe.getMetodologiaCuando()},
+                    {"¿Dónde hacerlo?", informe.getMetodologiaDonde()},
+                    {"¿Con quién hacerlo?", informe.getMetodologiaConQuien()},
+                });
             if (informe.getPropuestaSolucion() != null && !informe.getPropuestaSolucion().isBlank()) {
                 addSub(doc, bold, normal, "7.1 Propuesta de Solución:", informe.getPropuestaSolucion());
             }
@@ -304,6 +349,56 @@ public class InformeFinalPmPdfGenerator {
         p.setAlignment(Element.ALIGN_JUSTIFIED);
         p.setSpacingAfter(6);
         doc.add(p);
+    }
+
+    private static Paragraph subtitulo(String texto, Font bold) {
+        Paragraph p = new Paragraph(texto, bold);
+        p.setSpacingBefore(8);
+        p.setSpacingAfter(2);
+        return p;
+    }
+
+    /**
+     * Renderiza una tabla institucional de 2 columnas (descripción/análisis o pregunta/respuesta).
+     * Si {@code colIzq}/{@code colDer} son nulos no se imprime fila de cabeceras (caso Tabla 3).
+     * La primera columna lleva la etiqueta FIJA del template; la segunda el contenido del usuario
+     * ("—" cuando está vacío).
+     */
+    private static void addTabla(Document doc, String titulo, String colIzq, String colDer,
+                                 String[][] filas) throws DocumentException {
+        Paragraph t = new Paragraph(titulo,
+            FontFactory.getFont(FontFactory.HELVETICA_BOLD, 10, PdfStyles.AZUL_UE));
+        t.setSpacingBefore(6);
+        t.setSpacingAfter(4);
+        doc.add(t);
+
+        PdfPTable table = new PdfPTable(2);
+        table.setWidthPercentage(100);
+        table.setWidths(new float[]{42f, 58f});
+        table.setSpacingAfter(8);
+
+        Font hf = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 9, java.awt.Color.WHITE);
+        Font lf = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 9);
+        Font vf = FontFactory.getFont(FontFactory.HELVETICA, 9);
+
+        if (colIzq != null && colDer != null) {
+            table.addCell(tablaCell(colIzq, hf, PdfStyles.AZUL_UE, Element.ALIGN_CENTER));
+            table.addCell(tablaCell(colDer, hf, PdfStyles.AZUL_UE, Element.ALIGN_CENTER));
+        }
+        for (String[] fila : filas) {
+            table.addCell(tablaCell(fila[0], lf, PdfStyles.GRIS_SUAVE, Element.ALIGN_LEFT));
+            String v = (fila[1] == null || fila[1].isBlank()) ? "—" : fila[1];
+            table.addCell(tablaCell(v, vf, null, Element.ALIGN_LEFT));
+        }
+        doc.add(table);
+    }
+
+    private static PdfPCell tablaCell(String text, Font font, java.awt.Color bg, int align) {
+        PdfPCell c = new PdfPCell(new Phrase(text == null ? "" : text, font));
+        if (bg != null) c.setBackgroundColor(bg);
+        c.setPadding(5);
+        c.setHorizontalAlignment(align);
+        return c;
     }
 
     private static Paragraph firmaLinea(String etiqueta, String nombre, boolean firmado, Font bold, Font normal) {

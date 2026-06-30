@@ -31,7 +31,7 @@ import static co.uempresarial.sivu.trimestre.pdf.PdfStyles.*;
 @RequiredArgsConstructor
 public class ActaReunionPdfGenerator {
 
-    private static final DateTimeFormatter FECHA = DateTimeFormatter.ofPattern("yyyy-MM-dd", new Locale("es", "CO"));
+    private static final DateTimeFormatter FECHA = DateTimeFormatter.ofPattern("dd-MMM-yy", new Locale("es", "CO"));
 
     private final TrimestreMapper mapper;
 
@@ -48,7 +48,7 @@ public class ActaReunionPdfGenerator {
             document.open();
 
             document.add(encabezadoInstitucional(
-                "GAC-FM-11", "2.0", LocalDate.now().format(FECHA), "1 de 1",
+                "GAC-FM-11", "2.0", "15/11/2023", "1 de 1",
                 "Acta de acompañamiento fase coformación empresarial"));
             document.add(espacio(8));
 
@@ -86,8 +86,9 @@ public class ActaReunionPdfGenerator {
             tDg.addCell(seccionCell("Datos generales de la reunión", 2));
             tDg.addCell(campoCell("Fecha", acta.getFecha() != null ? acta.getFecha().format(FECHA) : ""));
             tDg.addCell(campoCell("Hora", safe(acta.getHora())));
-            tDg.addCell(campoCell("Tipo de reunión", acta.getTipoReunion() != null
-                ? acta.getTipoReunion().name() : ""));
+            tDg.addCell(campoCell("Tipo de reunión",
+                acta.getModalidad() == co.uempresarial.sivu.agendamiento.domain.Modalidad.VIRTUAL
+                    ? "Virtual" : "Presencial"));
             tDg.addCell(campoCell("Lugar", safe(acta.getLugar())));
             PdfPCell asuntoLabel = new PdfPCell(new Phrase("Asunto", FUENTE_CAMPO));
             asuntoLabel.setBackgroundColor(GRIS_SUAVE);

@@ -157,4 +157,54 @@ public class InformeFinalPm extends BaseEntity {
 
     @Column(name = "referencias_apa", columnDefinition = "TEXT")
     private String referenciasApa;
+
+    // --- Fidelidad estructural GTC-FM-16: tablas institucionales de las secciones 6 y 7 ---
+    // Sección 6.1 Diagnóstico Externo — Tabla 1 (PESTEL): análisis por factor.
+
+    @Column(name = "pestel_politico", columnDefinition = "TEXT")
+    private String pestelPolitico;
+
+    @Column(name = "pestel_economico", columnDefinition = "TEXT")
+    private String pestelEconomico;
+
+    @Column(name = "pestel_social", columnDefinition = "TEXT")
+    private String pestelSocial;
+
+    @Column(name = "pestel_tecnologico", columnDefinition = "TEXT")
+    private String pestelTecnologico;
+
+    /** Sección 6.1.1 Diagnóstico de la Ventaja Competitiva. */
+    @Column(name = "ventaja_competitiva", columnDefinition = "TEXT")
+    private String ventajaCompetitiva;
+
+    // Sección 6.2 Diagnóstico Interno o del Área Funcional — Tabla 2: análisis por capacidad.
+
+    @Column(name = "interno_capacidad_directiva", columnDefinition = "TEXT")
+    private String internoCapacidadDirectiva;
+
+    @Column(name = "interno_capacidad_tecnologica", columnDefinition = "TEXT")
+    private String internoCapacidadTecnologica;
+
+    @Column(name = "interno_capacidad_tecnica", columnDefinition = "TEXT")
+    private String internoCapacidadTecnica;
+
+    @Column(name = "interno_talento_humano", columnDefinition = "TEXT")
+    private String internoTalentoHumano;
+
+    // Sección 7 Metodología del Plan de Mejora — Tabla 3 (5W): respuesta por pregunta.
+
+    @Column(name = "metodologia_que", columnDefinition = "TEXT")
+    private String metodologiaQue;
+
+    @Column(name = "metodologia_como", columnDefinition = "TEXT")
+    private String metodologiaComo;
+
+    @Column(name = "metodologia_cuando", columnDefinition = "TEXT")
+    private String metodologiaCuando;
+
+    @Column(name = "metodologia_donde", columnDefinition = "TEXT")
+    private String metodologiaDonde;
+
+    @Column(name = "metodologia_con_quien", columnDefinition = "TEXT")
+    private String metodologiaConQuien;
 }

@@ -16,5 +16,23 @@ public record SeccionesInformeRequest(
     String factibilidad,
     String resultados,
     String conclusiones,
-    String referenciasApa
+    String referenciasApa,
+    // Fidelidad estructural GTC-FM-16 — Sección 6.1 Diagnóstico Externo (Tabla 1 PESTEL)
+    String pestelPolitico,
+    String pestelEconomico,
+    String pestelSocial,
+    String pestelTecnologico,
+    // Sección 6.1.1 Ventaja Competitiva
+    String ventajaCompetitiva,
+    // Sección 6.2 Diagnóstico Interno (Tabla 2)
+    String internoCapacidadDirectiva,
+    String internoCapacidadTecnologica,
+    String internoCapacidadTecnica,
+    String internoTalentoHumano,
+    // Sección 7 Metodología (Tabla 3 — 5W)
+    String metodologiaQue,
+    String metodologiaComo,
+    String metodologiaCuando,
+    String metodologiaDonde,
+    String metodologiaConQuien
 ) {}

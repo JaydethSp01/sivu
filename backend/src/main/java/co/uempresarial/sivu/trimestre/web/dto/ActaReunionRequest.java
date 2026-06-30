@@ -1,5 +1,6 @@
 package co.uempresarial.sivu.trimestre.web.dto;
 
+import co.uempresarial.sivu.agendamiento.domain.Modalidad;
 import co.uempresarial.sivu.trimestre.domain.TipoReunion;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
@@ -15,6 +16,7 @@ public record ActaReunionRequest(
     String lugar,
     String asunto,
     @NotNull TipoReunion tipoReunion,
+    Modalidad modalidad,
     List<AsistenteRequest> asistentes,
     String observaciones,
     @Valid List<TemaRequest> temas

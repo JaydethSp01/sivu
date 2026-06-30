@@ -26,7 +26,7 @@ import static co.uempresarial.sivu.trimestre.pdf.PdfStyles.*;
 @Component
 public class EvaluacionTutorPdfGenerator {
 
-    private static final DateTimeFormatter FECHA = DateTimeFormatter.ofPattern("yyyy-MM-dd", new Locale("es", "CO"));
+    private static final DateTimeFormatter FECHA = DateTimeFormatter.ofPattern("dd-MMM-yy", new Locale("es", "CO"));
 
     private static final String CAPACIDADES_TEXTO =
         "• Proactividad: Tiene un alto nivel de autonomía y posee una alta capacidad para "
@@ -73,7 +73,7 @@ public class EvaluacionTutorPdfGenerator {
             document.open();
 
             document.add(encabezadoInstitucional(
-                "GAC-FM-007", "2.0", LocalDate.now().format(FECHA),
+                "GAC-FM-007", "2.0", "24/09/2025",
                 "DIRECCIÓN DE COFORMACION EMPRESARIAL\nEVALUACIÓN POR PARTE DEL TUTOR"));
             document.add(espacio(8));
 

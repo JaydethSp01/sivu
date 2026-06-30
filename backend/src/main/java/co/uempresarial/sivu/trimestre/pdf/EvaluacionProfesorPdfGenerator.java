@@ -26,7 +26,7 @@ import static co.uempresarial.sivu.trimestre.pdf.PdfStyles.*;
 @Component
 public class EvaluacionProfesorPdfGenerator {
 
-    private static final DateTimeFormatter FECHA = DateTimeFormatter.ofPattern("yyyy-MM-dd", new Locale("es", "CO"));
+    private static final DateTimeFormatter FECHA = DateTimeFormatter.ofPattern("dd-MMM-yy", new Locale("es", "CO"));
 
     private static final String CAPACIDADES_TEXTO =
         "Comprensión y asimilación de las funciones e instrucciones dadas para el desarrollo del "
@@ -60,7 +60,7 @@ public class EvaluacionProfesorPdfGenerator {
             document.open();
 
             document.add(encabezadoInstitucional(
-                "GAC-FM-1", "3", LocalDate.now().format(FECHA), "1 de 1",
+                "GAC-FM-1", "3", "15/11/2023", "1 de 1",
                 "Formato de evaluación por parte del profesor acompañamiento"));
             document.add(espacio(8));
 
@@ -147,6 +147,14 @@ public class EvaluacionProfesorPdfGenerator {
             tCri.addCell(celdaTexto(num(ev.getNotaPonderada()), FUENTE_TEXTO_BOLD, Element.ALIGN_CENTER));
             tCri.addCell(celdaTexto(num(ev.getNotaPonderadaC2()), FUENTE_TEXTO_BOLD, Element.ALIGN_CENTER));
 
+            // NOTA FINAL ACUMULADA = promedio de los dos cortes (cada uno pesa 25% en la nota final).
+            PdfPCell nfaLbl = celdaTextoFondo("NOTA FINAL ACUMULADA", FUENTE_TEXTO_BOLD, Element.ALIGN_RIGHT, GRIS_SUAVE);
+            nfaLbl.setColspan(2);
+            tCri.addCell(nfaLbl);
+            PdfPCell nfaVal = celdaTexto(notaAcumulada(ev), FUENTE_TEXTO_BOLD, Element.ALIGN_CENTER);
+            nfaVal.setColspan(2);
+            tCri.addCell(nfaVal);
+
             // FECHA ELABORACION (una por corte)
             PdfPCell feLbl = celdaTextoFondo("FECHA ELABORACION", FUENTE_TEXTO_BOLD, Element.ALIGN_RIGHT, GRIS_SUAVE);
             feLbl.setColspan(2);
@@ -212,6 +220,14 @@ public class EvaluacionProfesorPdfGenerator {
             throw new IllegalStateException("Error generando PDF Evaluación del Profesor", ex);
         }
         return out.toByteArray();
+    }
+
+    /** Nota final acumulada del docente = promedio de los dos cortes (25%+25%). "—" si falta alguno. */
+    private static String notaAcumulada(EvaluacionProfesorTrimestre ev) {
+        BigDecimal c1 = ev.getNotaPonderada();
+        BigDecimal c2 = ev.getNotaPonderadaC2();
+        if (c1 == null || c2 == null) return "—";
+        return num(c1.add(c2).divide(new BigDecimal("2"), 2, java.math.RoundingMode.HALF_UP));
     }
 
     private static String num(BigDecimal v) {
