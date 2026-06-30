@@ -31,6 +31,10 @@ public interface ConvenioRepository extends JpaRepository<Convenio, Long> {
      */
     boolean existsByEstudianteIdAndEmpresaId(Long estudianteId, Long empresaId);
 
+    /** ¿El estudiante tiene un convenio cuyo docente acompañante (tutor académico) es este?
+     *  Habilita el scope estricto del docente sobre expedientes. */
+    boolean existsByEstudianteIdAndTutorAcademicoId(Long estudianteId, Long tutorAcademicoId);
+
     /**
      * Listado con EntityGraph para evitar N+1: precarga todas las relaciones
      * que el mapper de respuesta necesita.

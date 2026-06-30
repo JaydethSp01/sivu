@@ -18,6 +18,7 @@ public record AuthResponse(
         String apellidos,
         Set<Rol> roles,
         Long estudianteId,
-        Long empresaId
+        Long empresaId,
+        Long tutorId
     ) {}
 }

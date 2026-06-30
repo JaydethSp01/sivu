@@ -6,10 +6,12 @@ import co.uempresarial.sivu.agendamiento.persistence.DisponibilidadDocenteReposi
 import co.uempresarial.sivu.agendamiento.web.AgendamientoMapper;
 import co.uempresarial.sivu.agendamiento.web.dto.DisponibilidadRequest;
 import co.uempresarial.sivu.agendamiento.web.dto.DisponibilidadResponse;
+import co.uempresarial.sivu.security.service.CurrentUserService;
 import co.uempresarial.sivu.shared.exception.BusinessException;
 import co.uempresarial.sivu.shared.exception.ResourceNotFoundException;
 import co.uempresarial.sivu.tutor.persistence.TutorRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,15 +31,17 @@ public class DisponibilidadDocenteService {
     private final DisponibilidadDocenteRepository repository;
     private final TutorRepository tutorRepository;
     private final AgendamientoMapper mapper;
+    private final CurrentUserService currentUser;
 
     public DisponibilidadResponse crear(DisponibilidadRequest request) {
-        validarTutor(request.tutorId());
+        Long tutorId = tutorIdParaEscritura(request.tutorId());
+        validarTutor(tutorId);
         validarRango(request.horaInicio(), request.horaFin());
-        validarNoSolapamiento(request.tutorId(), request.fecha(),
+        validarNoSolapamiento(tutorId, request.fecha(),
             request.horaInicio(), request.horaFin(), null);
 
         DisponibilidadDocente d = DisponibilidadDocente.builder()
-            .tutorId(request.tutorId())
+            .tutorId(tutorId)
             .fecha(request.fecha())
             .horaInicio(request.horaInicio())
             .horaFin(request.horaFin())
@@ -49,15 +53,17 @@ public class DisponibilidadDocenteService {
 
     public DisponibilidadResponse actualizar(Long id, DisponibilidadRequest request) {
         DisponibilidadDocente d = obtenerEntidad(id);
+        verificarPropiedadFranja(d);
         if (d.getEstado() == EstadoDisponibilidad.OCUPADA) {
             throw new BusinessException("No se puede modificar una franja OCUPADA por una reunión confirmada");
         }
-        validarTutor(request.tutorId());
+        Long tutorId = tutorIdParaEscritura(request.tutorId());
+        validarTutor(tutorId);
         validarRango(request.horaInicio(), request.horaFin());
-        validarNoSolapamiento(request.tutorId(), request.fecha(),
+        validarNoSolapamiento(tutorId, request.fecha(),
             request.horaInicio(), request.horaFin(), id);
 
-        d.setTutorId(request.tutorId());
+        d.setTutorId(tutorId);
         d.setFecha(request.fecha());
         d.setHoraInicio(request.horaInicio());
         d.setHoraFin(request.horaFin());
@@ -67,6 +73,7 @@ public class DisponibilidadDocenteService {
 
     public void eliminar(Long id) {
         DisponibilidadDocente d = obtenerEntidad(id);
+        verificarPropiedadFranja(d);
         if (d.getEstado() == EstadoDisponibilidad.OCUPADA) {
             throw new BusinessException("No se puede eliminar una franja OCUPADA por una reunión confirmada");
         }
@@ -80,6 +87,10 @@ public class DisponibilidadDocenteService {
 
     @Transactional(readOnly = true)
     public List<DisponibilidadResponse> listar(Long tutorId, LocalDate desde, LocalDate hasta) {
+        // Auto-scope estricto: el docente puro solo ve sus propias franjas.
+        if (currentUser.esDocentePuro()) {
+            tutorId = currentUser.currentTutorId().orElse(-1L);
+        }
         List<DisponibilidadDocente> resultado;
         if (tutorId != null && desde != null && hasta != null) {
             resultado = repository.findByTutorIdAndFechaBetweenOrderByFechaAscHoraInicioAsc(tutorId, desde, hasta);
@@ -96,6 +107,25 @@ public class DisponibilidadDocenteService {
     private DisponibilidadDocente obtenerEntidad(Long id) {
         return repository.findById(id)
             .orElseThrow(() -> new ResourceNotFoundException("Disponibilidad", id));
+    }
+
+    /** El docente puro solo puede escribir franjas a su propio tutor académico (se ignora lo pedido). */
+    private Long tutorIdParaEscritura(Long solicitado) {
+        if (currentUser.esDocentePuro()) {
+            return currentUser.currentTutorId().orElseThrow(() -> new AccessDeniedException(
+                "Su cuenta de docente no está vinculada a un tutor académico"));
+        }
+        return solicitado;
+    }
+
+    /** Impide que un docente gestione franjas de otro docente. */
+    private void verificarPropiedadFranja(DisponibilidadDocente d) {
+        if (currentUser.esDocentePuro()) {
+            Long propio = currentUser.currentTutorId().orElse(null);
+            if (propio == null || !propio.equals(d.getTutorId())) {
+                throw new AccessDeniedException("No puede gestionar franjas de otro docente");
+            }
+        }
     }
 
     private void validarTutor(Long tutorId) {
