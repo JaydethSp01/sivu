@@ -15,13 +15,20 @@ import co.uempresarial.sivu.convenio.persistence.ConvenioRepository;
 import co.uempresarial.sivu.estudiante.persistence.EstudianteRepository;
 import co.uempresarial.sivu.shared.exception.BusinessException;
 import co.uempresarial.sivu.shared.exception.ResourceNotFoundException;
+import co.uempresarial.sivu.trimestre.domain.EstadoTrimestre;
+import co.uempresarial.sivu.trimestre.domain.Trimestre;
+import co.uempresarial.sivu.trimestre.persistence.TrimestreRepository;
+import co.uempresarial.sivu.trimestre.service.ActaReunionService;
+import co.uempresarial.sivu.trimestre.web.dto.ActaReunionRequest;
 import co.uempresarial.sivu.tutor.persistence.TutorRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
@@ -37,6 +44,7 @@ import java.util.Set;
  *   * (no CANCELADO) --cancelar-----> CANCELADO (libera la franja)
  */
 @Service
+@Slf4j
 @RequiredArgsConstructor
 @Transactional
 public class AgendamientoReunionService {
@@ -49,6 +57,8 @@ public class AgendamientoReunionService {
     private final ConvenioRepository convenioRepository;
     private final EstudianteRepository estudianteRepository;
     private final TutorRepository tutorRepository;
+    private final TrimestreRepository trimestreRepository;
+    private final ActaReunionService actaReunionService;
     private final AgendamientoMapper mapper;
 
     /** El estudiante propone una reunión; solo válida si cae dentro de una franja ACTIVA del tutor. */
@@ -99,9 +109,7 @@ public class AgendamientoReunionService {
         AgendamientoReunion r = obtenerEntidad(id);
         exigirEstado(r, CONFIRMABLES, "confirmar");
         confirmarInterno(r);
-        // TODO: generar borrador de ActaReunion prellenado (fecha, modalidad, enlace, participantes)
-        //       cuando se integre con el módulo trimestre (requiere un Trimestre asociado al convenio).
-        //       Por ahora actaReunionId queda en null.
+        generarBorradorActa(r);
         return mapper.toResponse(r);
     }
 
@@ -169,6 +177,75 @@ public class AgendamientoReunionService {
     }
 
     // ---------- helpers ----------
+
+    /**
+     * BI-15 / RF-B02: al confirmar una reunión, genera automáticamente un borrador de
+     * Acta de Acompañamiento (GAC-FM-11) prellenado con los datos de la reunión.
+     *
+     * <p>El acta requiere un {@link Trimestre} del convenio. Si el convenio aún no tiene
+     * trimestres, {@code actaReunionId} queda en {@code null} (log WARN) sin romper la
+     * confirmación. Cualquier fallo al crear el acta se captura y registra: la reunión
+     * queda CONFIRMADA igual.</p>
+     */
+    private void generarBorradorActa(AgendamientoReunion r) {
+        try {
+            Trimestre trimestre = resolverTrimestre(r.getConvenioId());
+            if (trimestre == null) {
+                log.warn("No se generó borrador de acta para la reunión {}: el convenio {} no tiene trimestres",
+                    r.getId(), r.getConvenioId());
+                return;
+            }
+
+            boolean virtual = r.getModalidad() == Modalidad.VIRTUAL;
+            String lugar = virtual
+                ? r.getEnlace()
+                : "Por definir (presencial)";
+            String hora = "%s - %s".formatted(r.getHoraInicio(), r.getHoraFin());
+            String asunto = "Acompañamiento de práctica (GAC-FM-11)";
+            String observaciones = ("Borrador generado automáticamente al confirmar la reunión agendada #%d "
+                + "(modalidad %s).").formatted(r.getId(), r.getModalidad());
+
+            Long actaId = actaReunionService.crearBorradorParaReunion(
+                trimestre.getId(),
+                r.getFechaPropuesta(),
+                hora,
+                lugar,
+                asunto,
+                construirAsistentes(r),
+                observaciones);
+
+            r.setActaReunionId(actaId);
+            log.info("Borrador de acta {} (trimestre {}) generado para la reunión confirmada {}",
+                actaId, trimestre.getId(), r.getId());
+        } catch (Exception ex) {
+            log.warn("No se pudo generar el borrador de acta para la reunión {} (queda CONFIRMADA igual): {}",
+                r.getId(), ex.getMessage());
+        }
+    }
+
+    /** Trimestre del convenio: prefiere el más reciente ABIERTO/EN_CURSO; si no hay, el más reciente. */
+    private Trimestre resolverTrimestre(Long convenioId) {
+        List<Trimestre> trimestres = trimestreRepository.findByConvenioIdOrderByNumeroAsc(convenioId);
+        if (trimestres.isEmpty()) {
+            return null;
+        }
+        return trimestres.stream()
+            .filter(t -> t.getEstado() == EstadoTrimestre.ABIERTO || t.getEstado() == EstadoTrimestre.EN_CURSO)
+            .reduce((a, b) -> b)                       // último activo = mayor número
+            .orElse(trimestres.get(trimestres.size() - 1)); // si ninguno activo, el más reciente
+    }
+
+    /** Asistentes prellenados: estudiante y tutor del convenio (si se pueden resolver). */
+    private List<ActaReunionRequest.AsistenteRequest> construirAsistentes(AgendamientoReunion r) {
+        List<ActaReunionRequest.AsistenteRequest> asistentes = new ArrayList<>();
+        estudianteRepository.findById(r.getEstudianteId()).ifPresent(e ->
+            asistentes.add(new ActaReunionRequest.AsistenteRequest(
+                "%s %s".formatted(e.getNombres(), e.getApellidos()).trim(), "ESTUDIANTE", e.getEmail())));
+        tutorRepository.findById(r.getTutorId()).ifPresent(t ->
+            asistentes.add(new ActaReunionRequest.AsistenteRequest(
+                "%s %s".formatted(t.getNombres(), t.getApellidos()).trim(), "TUTOR", t.getEmail())));
+        return asistentes;
+    }
 
     private void confirmarInterno(AgendamientoReunion r) {
         validarModalidad(r.getModalidad(), r.getEnlace());

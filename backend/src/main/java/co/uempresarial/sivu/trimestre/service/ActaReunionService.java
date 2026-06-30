@@ -10,8 +10,10 @@ import co.uempresarial.sivu.trimestre.web.dto.ActaReunionRequest;
 import co.uempresarial.sivu.trimestre.web.dto.ActaReunionResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @Service
@@ -69,6 +71,42 @@ public class ActaReunionService {
         aplicarTemas(acta, request.temas());
         ActaReunion saved = repository.save(acta);
         return mapper.toResponse(saved);
+    }
+
+    /**
+     * BI-15 / RF-B02: crea un borrador de Acta de Acompañamiento (GAC-FM-11) prellenado
+     * a partir de una reunión agendada confirmada.
+     *
+     * <p>Se ejecuta en una transacción independiente ({@link Propagation#REQUIRES_NEW}) para que,
+     * si la creación del acta falla (p. ej. colisión del número), el fallo quede aislado y NO
+     * arrastre la transacción de confirmación de la reunión. El acta queda sin firmar
+     * (firmadoEstudiante/Tutor/Profesor = false), que es el estado "borrador" del modelo.</p>
+     *
+     * @return el id del acta borrador creada.
+     */
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public Long crearBorradorParaReunion(Long trimestreId,
+                                         LocalDate fecha,
+                                         String hora,
+                                         String lugar,
+                                         String asunto,
+                                         List<ActaReunionRequest.AsistenteRequest> asistentes,
+                                         String observaciones) {
+        Trimestre trimestre = trimestreRepository.findById(trimestreId)
+            .orElseThrow(() -> new ResourceNotFoundException("Trimestre", trimestreId));
+        short numero = (short) (repository.countByTrimestreId(trimestreId) + 1);
+        ActaReunion acta = ActaReunion.builder()
+            .trimestre(trimestre)
+            .numero(numero)
+            .fecha(fecha)
+            .hora(hora)
+            .lugar(lugar)
+            .asunto(asunto)
+            .tipoReunion(TipoReunion.SEGUIMIENTO)
+            .asistentesJson(mapper.asistentesToJson(asistentes))
+            .observaciones(observaciones)
+            .build();
+        return repository.save(acta).getId();
     }
 
     public ActaReunionResponse actualizar(Long id, ActaReunionRequest request) {
