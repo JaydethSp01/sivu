@@ -403,7 +403,7 @@ function EmpresaDashboard(): JSX.Element {
 export function DashboardPage(): JSX.Element {
   const hasRole = useAuthStore((s) => s.hasRole);
   if (hasRole("ADMIN", "COORDINADOR")) return <AdminDashboard />;
-  if (hasRole("EMPRESA")) return <EmpresaDashboard />;
+  if (hasRole("TUTOR")) return <EmpresaDashboard />;
   if (hasRole("ESTUDIANTE")) return <EstudianteDashboard />;
   return (
     <EmptyState

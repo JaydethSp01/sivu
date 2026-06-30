@@ -80,7 +80,7 @@ export function App(): JSX.Element {
               <Route element={<AppShell />}>
                 <Route index element={<DashboardPage />} />
 
-                <Route element={<RoleGuard allow={["ADMIN", "COORDINADOR", "EMPRESA"]} />}>
+                <Route element={<RoleGuard allow={["ADMIN", "COORDINADOR", "DOCENTE", "TUTOR"]} />}>
                   <Route path="estudiantes" element={<EstudiantesListPage />} />
                   <Route path="estudiantes/:id" element={<EstudianteDetailPage />} />
                 </Route>
@@ -89,14 +89,14 @@ export function App(): JSX.Element {
                   <Route path="estudiantes/:id/edit" element={<EstudianteFormPage />} />
                 </Route>
 
-                <Route element={<RoleGuard allow={["ADMIN", "COORDINADOR", "EMPRESA"]} />}>
+                <Route element={<RoleGuard allow={["ADMIN", "COORDINADOR", "TUTOR"]} />}>
                   <Route path="empresas" element={<EmpresasListPage />} />
                   <Route path="empresas/:id" element={<EmpresaDetailPage />} />
                   <Route path="empresas/new" element={<EmpresaFormPage />} />
                   <Route path="empresas/:id/edit" element={<EmpresaFormPage />} />
                 </Route>
 
-                <Route element={<RoleGuard allow={["EMPRESA", "ADMIN", "COORDINADOR"]} />}>
+                <Route element={<RoleGuard allow={["TUTOR", "ADMIN", "COORDINADOR"]} />}>
                   <Route path="mi-empresa" element={<MiEmpresaPage />} />
                 </Route>
 
@@ -106,7 +106,7 @@ export function App(): JSX.Element {
                 <Route path="documentos/:id/edit" element={<DocumentoFormPage />} />
 
                 {/* Expediente Digital Unificado (BI-16 / RF-B01) */}
-                <Route element={<RoleGuard allow={["ADMIN", "COORDINADOR", "ESTUDIANTE", "EMPRESA", "TUTOR"]} />}>
+                <Route element={<RoleGuard allow={["ADMIN", "COORDINADOR", "ESTUDIANTE", "DOCENTE", "TUTOR"]} />}>
                   <Route path="expedientes" element={<ExpedientesIndexPage />} />
                   <Route path="expedientes/:estudianteId" element={<ExpedientePage />} />
                 </Route>
@@ -127,7 +127,7 @@ export function App(): JSX.Element {
                 <Route path="convenios/:convenioId/trimestres/:trimestreId/evaluacion-profesor" element={<EvaluacionProfesorPage />} />
 
                 {/* Agendamiento colaborativo (RF-C01/C02/C03) */}
-                <Route element={<RoleGuard allow={["ADMIN", "COORDINADOR"]} />}>
+                <Route element={<RoleGuard allow={["ADMIN", "COORDINADOR", "DOCENTE"]} />}>
                   <Route path="agendamiento/disponibilidad" element={<DisponibilidadPage />} />
                 </Route>
                 <Route element={<RoleGuard allow={["ESTUDIANTE", "ADMIN", "COORDINADOR"]} />}>
@@ -135,7 +135,7 @@ export function App(): JSX.Element {
                   <Route path="agendamiento/reuniones" element={<BandejaReunionesPage />} />
                 </Route>
 
-                <Route element={<RoleGuard allow={["ADMIN", "COORDINADOR", "EMPRESA", "MCP_AGENT"]} />}>
+                <Route element={<RoleGuard allow={["ADMIN", "COORDINADOR", "TUTOR", "MCP_AGENT"]} />}>
                   <Route path="tutores" element={<TutoresListPage />} />
                   <Route path="tutores/:id" element={<TutorDetailPage />} />
                 </Route>

@@ -287,9 +287,9 @@ export function InformeFinalPmPage(): JSX.Element {
   const qc = useQueryClient();
   const hasRole = useAuthStore((s) => s.hasRole);
   const canRevisar = hasRole("ADMIN", "COORDINADOR");
-  // El backend permite nota-tutor a TUTOR/EMPRESA/COORDINADOR/ADMIN; en el
-  // frontend solo existen estos roles (no hay rol TUTOR en el catálogo del UI).
-  const canNotaTutor = hasRole("ADMIN", "COORDINADOR", "EMPRESA");
+  // El backend permite nota-tutor a TUTOR/COORDINADOR/ADMIN; el tutor empresarial
+  // (rol TUTOR) registra la nota de su lado.
+  const canNotaTutor = hasRole("ADMIN", "COORDINADOR", "TUTOR");
   const canNotaProfesor = hasRole("ADMIN", "COORDINADOR");
   const canAltoImpacto = hasRole("ADMIN", "COORDINADOR");
   // El estudiante edita las 12 secciones; Coordinación/Admin pueden ajustar.

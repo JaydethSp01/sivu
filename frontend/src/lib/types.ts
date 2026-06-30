@@ -1,4 +1,4 @@
-export type Rol = "ADMIN" | "COORDINADOR" | "ESTUDIANTE" | "EMPRESA" | "TUTOR" | "MCP_AGENT";
+export type Rol = "ADMIN" | "COORDINADOR" | "ESTUDIANTE" | "DOCENTE" | "TUTOR" | "MCP_AGENT";
 
 export interface UsuarioResumen {
   id: string;

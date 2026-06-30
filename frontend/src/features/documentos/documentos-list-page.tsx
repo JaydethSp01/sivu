@@ -91,8 +91,8 @@ export function DocumentosListPage(): JSX.Element {
   const qc = useQueryClient();
   const hasRole = useAuthStore((s) => s.hasRole);
   const canValidate = hasRole("ADMIN", "COORDINADOR");
-  const isStudentOnly = hasRole("ESTUDIANTE") && !hasRole("ADMIN", "COORDINADOR", "EMPRESA");
-  const isEmpresaOnly = hasRole("EMPRESA") && !hasRole("ADMIN", "COORDINADOR");
+  const isStudentOnly = hasRole("ESTUDIANTE") && !hasRole("ADMIN", "COORDINADOR", "TUTOR");
+  const isEmpresaOnly = hasRole("TUTOR") && !hasRole("ADMIN", "COORDINADOR");
 
   const [estado, setEstado] = useState<EstadoDocumento | "ALL">("ALL");
   const [tipo, setTipo] = useState<TipoDocumentoSoporte | "ALL">("ALL");

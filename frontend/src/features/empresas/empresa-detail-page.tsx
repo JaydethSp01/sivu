@@ -85,7 +85,7 @@ export function EmpresaDetailPage(): JSX.Element {
               </Button>
             </>
           )}
-          {hasRole("ADMIN", "COORDINADOR", "EMPRESA") && (
+          {hasRole("ADMIN", "COORDINADOR", "TUTOR") && (
             <Button variant="outline" onClick={() => navigate(`/empresas/${id}/edit`)}>
               <Pencil className="h-4 w-4" /> Editar
             </Button>
