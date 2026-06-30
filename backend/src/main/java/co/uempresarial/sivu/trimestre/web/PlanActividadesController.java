@@ -91,7 +91,7 @@ public class PlanActividadesController {
     }
 
     @PostMapping("/comentarios")
-    @PreAuthorize("hasAnyRole('ESTUDIANTE','COORDINADOR','ADMIN','EMPRESA','TUTOR')")
+    @PreAuthorize("hasAnyRole('ESTUDIANTE','COORDINADOR','ADMIN','DOCENTE','TUTOR')")
     @Operation(summary = "Agregar un mensaje al hilo (FEEDBACK / RESPUESTA_APROBACION / RESPUESTA_RECHAZO). "
         + "RESPUESTA_RECHAZO devuelve el plan a BORRADOR; RESPUESTA_APROBACION avanza el estado de firma.")
     public ResponseEntity<PlanActividadesComentarioResponse> agregarComentario(

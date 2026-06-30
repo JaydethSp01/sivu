@@ -49,12 +49,12 @@ public class CurrentUserService {
     }
 
     /**
-     * "Empresa pura": tiene rol EMPRESA y NO tiene rol privilegiado (ADMIN/COORDINADOR).
-     * Para usuarios EMPRESA puros se aplica el scope por empresaId; para ADMIN/COORDINADOR
-     * que también tengan rol EMPRESA, se respeta el acceso amplio.
+     * "Empresa pura": es un tutor empresarial (rol TUTOR vinculado a una empresa) y NO tiene
+     * rol privilegiado (ADMIN/COORDINADOR). Para estos usuarios se aplica el scope por empresaId;
+     * para ADMIN/COORDINADOR que también tengan rol TUTOR, se respeta el acceso amplio.
      */
     public boolean esEmpresaPura() {
-        return hasRole(Rol.EMPRESA) && !hasRole(Rol.ADMIN) && !hasRole(Rol.COORDINADOR);
+        return hasRole(Rol.TUTOR) && !hasRole(Rol.ADMIN) && !hasRole(Rol.COORDINADOR);
     }
 
     /** Equivalente para estudiantes (uso futuro al hacer auto-scope para ESTUDIANTE). */

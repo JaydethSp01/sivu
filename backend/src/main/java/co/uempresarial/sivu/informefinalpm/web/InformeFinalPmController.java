@@ -78,7 +78,7 @@ public class InformeFinalPmController {
     }
 
     @PatchMapping("/api/v1/informes-final-pm/{id}/nota-tutor")
-    @PreAuthorize("hasAnyRole('TUTOR','EMPRESA','COORDINADOR','ADMIN')")
+    @PreAuthorize("hasAnyRole('TUTOR','COORDINADOR','ADMIN')")
     @Operation(summary = "Registrar la nota individual del tutor empresarial (BI-07)")
     public ResponseEntity<InformeFinalPmResponse> registrarNotaTutor(
             @PathVariable Long id, @Valid @RequestBody RegistrarNotaRequest request) {

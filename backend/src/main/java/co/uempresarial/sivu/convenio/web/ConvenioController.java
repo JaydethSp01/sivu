@@ -71,7 +71,7 @@ public class ConvenioController {
     @PreAuthorize("""
         hasRole('ADMIN')
         or (#parte.name() == 'ESTUDIANTE' and hasRole('ESTUDIANTE'))
-        or (#parte.name() == 'EMPRESA' and hasRole('EMPRESA'))
+        or (#parte.name() == 'EMPRESA' and hasRole('TUTOR'))
         or (#parte.name() == 'UNIVERSIDAD' and hasRole('COORDINADOR'))
         """)
     @Operation(summary = "Registrar la firma de una de las tres partes del convenio")

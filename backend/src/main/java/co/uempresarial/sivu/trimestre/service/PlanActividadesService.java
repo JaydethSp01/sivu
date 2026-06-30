@@ -284,8 +284,8 @@ public class PlanActividadesService {
         if (u.getRoles() == null) return Rol.ESTUDIANTE.name();
         if (u.getRoles().contains(Rol.ADMIN)) return Rol.ADMIN.name();
         if (u.getRoles().contains(Rol.COORDINADOR)) return Rol.COORDINADOR.name();
+        if (u.getRoles().contains(Rol.DOCENTE)) return Rol.DOCENTE.name();
         if (u.getRoles().contains(Rol.TUTOR)) return Rol.TUTOR.name();
-        if (u.getRoles().contains(Rol.EMPRESA)) return Rol.EMPRESA.name();
         if (u.getRoles().contains(Rol.ESTUDIANTE)) return Rol.ESTUDIANTE.name();
         return u.getRoles().stream().findFirst().map(Enum::name).orElse(Rol.ESTUDIANTE.name());
     }

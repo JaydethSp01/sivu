@@ -34,7 +34,7 @@ public class EvaluacionTutorTrimestreController {
     }
 
     @PutMapping
-    @PreAuthorize("hasAnyRole('EMPRESA','COORDINADOR','ADMIN')")
+    @PreAuthorize("hasAnyRole('TUTOR','COORDINADOR','ADMIN')")
     @Operation(summary = "Crear o actualizar la ET del trimestre (nota ponderada se autocalcula)")
     public ResponseEntity<EvaluacionTutorResponse> guardar(@PathVariable Long trimestreId,
                                                            @Valid @RequestBody EvaluacionTutorRequest request) {
