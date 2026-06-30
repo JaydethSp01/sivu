@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import {
   AlertTriangle,
   ArrowLeft,
+  Award,
   CheckCircle2,
   Download,
   FileText,
@@ -188,6 +189,22 @@ function toRequest(v: FormValues): InformeFinalPmRequest {
   };
 }
 
+/** Valida una nota 0-5; devuelve el número o null si es inválida. */
+function parseNota(raw: string): number | null {
+  if (raw.trim() === "") return null;
+  const n = Number(raw);
+  if (Number.isNaN(n) || n < 0 || n > 5) return null;
+  return n;
+}
+
+/** Formatea una nota (number | string | null) a "x.x" o "—". */
+function fmtNota(n: number | string | null | undefined): string {
+  if (n === null || n === undefined || n === "") return "—";
+  const num = typeof n === "string" ? Number(n) : n;
+  if (Number.isNaN(num)) return "—";
+  return num.toFixed(1);
+}
+
 function SeccionTextarea({
   field,
   value,
@@ -218,10 +235,17 @@ export function InformeFinalPmPage(): JSX.Element {
   const qc = useQueryClient();
   const hasRole = useAuthStore((s) => s.hasRole);
   const canRevisar = hasRole("ADMIN", "COORDINADOR");
+  // El backend permite nota-tutor a TUTOR/EMPRESA/COORDINADOR/ADMIN; en el
+  // frontend solo existen estos roles (no hay rol TUTOR en el catálogo del UI).
+  const canNotaTutor = hasRole("ADMIN", "COORDINADOR", "EMPRESA");
+  const canNotaProfesor = hasRole("ADMIN", "COORDINADOR");
+  const canAltoImpacto = hasRole("ADMIN", "COORDINADOR");
 
   const [values, setValues] = useState<FormValues>(EMPTY);
   const [rechazoOpen, setRechazoOpen] = useState(false);
   const [observaciones, setObservaciones] = useState("");
+  const [notaTutorInput, setNotaTutorInput] = useState("");
+  const [notaProfesorInput, setNotaProfesorInput] = useState("");
 
   const pmId = Number(planMejoraId);
 
@@ -351,6 +375,81 @@ export function InformeFinalPmPage(): JSX.Element {
     },
     onError: (e) => toast.error(extractApiMessage(e)),
   });
+
+  const guardarNotaTutor = useMutation({
+    mutationFn: async (nota: number) => {
+      if (!informe.data) throw new Error("Informe no cargado");
+      const { data } = await api.patch<InformeFinalPmResponse>(
+        `/informes-final-pm/${informe.data.id}/nota-tutor`,
+        { nota }
+      );
+      return data;
+    },
+    onSuccess: (data) => {
+      toast.success("Nota del tutor registrada");
+      qc.setQueryData(["/planes-mejora", pmId, "informe-final"], data);
+      qc.invalidateQueries({ queryKey: ["/planes-mejora", pmId, "informe-final"] });
+      setNotaTutorInput("");
+    },
+    onError: (e) => toast.error(extractApiMessage(e)),
+  });
+
+  const guardarNotaProfesor = useMutation({
+    mutationFn: async (nota: number) => {
+      if (!informe.data) throw new Error("Informe no cargado");
+      const { data } = await api.patch<InformeFinalPmResponse>(
+        `/informes-final-pm/${informe.data.id}/nota-profesor`,
+        { nota }
+      );
+      return data;
+    },
+    onSuccess: (data) => {
+      toast.success("Nota del profesor registrada");
+      qc.setQueryData(["/planes-mejora", pmId, "informe-final"], data);
+      qc.invalidateQueries({ queryKey: ["/planes-mejora", pmId, "informe-final"] });
+      setNotaProfesorInput("");
+    },
+    onError: (e) => toast.error(extractApiMessage(e)),
+  });
+
+  const toggleAltoImpacto = useMutation({
+    mutationFn: async (altoImpacto: boolean) => {
+      if (!informe.data) throw new Error("Informe no cargado");
+      const { data } = await api.patch<InformeFinalPmResponse>(
+        `/informes-final-pm/${informe.data.id}/alto-impacto`,
+        { altoImpacto }
+      );
+      return data;
+    },
+    onSuccess: (data) => {
+      toast.success(
+        data.altoImpacto
+          ? "Marcado como Proyecto de Alto Impacto"
+          : "Se quitó la marca de Alto Impacto"
+      );
+      qc.setQueryData(["/planes-mejora", pmId, "informe-final"], data);
+      qc.invalidateQueries({ queryKey: ["/planes-mejora", pmId, "informe-final"] });
+    },
+    onError: (e) => toast.error(extractApiMessage(e)),
+  });
+
+  const onRegistrarNotaTutor = () => {
+    const n = parseNota(notaTutorInput);
+    if (n === null) {
+      toast.error("La nota del tutor debe estar entre 0 y 5");
+      return;
+    }
+    guardarNotaTutor.mutate(n);
+  };
+
+  const onRegistrarNotaProfesor = () => {
+    const n = parseNota(notaProfesorInput);
+    if (n === null) {
+      toast.error("La nota del profesor debe estar entre 0 y 5");
+      return;
+    }
+    guardarNotaProfesor.mutate(n);
+  };
 
   const faltantes = useMemo(
     () =>
@@ -541,6 +640,153 @@ export function InformeFinalPmPage(): JSX.Element {
                 </p>
               )}
             </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {informe.data && (
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Award className="h-4 w-4 text-primary" /> Calificación final
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid gap-3 sm:grid-cols-3">
+              <div className="rounded-lg border border-border/60 p-3">
+                <div className="text-xs text-muted-foreground">Nota del tutor</div>
+                <div className="text-lg font-semibold">
+                  {fmtNota(informe.data.notaTutor)}
+                </div>
+              </div>
+              <div className="rounded-lg border border-border/60 p-3">
+                <div className="text-xs text-muted-foreground">Nota del profesor</div>
+                <div className="text-lg font-semibold">
+                  {fmtNota(informe.data.notaProfesor)}
+                </div>
+              </div>
+              <div className="rounded-lg border border-primary/30 bg-primary-soft/30 p-3">
+                <div className="text-xs text-muted-foreground">Nota promedio</div>
+                <div className="text-lg font-bold">
+                  {fmtNota(informe.data.notaPromedio)}{" "}
+                  <span className="text-sm font-normal text-muted-foreground">
+                    / 5.0
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge variant={informe.data.cumpleNotaMinima ? "success" : "destructive"}>
+                {informe.data.cumpleNotaMinima ? (
+                  <>
+                    <CheckCircle2 className="h-3.5 w-3.5" /> APROBADO
+                  </>
+                ) : (
+                  <>
+                    <AlertTriangle className="h-3.5 w-3.5" /> NO APROBADO
+                  </>
+                )}
+              </Badge>
+              {informe.data.altoImpacto && (
+                <Badge variant="accent">
+                  <Sparkles className="h-3.5 w-3.5" /> Alto Impacto
+                </Badge>
+              )}
+              {informe.data.nivel && (
+                <Badge variant="muted">Nivel: {informe.data.nivel}</Badge>
+              )}
+            </div>
+
+            {(canNotaTutor || canNotaProfesor || canAltoImpacto) && (
+              <div className="space-y-3 border-t border-border/60 pt-4">
+                {canNotaTutor && (
+                  <div className="flex flex-wrap items-end gap-2">
+                    <div className="w-36">
+                      <Label htmlFor="nota-tutor-input">Nota del tutor (0-5)</Label>
+                      <Input
+                        id="nota-tutor-input"
+                        type="number"
+                        min={0}
+                        max={5}
+                        step="0.1"
+                        value={notaTutorInput}
+                        onChange={(e) => setNotaTutorInput(e.target.value)}
+                        placeholder="0.0"
+                      />
+                    </div>
+                    <Button
+                      size="sm"
+                      onClick={onRegistrarNotaTutor}
+                      disabled={guardarNotaTutor.isPending}
+                    >
+                      {guardarNotaTutor.isPending ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Save className="h-4 w-4" />
+                      )}{" "}
+                      Registrar nota tutor
+                    </Button>
+                  </div>
+                )}
+
+                {canNotaProfesor && (
+                  <div className="flex flex-wrap items-end gap-2">
+                    <div className="w-36">
+                      <Label htmlFor="nota-profesor-input">Nota del profesor (0-5)</Label>
+                      <Input
+                        id="nota-profesor-input"
+                        type="number"
+                        min={0}
+                        max={5}
+                        step="0.1"
+                        value={notaProfesorInput}
+                        onChange={(e) => setNotaProfesorInput(e.target.value)}
+                        placeholder="0.0"
+                      />
+                    </div>
+                    <Button
+                      size="sm"
+                      onClick={onRegistrarNotaProfesor}
+                      disabled={guardarNotaProfesor.isPending}
+                    >
+                      {guardarNotaProfesor.isPending ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Save className="h-4 w-4" />
+                      )}{" "}
+                      Registrar nota profesor
+                    </Button>
+                  </div>
+                )}
+
+                {canAltoImpacto && (
+                  <div className="flex items-center justify-between gap-3 rounded-lg border border-border/60 p-3">
+                    <div>
+                      <div className="text-sm font-medium">
+                        Proyecto de Alto Impacto
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        Marca este informe como proyecto destacado.
+                      </p>
+                    </div>
+                    <Button
+                      variant={informe.data.altoImpacto ? "default" : "outline"}
+                      size="sm"
+                      onClick={() =>
+                        toggleAltoImpacto.mutate(!informe.data?.altoImpacto)
+                      }
+                      disabled={toggleAltoImpacto.isPending}
+                    >
+                      {toggleAltoImpacto.isPending ? (
+                        <Loader2 className="h-4 w-4 animate-spin mr-1" />
+                      ) : null}
+                      {informe.data.altoImpacto ? "Activado" : "Desactivado"}
+                    </Button>
+                  </div>
+                )}
+              </div>
+            )}
           </CardContent>
         </Card>
       )}

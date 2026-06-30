@@ -1,4 +1,4 @@
-export type Rol = "ADMIN" | "COORDINADOR" | "ESTUDIANTE" | "EMPRESA" | "MCP_AGENT";
+export type Rol = "ADMIN" | "COORDINADOR" | "ESTUDIANTE" | "EMPRESA" | "TUTOR" | "MCP_AGENT";
 
 export interface UsuarioResumen {
   id: string;
@@ -391,6 +391,13 @@ export interface InformeFinalPmResponse {
   fechaRevision?: string | null;
   revisadoPorNombre?: string | null;
   observacionesRevisor?: string | null;
+  // Calificación final (notas nuevas)
+  notaTutor?: number | string | null;
+  notaProfesor?: number | string | null;
+  notaPromedio?: number | string | null;
+  altoImpacto?: boolean | null;
+  cumpleNotaMinima?: boolean | null;
+  nivel?: string | null;
   firmadoEstudiante: boolean;
   firmadoTutorAcad: boolean;
   firmadoTutorEmp: boolean;
@@ -848,6 +855,23 @@ export interface PlanActividadesRequest {
   meses: PlanActividadesMes[];
 }
 
+/** Tipo de comentario en el hilo de aprobación del Plan de Actividades. */
+export type PlanActividadesTipoComentario =
+  | "FEEDBACK"
+  | "RESPUESTA_APROBACION"
+  | "RESPUESTA_RECHAZO"
+  | "SISTEMA";
+
+/** Comentario del flujo de aprobación asociado a un Plan de Actividades. */
+export interface PlanActividadesComentario {
+  id: number;
+  autorNombre: string;
+  autorRol: Rol;
+  mensaje: string;
+  tipo: PlanActividadesTipoComentario;
+  createdAt: string;
+}
+
 export interface ActaAsistente {
   nombre: string;
   rol?: string | null;
@@ -1132,4 +1156,214 @@ export interface AsignarRequest {
 export interface LlenarRequest {
   valores?: ValorCriterio[];
   observaciones?: string | null;
+}
+
+// ============================================================
+// Agendamiento colaborativo (RF-C01 / RF-C02 / RF-C03)
+// ============================================================
+
+export type ModalidadAgenda = "PRESENCIAL" | "VIRTUAL";
+export type EstadoDisponibilidad = "ACTIVA" | "OCUPADA" | "CANCELADA";
+export type EstadoAgendamiento =
+  | "PROPUESTO"
+  | "ACEPTADO"
+  | "RECHAZADO"
+  | "CONTRAOFERTA"
+  | "CONFIRMADO"
+  | "CANCELADO";
+
+export interface Disponibilidad {
+  id: number;
+  tutorId: number;
+  fecha: string; // YYYY-MM-DD
+  horaInicio: string; // HH:mm[:ss]
+  horaFin: string;
+  modalidad: ModalidadAgenda;
+  estado: EstadoDisponibilidad;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface DisponibilidadRequest {
+  tutorId: number;
+  fecha: string;
+  horaInicio: string;
+  horaFin: string;
+  modalidad: ModalidadAgenda;
+}
+
+export interface ReunionAgenda {
+  id: number;
+  convenioId: number;
+  estudianteId: number;
+  tutorId: number;
+  disponibilidadId: number | null;
+  fechaPropuesta: string;
+  horaInicio: string;
+  horaFin: string;
+  modalidad: ModalidadAgenda;
+  enlace: string | null;
+  estado: EstadoAgendamiento;
+  observaciones: string | null;
+  actaReunionId: number | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ProponerReunionRequest {
+  convenioId: number;
+  estudianteId: number;
+  tutorId: number;
+  fechaPropuesta: string;
+  horaInicio: string;
+  horaFin: string;
+  modalidad: ModalidadAgenda;
+  enlace?: string | null;
+  observaciones?: string | null;
+}
+
+export interface ContraofertaReunionRequest {
+  fechaPropuesta: string;
+  horaInicio: string;
+  horaFin: string;
+  modalidad?: ModalidadAgenda;
+  enlace?: string | null;
+  observaciones?: string | null;
+}
+
+// ============================================================================
+// Expediente Digital Unificado (BI-16 / RF-B01)
+// Refleja ExpedienteResponse / ExpedienteResumenCohorte del backend.
+// ============================================================================
+
+export type EstadoSeccionExpediente =
+  | "NO_INICIADO"
+  | "PENDIENTE"
+  | "EN_REVISION"
+  | "FIRMADO"
+  | "PDF_GENERADO";
+
+export interface ExpedienteEstudianteResumen {
+  id: number;
+  nombres: string;
+  apellidos: string;
+  numeroDocumento: string;
+  email: string;
+  programaAcademico: string | null;
+  semestre: number | null;
+  estado: string | null;
+}
+
+export interface ExpedienteConvenioResumen {
+  id: number;
+  numeroConvenio: string;
+  estado: string;
+  fechaInicio: string | null;
+  fechaFin: string | null;
+  semestreAcademico: string | null;
+  esContinuidad: boolean | null;
+  documentoPdfId: number | null;
+  certificadoPdfId: number | null;
+}
+
+export interface ExpedienteEmpresaResumen {
+  id: number;
+  razonSocial: string;
+  nit: string | null;
+  sector: string | null;
+  ciudad: string | null;
+}
+
+export interface ExpedienteTutoresResumen {
+  tutorAcademico: string | null;
+  tutorEmpresarial: string | null;
+}
+
+export interface ExpedienteCalificacionResumen {
+  notaCorte1: number | null;
+  notaCorte2: number | null;
+  notaCorte3: number | null;
+  notaFinal: number | null;
+  completa: boolean;
+  bloqueada: boolean;
+}
+
+export interface ExpedienteSeccionDocumento {
+  nombre: string;
+  estado: EstadoSeccionExpediente;
+  documentoPdfId: number | null;
+  firmadoEstudiante: boolean;
+  firmadoTutor: boolean;
+  firmadoProfesor: boolean;
+}
+
+export interface ExpedienteActaItem {
+  id: number;
+  numero: number | null;
+  fecha: string | null;
+  asunto: string | null;
+  estado: EstadoSeccionExpediente;
+  documentoPdfId: number | null;
+}
+
+export interface ExpedienteSeccionActas {
+  nombre: string;
+  estado: EstadoSeccionExpediente;
+  total: number;
+  firmadas: number;
+  items: ExpedienteActaItem[];
+}
+
+export interface ExpedienteSeccionInformeFinal {
+  id: number;
+  planMejoraId: number | null;
+  titulo: string | null;
+  estado: string | null;
+  estadoSeccion: EstadoSeccionExpediente;
+  notaPromedio: number | null;
+  documentoPdfId: number | null;
+}
+
+export interface ExpedienteTrimestre {
+  id: number;
+  numero: number | null;
+  materiaNucleo: string | null;
+  estado: string | null;
+  planActividades: ExpedienteSeccionDocumento;
+  actas: ExpedienteSeccionActas;
+  evaluacionDocente: ExpedienteSeccionDocumento;
+  evaluacionTutor: ExpedienteSeccionDocumento;
+  informesFinales: ExpedienteSeccionInformeFinal[];
+}
+
+export interface ExpedienteDocumento {
+  id: number;
+  tipo: string;
+  nombreOriginal: string;
+  estado: string;
+  fecha: string | null;
+}
+
+export interface ExpedienteResponse {
+  estudiante: ExpedienteEstudianteResumen;
+  convenio: ExpedienteConvenioResumen | null;
+  empresa: ExpedienteEmpresaResumen | null;
+  tutores: ExpedienteTutoresResumen | null;
+  calificacion: ExpedienteCalificacionResumen | null;
+  trimestres: ExpedienteTrimestre[];
+  documentos: ExpedienteDocumento[];
+  estadoGeneral: string | null;
+}
+
+export interface ExpedienteResumenCohorte {
+  estudianteId: number;
+  nombres: string;
+  apellidos: string;
+  numeroDocumento: string;
+  programaAcademico: string | null;
+  convenioId: number | null;
+  numeroConvenio: string | null;
+  estadoConvenio: string | null;
+  notaFinal: number | null;
+  estadoGeneral: string | null;
 }

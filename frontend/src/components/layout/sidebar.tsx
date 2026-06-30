@@ -5,7 +5,10 @@ import {
   BookCopy,
   Briefcase,
   CalendarClock,
+  CalendarPlus,
+  CalendarRange,
   Factory,
+  FolderArchive,
   FileCog,
   Inbox as InboxIcon,
   FileSignature,
@@ -81,6 +84,15 @@ function labelTutores(roles: Rol[]): string {
     ? "Mis tutores"
     : "Tutores";
 }
+function labelExpediente(roles: Rol[]): string {
+  return roles.includes("ESTUDIANTE") &&
+    !roles.includes("ADMIN") &&
+    !roles.includes("COORDINADOR") &&
+    !roles.includes("EMPRESA") &&
+    !roles.includes("TUTOR")
+    ? "Mi expediente"
+    : "Expediente";
+}
 
 // Solo el Dashboard queda como ítem principal; el resto se agrupa por dominio
 // para que cada rol vea un menú razonable y no una lista plana de 22 items.
@@ -134,7 +146,18 @@ const GROUPS: NavGroup[] = [
     label: "Procesos & soportes",
     items: [
       { to: "/convenios", label: labelPracticas, icon: FileSignature },
+      { to: "/expedientes", label: labelExpediente, icon: FolderArchive, roles: ["ADMIN", "COORDINADOR", "ESTUDIANTE", "EMPRESA", "TUTOR"] },
       { to: "/documentos", label: labelDocumentos, icon: FileText },
+    ],
+  },
+  // 4b. Agendamiento colaborativo — franjas del docente y reuniones
+  //     estudiante ↔ tutor (RF-C01/C02/C03).
+  {
+    label: "Agendamiento",
+    items: [
+      { to: "/agendamiento/disponibilidad", label: "Disponibilidad docente", icon: CalendarClock, roles: ["ADMIN", "COORDINADOR"] },
+      { to: "/agendamiento/proponer", label: "Proponer reunión", icon: CalendarPlus, roles: ["ESTUDIANTE"] },
+      { to: "/agendamiento/reuniones", label: "Reuniones", icon: CalendarRange, roles: ["ESTUDIANTE", "ADMIN", "COORDINADOR"] },
     ],
   },
   // 5. Programa interno — plan B académico. Solo coord/admin gestionan; los

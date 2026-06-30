@@ -412,6 +412,145 @@ class SivuApiClient {
   public revisarInformeFinal(informeId: number): Promise<FeedbackInformeIA> {
     return this.post<FeedbackInformeIA>(`/ia/informe-final/${informeId}/feedback`, {});
   }
+
+  // -------------------------------------------------------------------------
+  // Proceso de Coformación (BI-17). Acompañamiento docente: agendamiento de
+  // reuniones, disponibilidad del tutor, auditoría de notificaciones y notas
+  // de la evaluación del tutor / informe final del PM.
+  // -------------------------------------------------------------------------
+
+  public listarReuniones(params: {
+    estudianteId?: number;
+    tutorId?: number;
+    convenioId?: number;
+  }): Promise<AgendamientoResponse[]> {
+    return this.get<AgendamientoResponse[]>('/agendamiento/reuniones', {
+      params,
+    });
+  }
+
+  public listarDisponibilidades(params: {
+    tutorId?: number;
+    desde?: string;
+    hasta?: string;
+  }): Promise<DisponibilidadResponse[]> {
+    return this.get<DisponibilidadResponse[]>('/agendamiento/disponibilidades', {
+      params,
+    });
+  }
+
+  public listarAuditoriaNotificaciones(params: {
+    destinatario?: string;
+    tipoEvento?: string;
+    page?: number;
+    size?: number;
+  }): Promise<PageResponse<NotificacionAuditoriaResponse>> {
+    return this.get<PageResponse<NotificacionAuditoriaResponse>>(
+      '/notificaciones/auditoria',
+      { params },
+    );
+  }
+
+  public obtenerEvaluacionTutor(
+    trimestreId: number,
+  ): Promise<EvaluacionTutorResponse> {
+    return this.get<EvaluacionTutorResponse>(
+      `/trimestres/${trimestreId}/evaluacion-tutor`,
+    );
+  }
+
+  public obtenerInformeFinal(
+    planMejoraId: number,
+  ): Promise<InformeFinalPmResponse> {
+    return this.get<InformeFinalPmResponse>(
+      `/planes-mejora/${planMejoraId}/informe-final`,
+    );
+  }
+}
+
+export interface AgendamientoResponse {
+  id: number;
+  convenioId: number | null;
+  estudianteId: number | null;
+  tutorId: number | null;
+  disponibilidadId: number | null;
+  fechaPropuesta: string | null;
+  horaInicio: string | null;
+  horaFin: string | null;
+  modalidad: string | null;
+  enlace: string | null;
+  estado: string;
+  observaciones: string | null;
+  actaReunionId: number | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface DisponibilidadResponse {
+  id: number;
+  tutorId: number | null;
+  fecha: string | null;
+  horaInicio: string | null;
+  horaFin: string | null;
+  modalidad: string | null;
+  estado: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface NotificacionAuditoriaResponse {
+  id: number;
+  tipoEvento: string;
+  destinatarioEmail: string | null;
+  asunto: string | null;
+  enviadoExitoso: boolean;
+  error: string | null;
+  referenciaTipo: string | null;
+  referenciaId: number | null;
+  createdAt: string;
+}
+
+export interface EvaluacionTutorResponse {
+  id: number;
+  trimestreId: number;
+  capacidades: number | null;
+  actitudes: number | null;
+  aplicacionDesempeno: number | null;
+  aplicacionElaboracionPem: number | null;
+  aplicacionSustentacionPem: number | null;
+  notaPonderada: number | null;
+  continuidadConEmpresa: boolean | null;
+  observaciones: string | null;
+  fechaElaboracion: string | null;
+  firmadoTutor: boolean;
+  firmadoEstudiante: boolean;
+  documentoPdfId: number | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface InformeFinalPmResponse {
+  id: number;
+  planMejoraId: number;
+  tituloInforme: string | null;
+  nivel: number | null;
+  cargoTutorEmpresarial: string | null;
+  notaTutor: number | null;
+  notaProfesor: number | null;
+  notaPromedio: number | null;
+  altoImpacto: boolean | null;
+  cumpleNotaMinima: boolean | null;
+  numeroPaginas: number | null;
+  estado: string;
+  fechaEntrega: string | null;
+  fechaRevision: string | null;
+  revisadoPorNombre: string | null;
+  observacionesRevisor: string | null;
+  firmadoEstudiante: boolean | null;
+  firmadoTutorAcad: boolean | null;
+  firmadoTutorEmp: boolean | null;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface HallazgoIA {

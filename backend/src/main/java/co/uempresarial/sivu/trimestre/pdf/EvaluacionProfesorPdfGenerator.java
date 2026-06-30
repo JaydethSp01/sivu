@@ -142,17 +142,33 @@ public class EvaluacionProfesorPdfGenerator {
             document.add(tCri);
             document.add(espacio(6));
 
-            // NOTAS PONDERADAS POR CORTE + NOTA FINAL PROMEDIO
+            // NOTAS PONDERADAS POR CORTE + NOTA FINAL
             PdfPTable tNp = new PdfPTable(new float[]{2.5f, 1.0f, 1.0f});
             tNp.setWidthPercentage(100);
-            tNp.addCell(celdaTextoFondo("NOTA PONDERADA POR CORTE", FUENTE_TEXTO_BOLD, Element.ALIGN_RIGHT, GRIS_SUAVE));
+            tNp.addCell(seccionCell("Notas ponderadas (cálculo automático)", 3));
+            tNp.addCell(celdaTextoFondo("", FUENTE_TEXTO_BOLD, Element.ALIGN_CENTER, GRIS_SUAVE));
+            tNp.addCell(celdaTextoFondo("1° Corte", FUENTE_CAMPO, Element.ALIGN_CENTER, GRIS_SUAVE));
+            tNp.addCell(celdaTextoFondo("2° Corte", FUENTE_CAMPO, Element.ALIGN_CENTER, GRIS_SUAVE));
+            tNp.addCell(celdaTextoFondo("NOTA PONDERADA DEL CORTE (0–5)", FUENTE_TEXTO_BOLD, Element.ALIGN_RIGHT, GRIS_SUAVE));
             tNp.addCell(celdaTexto(num(ev.getNotaPonderada()), FUENTE_TEXTO_BOLD, Element.ALIGN_CENTER));
             tNp.addCell(celdaTexto(num(ev.getNotaPonderadaC2()), FUENTE_TEXTO_BOLD, Element.ALIGN_CENTER));
-            tNp.addCell(celdaTextoFondo("NOTA FINAL (promedio de cortes con datos)", FUENTE_TEXTO_BOLD, Element.ALIGN_RIGHT, GRIS_SUAVE));
+            tNp.addCell(celdaTextoFondo("Aporte al proceso (corte · 25%)", FUENTE_TEXTO, Element.ALIGN_RIGHT, GRIS_SUAVE));
+            tNp.addCell(celdaTexto(num(porcentaje(ev.getNotaPonderada(), "0.25")), FUENTE_TEXTO, Element.ALIGN_CENTER));
+            tNp.addCell(celdaTexto(num(porcentaje(ev.getNotaPonderadaC2(), "0.25")), FUENTE_TEXTO, Element.ALIGN_CENTER));
+
+            // Nota final del docente: promedio de los cortes con datos (escala 0–5)
             BigDecimal nf = promedioCortes(ev.getNotaPonderada(), ev.getNotaPonderadaC2());
+            tNp.addCell(celdaTextoFondo("NOTA FINAL DEL DOCENTE (promedio de cortes · 0–5)", FUENTE_TEXTO_BOLD, Element.ALIGN_RIGHT, GRIS_SUAVE));
             PdfPCell nfCell = celdaTextoFondo(num(nf), FUENTE_TEXTO_BOLD, Element.ALIGN_CENTER, GRIS_SUAVE);
             nfCell.setColspan(2);
             tNp.addCell(nfCell);
+
+            // Aporte acumulado al proceso global: C1·25% + C2·25%
+            BigDecimal acumulado = acumuladoProceso(ev.getNotaPonderada(), ev.getNotaPonderadaC2());
+            tNp.addCell(celdaTextoFondo("APORTE ACUMULADO AL PROCESO (C1·25% + C2·25%)", FUENTE_TEXTO_BOLD, Element.ALIGN_RIGHT, GRIS_SUAVE));
+            PdfPCell acCell = celdaTextoFondo(num(acumulado), FUENTE_TEXTO_BOLD, Element.ALIGN_CENTER, GRIS_SUAVE);
+            acCell.setColspan(2);
+            tNp.addCell(acCell);
             document.add(tNp);
             document.add(espacio(6));
 
@@ -220,6 +236,21 @@ public class EvaluacionProfesorPdfGenerator {
         if (c1 == null) return c2;
         if (c2 == null) return c1;
         return c1.add(c2).divide(new BigDecimal("2"), 2, java.math.RoundingMode.HALF_UP);
+    }
+
+    /** Aplica un factor (p.ej. 0.25) a una nota de corte. */
+    private static BigDecimal porcentaje(BigDecimal v, String factor) {
+        if (v == null) return null;
+        return v.multiply(new BigDecimal(factor)).setScale(2, java.math.RoundingMode.HALF_UP);
+    }
+
+    /** Aporte acumulado al proceso global: C1·25% + C2·25% (cada corte vale 25%). */
+    private static BigDecimal acumuladoProceso(BigDecimal c1, BigDecimal c2) {
+        if (c1 == null && c2 == null) return null;
+        BigDecimal total = BigDecimal.ZERO;
+        if (c1 != null) total = total.add(c1.multiply(new BigDecimal("0.25")));
+        if (c2 != null) total = total.add(c2.multiply(new BigDecimal("0.25")));
+        return total.setScale(2, java.math.RoundingMode.HALF_UP);
     }
 
     private PdfPCell firmaCell(String rol, String nombre, boolean firmado,

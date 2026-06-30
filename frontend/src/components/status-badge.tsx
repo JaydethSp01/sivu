@@ -54,11 +54,35 @@ const CONVENIO_MAP: Record<string, { label: string; variant: BadgeVariant }> = {
   ACTIVO: { label: "Activo", variant: "success" },
   FINALIZADO: { label: "Finalizado", variant: "default" },
   CANCELADO: { label: "Cancelado", variant: "destructive" },
+  SIN_CONVENIO: { label: "Sin convenio", variant: "muted" },
+};
+
+const SECCION_EXPEDIENTE_MAP: Record<string, { label: string; variant: BadgeVariant }> = {
+  NO_INICIADO: { label: "No iniciado", variant: "muted" },
+  PENDIENTE: { label: "Pendiente", variant: "warning" },
+  EN_REVISION: { label: "En revisión", variant: "secondary" },
+  FIRMADO: { label: "Firmado", variant: "success" },
+  PDF_GENERADO: { label: "PDF generado", variant: "default" },
 };
 
 const TUTOR_MAP: Record<string, { label: string; variant: BadgeVariant }> = {
   ACTIVO: { label: "Activo", variant: "success" },
   INACTIVO: { label: "Inactivo", variant: "muted" },
+};
+
+const DISPONIBILIDAD_MAP: Record<string, { label: string; variant: BadgeVariant }> = {
+  ACTIVA: { label: "Activa", variant: "success" },
+  OCUPADA: { label: "Ocupada", variant: "warning" },
+  CANCELADA: { label: "Cancelada", variant: "muted" },
+};
+
+const REUNION_MAP: Record<string, { label: string; variant: BadgeVariant }> = {
+  PROPUESTO: { label: "Propuesta enviada", variant: "warning" },
+  ACEPTADO: { label: "Aceptada", variant: "default" },
+  RECHAZADO: { label: "Rechazada", variant: "destructive" },
+  CONTRAOFERTA: { label: "Contraoferta", variant: "accent" },
+  CONFIRMADO: { label: "Confirmada", variant: "success" },
+  CANCELADO: { label: "Cancelada", variant: "muted" },
 };
 
 const MAPS = {
@@ -70,6 +94,9 @@ const MAPS = {
   convenio: CONVENIO_MAP,
   tutor: TUTOR_MAP,
   entrevista: ENTREVISTA_MAP,
+  disponibilidad: DISPONIBILIDAD_MAP,
+  reunion: REUNION_MAP,
+  expedienteSeccion: SECCION_EXPEDIENTE_MAP,
 } as const;
 
 const DOT_BY_VARIANT: Record<BadgeVariant, string> = {

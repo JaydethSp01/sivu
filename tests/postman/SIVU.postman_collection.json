@@ -2031,6 +2031,260 @@
           ]
         }
       ]
+    },
+    {
+      "name": "Coformación v2",
+      "description": "Pruebas de contrato del módulo de Coformación v2: agendamiento (disponibilidades/reuniones), auditoría de notificaciones, tokens de acceso de tutor, expedientes y calificación de convenios. Hereda auth bearer {{accessToken}} salvo la validación pública de token.",
+      "item": [
+        {
+          "name": "Listar disponibilidades",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/agendamiento/disponibilidades",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "agendamiento",
+                "disponibilidades"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test('body es array o paginado', () => pm.expect(Array.isArray(j) || Array.isArray(j.content)).to.be.true);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Listar reuniones por estudiante",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/agendamiento/reuniones?estudianteId=1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "agendamiento",
+                "reuniones"
+              ],
+              "query": [
+                {
+                  "key": "estudianteId",
+                  "value": "1"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test('body es array o paginado', () => pm.expect(Array.isArray(j) || Array.isArray(j.content)).to.be.true);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Auditoria de notificaciones",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/notificaciones/auditoria",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "notificaciones",
+                "auditoria"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test('respuesta paginada (content array)', () => pm.expect(Array.isArray(j.content) || Array.isArray(j)).to.be.true);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Generar token de acceso de tutor",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tutorId\": 1,\n  \"convenioId\": null,\n  \"proposito\": \"EVALUACION_TUTOR\",\n  \"diasValidez\": 7\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/tutor-acceso",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "tutor-acceso"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test('token presente', () => pm.expect(j.token).to.be.a('string').and.have.length.greaterThan(10));",
+                  "pm.test('proposito EVALUACION_TUTOR', () => pm.expect(j.proposito).to.eql('EVALUACION_TUTOR'));",
+                  "if (j && j.token) { pm.environment.set('tutorToken', j.token); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Validar token de acceso de tutor (publico)",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/tutor-acceso/validar?token={{tutorToken}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "tutor-acceso",
+                "validar"
+              ],
+              "query": [
+                {
+                  "key": "token",
+                  "value": "{{tutorToken}}"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test('valido es true', () => pm.expect(j.valido).to.eql(true));",
+                  "pm.test('proposito EVALUACION_TUTOR', () => pm.expect(j.proposito).to.eql('EVALUACION_TUTOR'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Obtener expediente por estudiante",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/expedientes/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "expedientes",
+                "1"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200 o 404', () => pm.expect([200,404]).to.include(pm.response.code));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Obtener calificacion de convenio",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/convenios/1/calificacion",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "convenios",
+                "1",
+                "calificacion"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200 o 404', () => pm.expect([200,404]).to.include(pm.response.code));"
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "auth": {
+        "type": "bearer",
+        "bearer": [
+          {
+            "key": "token",
+            "value": "{{adminToken}}",
+            "type": "string"
+          }
+        ]
+      }
     }
   ]
 }

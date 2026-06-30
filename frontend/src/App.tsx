@@ -63,6 +63,12 @@ const PlanesMejoraPage          = lazy(() => import("@/features/trimestres/plane
 const InformeFinalPmPage        = lazy(() => import("@/features/trimestres/informe-final-pm-page").then(m => ({ default: m.InformeFinalPmPage })));
 const EvaluacionTutorPage       = lazy(() => import("@/features/trimestres/evaluacion-tutor-page").then(m => ({ default: m.EvaluacionTutorPage })));
 const EvaluacionProfesorPage    = lazy(() => import("@/features/trimestres/evaluacion-profesor-page").then(m => ({ default: m.EvaluacionProfesorPage })));
+const DisponibilidadPage        = lazy(() => import("@/features/agendamiento/disponibilidad-page").then(m => ({ default: m.DisponibilidadPage })));
+const ProponerReunionPage       = lazy(() => import("@/features/agendamiento/proponer-reunion-page").then(m => ({ default: m.ProponerReunionPage })));
+const BandejaReunionesPage      = lazy(() => import("@/features/agendamiento/bandeja-reuniones-page").then(m => ({ default: m.BandejaReunionesPage })));
+const EvaluacionTutorTokenPage  = lazy(() => import("@/features/evaluacion-externa/evaluacion-tutor-token-page").then(m => ({ default: m.EvaluacionTutorTokenPage })));
+const ExpedientesIndexPage      = lazy(() => import("@/features/expedientes/expediente-page").then(m => ({ default: m.ExpedientesIndexPage })));
+const ExpedientePage            = lazy(() => import("@/features/expedientes/expediente-page").then(m => ({ default: m.ExpedientePage })));
 
 function RouteFallback(): JSX.Element {
   return (
@@ -88,6 +94,9 @@ export function App(): JSX.Element {
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/403" element={<ForbiddenPage />} />
+
+            {/* Acceso externo del tutor empresarial por token (sin login) */}
+            <Route path="/evaluacion-tutor-externo" element={<EvaluacionTutorTokenPage />} />
 
             <Route element={<ProtectedRoute />}>
               <Route element={<AppShell />}>
@@ -127,6 +136,12 @@ export function App(): JSX.Element {
                 <Route path="documentos/new" element={<DocumentoFormPage />} />
                 <Route path="documentos/:id/edit" element={<DocumentoFormPage />} />
 
+                {/* Expediente Digital Unificado (BI-16 / RF-B01) */}
+                <Route element={<RoleGuard allow={["ADMIN", "COORDINADOR", "ESTUDIANTE", "EMPRESA", "TUTOR"]} />}>
+                  <Route path="expedientes" element={<ExpedientesIndexPage />} />
+                  <Route path="expedientes/:estudianteId" element={<ExpedientePage />} />
+                </Route>
+
                 <Route path="convenios" element={<ConveniosListPage />} />
                 <Route path="convenios/:id" element={<ConvenioDetailPage />} />
                 <Route path="convenios/:convenioId/trimestres/:trimestreId/plan-actividades" element={<PlanActividadesPage />} />
@@ -138,6 +153,15 @@ export function App(): JSX.Element {
                 <Route path="convenios/:convenioId/trimestres/:trimestreId/evaluacion-tutor" element={<EvaluacionTutorPage />} />
                 <Route path="convenios/:convenioId/trimestres/:trimestreId/evaluacion-profesor" element={<EvaluacionProfesorPage />} />
 
+
+                {/* Agendamiento colaborativo (RF-C01/C02/C03) */}
+                <Route element={<RoleGuard allow={["ADMIN", "COORDINADOR"]} />}>
+                  <Route path="agendamiento/disponibilidad" element={<DisponibilidadPage />} />
+                </Route>
+                <Route element={<RoleGuard allow={["ESTUDIANTE", "ADMIN", "COORDINADOR"]} />}>
+                  <Route path="agendamiento/proponer" element={<ProponerReunionPage />} />
+                  <Route path="agendamiento/reuniones" element={<BandejaReunionesPage />} />
+                </Route>
 
                 <Route element={<RoleGuard allow={["ADMIN", "COORDINADOR", "EMPRESA", "MCP_AGENT"]} />}>
                   <Route path="tutores" element={<TutoresListPage />} />

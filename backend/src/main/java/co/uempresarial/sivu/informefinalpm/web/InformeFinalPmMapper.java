@@ -1,6 +1,7 @@
 package co.uempresarial.sivu.informefinalpm.web;
 
 import co.uempresarial.sivu.informefinalpm.domain.InformeFinalPm;
+import co.uempresarial.sivu.informefinalpm.service.InformeFinalPmService;
 import co.uempresarial.sivu.informefinalpm.web.dto.InformeFinalPmResponse;
 import org.springframework.stereotype.Component;
 
@@ -8,12 +9,20 @@ import org.springframework.stereotype.Component;
 public class InformeFinalPmMapper {
 
     public InformeFinalPmResponse toResponse(InformeFinalPm i) {
+        Boolean cumpleNotaMinima = i.getNotaPromedio() == null
+            ? null
+            : i.getNotaPromedio().compareTo(InformeFinalPmService.NOTA_MINIMA_APROBACION) >= 0;
         return new InformeFinalPmResponse(
             i.getId(),
             i.getPlanMejora() != null ? i.getPlanMejora().getId() : null,
             i.getTituloInforme(),
             i.getNivel(),
             i.getCargoTutorEmpresarial(),
+            i.getNotaTutor(),
+            i.getNotaProfesor(),
+            i.getNotaPromedio(),
+            i.getAltoImpacto(),
+            cumpleNotaMinima,
             i.getResumenEjecutivo(),
             i.getContextualizacion(),
             i.getPlanteamientoProblema(),

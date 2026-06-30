@@ -2,6 +2,7 @@ package co.uempresarial.sivu.informefinalpm.web.dto;
 
 import co.uempresarial.sivu.informefinalpm.domain.EstadoInformeFinalPm;
 
+import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 
 public record InformeFinalPmResponse(
@@ -10,6 +11,12 @@ public record InformeFinalPmResponse(
     String tituloInforme,
     Short nivel,
     String cargoTutorEmpresarial,
+    BigDecimal notaTutor,
+    BigDecimal notaProfesor,
+    BigDecimal notaPromedio,
+    Boolean altoImpacto,
+    /** Derivado: notaPromedio ≥ 3.0. {@code null} si aún no hay ambas notas. */
+    Boolean cumpleNotaMinima,
     String resumenEjecutivo,
     String contextualizacion,
     String planteamientoProblema,

@@ -10,14 +10,19 @@ import co.uempresarial.sivu.trimestre.pdf.EvaluacionTutorPdfGenerator;
 import co.uempresarial.sivu.trimestre.persistence.EvaluacionTutorTrimestreRepository;
 import co.uempresarial.sivu.trimestre.persistence.TrimestreRepository;
 import co.uempresarial.sivu.trimestre.web.TrimestreMapper;
+import co.uempresarial.sivu.trimestre.web.dto.EvaluacionTutorExternoResponse;
 import co.uempresarial.sivu.trimestre.web.dto.EvaluacionTutorRequest;
 import co.uempresarial.sivu.trimestre.web.dto.EvaluacionTutorResponse;
+import co.uempresarial.sivu.tutoracceso.domain.PropositoTokenTutor;
+import co.uempresarial.sivu.tutoracceso.service.TokenAccesoTutorService;
+import co.uempresarial.sivu.tutoracceso.web.dto.ValidacionTokenResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.OffsetDateTime;
 
 @Service
 @RequiredArgsConstructor
@@ -29,6 +34,7 @@ public class EvaluacionTutorTrimestreService {
     private final TrimestreMapper mapper;
     private final CurrentUserService currentUser;
     private final EvaluacionTutorPdfGenerator pdfGenerator;
+    private final TokenAccesoTutorService tokenAccesoService;
 
     @Transactional(readOnly = true)
     public EvaluacionTutorResponse obtener(Long trimestreId) {
@@ -55,6 +61,13 @@ public class EvaluacionTutorTrimestreService {
         EvaluacionTutorTrimestre e = repository.findByTrimestreId(trimestreId)
             .orElseGet(() -> EvaluacionTutorTrimestre.builder().trimestre(trimestre).build());
 
+        aplicar(e, request);
+
+        return mapper.toResponse(repository.save(e));
+    }
+
+    /** Copia los campos del request a la entidad y recalcula la nota ponderada (no editable). */
+    private void aplicar(EvaluacionTutorTrimestre e, EvaluacionTutorRequest request) {
         e.setCapacidades(request.capacidades());
         e.setActitudes(request.actitudes());
         e.setAplicacionDesempeno(request.aplicacionDesempeno());
@@ -63,10 +76,16 @@ public class EvaluacionTutorTrimestreService {
         e.setContinuidadConEmpresa(request.continuidadConEmpresa());
         e.setObservaciones(request.observaciones());
         e.setFechaElaboracion(request.fechaElaboracion());
-
         e.setNotaPonderada(calcularNotaPonderada(request));
+    }
 
-        return mapper.toResponse(repository.save(e));
+    /** El campo de continuidad (GAC-FM-9) es obligatorio para finalizar/enviar la evaluación. */
+    private void exigirContinuidad(EvaluacionTutorTrimestre e) {
+        if (e.getContinuidadConEmpresa() == null) {
+            throw new BusinessException(
+                "Debe indicar si el estudiante tiene continuidad con la empresa (Sí/No) "
+                + "antes de finalizar la evaluación del tutor");
+        }
     }
 
     public EvaluacionTutorResponse firmar(Long trimestreId, ParteFirmaTrimestre parte) {
@@ -80,6 +99,7 @@ public class EvaluacionTutorTrimestreService {
                 if (Boolean.TRUE.equals(e.getFirmadoTutor())) {
                     throw new BusinessException("El tutor ya firmó esta evaluación");
                 }
+                exigirContinuidad(e);
                 e.setFirmadoTutor(true);
                 e.setFechaFirmaTutor(now);
                 e.setFirmadoTutorNombre(nombreActor);
@@ -96,6 +116,79 @@ public class EvaluacionTutorTrimestreService {
                 "La evaluación del tutor solo la firman TUTOR y ESTUDIANTE");
         }
         return mapper.toResponse(e);
+    }
+
+    // ───────────────────────────── Acceso externo del tutor (token) ─────────────────────────────
+
+    /** Valida el token externo y devuelve el contexto + la evaluación actual (puede ser null). */
+    @Transactional(readOnly = true)
+    public EvaluacionTutorExternoResponse validarAccesoExterno(Long trimestreId, String token) {
+        ValidacionTokenResponse ctx = tokenAccesoService.validarToken(token);
+        verificarContexto(trimestreId, ctx);
+        EvaluacionTutorResponse eval = repository.findByTrimestreId(trimestreId)
+            .map(mapper::toResponse)
+            .orElse(null);
+        return new EvaluacionTutorExternoResponse(ctx.tutorId(), ctx.convenioId(), ctx.proposito(), eval);
+    }
+
+    /**
+     * El tutor empresarial diligencia su evaluación usando el token externo (sin cuenta).
+     * Si {@code finalizar} es true: exige continuidad, firma como tutor y consume el token.
+     */
+    public EvaluacionTutorExternoResponse guardarExterno(Long trimestreId, String token,
+                                                         EvaluacionTutorRequest request, boolean finalizar) {
+        ValidacionTokenResponse ctx = tokenAccesoService.validarToken(token);
+        Trimestre trimestre = verificarContexto(trimestreId, ctx);
+
+        EvaluacionTutorTrimestre e = repository.findByTrimestreId(trimestreId)
+            .orElseGet(() -> EvaluacionTutorTrimestre.builder().trimestre(trimestre).build());
+
+        aplicar(e, request);
+
+        if (finalizar) {
+            exigirContinuidad(e);
+            if (!Boolean.TRUE.equals(e.getFirmadoTutor())) {
+                e.setFirmadoTutor(true);
+                e.setFechaFirmaTutor(OffsetDateTime.now());
+                e.setFirmadoTutorNombre(nombreTutor(trimestre));
+            }
+        }
+
+        EvaluacionTutorTrimestre saved = repository.save(e);
+
+        if (finalizar) {
+            tokenAccesoService.marcarUsado(token);
+        }
+
+        return new EvaluacionTutorExternoResponse(
+            ctx.tutorId(), ctx.convenioId(), ctx.proposito(), mapper.toResponse(saved));
+    }
+
+    /** Verifica propósito y que el token corresponda al convenio del trimestre. */
+    private Trimestre verificarContexto(Long trimestreId, ValidacionTokenResponse ctx) {
+        Trimestre trimestre = trimestreRepository.findById(trimestreId)
+            .orElseThrow(() -> new ResourceNotFoundException("Trimestre", trimestreId));
+        if (ctx.proposito() != PropositoTokenTutor.EVALUACION_TUTOR) {
+            throw new BusinessException("El token no autoriza diligenciar la evaluación del tutor");
+        }
+        Long convenioId = trimestre.getConvenio() != null ? trimestre.getConvenio().getId() : null;
+        if (ctx.convenioId() != null && !ctx.convenioId().equals(convenioId)) {
+            throw new BusinessException("El token no corresponde al convenio de este trimestre");
+        }
+        return trimestre;
+    }
+
+    private static String nombreTutor(Trimestre t) {
+        if (t.getConvenio() != null && t.getConvenio().getTutorEmpresarial() != null) {
+            var tut = t.getConvenio().getTutorEmpresarial();
+            String nombre = (safe(tut.getNombres()) + " " + safe(tut.getApellidos())).trim();
+            return nombre.isEmpty() ? null : nombre;
+        }
+        return null;
+    }
+
+    private static String safe(String s) {
+        return s == null ? "" : s;
     }
 
     /** Capacidades*0.40 + Actitudes*0.40 + (Desemp*0.10 + ElabPEM*0.05 + SustPEM*0.05). */

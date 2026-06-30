@@ -17,4 +17,19 @@ public final class IADtos {
         /** Mensaje informativo opcional (por qué se usó fallback, etc.). */
         String aviso
     ) {}
+
+    /**
+     * Resultado del chequeo de coherencia del Plan de Actividades (GAC-FM-10).
+     * NO bloquea: es informativo. Las advertencias reutilizan {@link HallazgoIA}.
+     */
+    public record CoherenciaPlanResponse(
+        /** "claude-code" si vino del sidecar, "local" si fue fallback heurístico. */
+        String fuente,
+        /** Reporte completo en Markdown. */
+        String reporteMarkdown,
+        /** Advertencias/sugerencias estructuradas (no bloquean el flujo). */
+        List<HallazgoIA> advertencias,
+        /** Mensaje informativo opcional. */
+        String aviso
+    ) {}
 }

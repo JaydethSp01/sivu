@@ -83,6 +83,65 @@ async function reviewWithClaude(informe) {
   return (textoFinal || assistantChunks.join("\n")).trim();
 }
 
+const SYSTEM_COHERENCIA = `Eres un asesor académico de la Fundación Universitaria Empresarial (Uniempresarial)
+que revisa la COHERENCIA del Plan de Actividades (formato GAC-FM-10) del estudiante en su fase de empresa.
+Cruzas el objetivo general del PEM y los objetivos específicos contra el cronograma de actividades mes a mes.
+Tu salida es INFORMATIVA: ayuda a mejorar, NO bloquea la firma del plan.
+Sé honesto y concreto: si un objetivo no tiene actividades que lo desarrollen, dilo.
+
+Responde SIEMPRE en este formato Markdown exacto:
+
+## Resumen ejecutivo
+<2-3 frases sobre la coherencia global>
+
+## Advertencias
+- **[severidad] [referencia]**: <observación concreta>
+
+## Recomendaciones
+- <acción concreta>
+
+## Veredicto de coherencia
+<COHERENTE / MEJORABLE / INCOHERENTE> — <una frase>`;
+
+function construirPromptCoherencia(plan) {
+  const objetivos = (plan.objetivos || [])
+    .map((o, i) => `  ${i + 1}. [${o.escenario || "—"}] ${o.descripcion || "(vacío)"}`)
+    .join("\n") || "  (sin objetivos)";
+  const meses = (plan.meses || [])
+    .map((m) => `  - Mes ${m.mes ?? "?"} | Área: ${m.areaRotacion || "—"} | Actividades: ${m.actividades || "(VACÍAS)"}`)
+    .join("\n") || "  (sin meses)";
+  return [
+    SYSTEM_COHERENCIA,
+    "\n\n---\nEvalúa la coherencia de este Plan de Actividades:\n",
+    `Escenario de coformación: ${plan.escenarioCoformacion || "(sin definir)"}`,
+    `Objetivo general (PEM): ${plan.pemObjetivoGeneral || "(sin definir)"}`,
+    `Descripción del escenario: ${plan.pemDescripcionEscenario || "(sin definir)"}\n`,
+    "Objetivos específicos:",
+    objetivos,
+    "\nCronograma por mes:",
+    meses,
+  ].join("\n");
+}
+
+async function coherenciaWithClaude(plan) {
+  let textoFinal = "";
+  const assistantChunks = [];
+  const it = query({
+    prompt: construirPromptCoherencia(plan),
+    options: { maxTurns: 1, allowedTools: [] },
+  });
+  for await (const msg of it) {
+    if (msg.type === "assistant" && msg.message?.content) {
+      for (const block of msg.message.content) {
+        if (block.type === "text") assistantChunks.push(block.text);
+      }
+    } else if (msg.type === "result") {
+      if (typeof msg.result === "string" && msg.result.trim()) textoFinal = msg.result;
+    }
+  }
+  return (textoFinal || assistantChunks.join("\n")).trim();
+}
+
 app.get("/health", (_req, res) => {
   res.json({ ok: true, hasToken: HAS_TOKEN, model: "claude-code-plan" });
 });
@@ -99,6 +158,20 @@ app.post("/review", async (req, res) => {
     res.json({ fuente: "claude-code", reporteMarkdown });
   } catch (e) {
     console.error("[ia-sidecar] error:", e?.message);
+    res.status(500).json({ error: e?.message || "fallo interno" });
+  }
+});
+
+app.post("/coherencia", async (req, res) => {
+  try {
+    const plan = req.body || {};
+    const reporteMarkdown = await coherenciaWithClaude(plan);
+    if (!reporteMarkdown) {
+      return res.status(502).json({ error: "Claude no devolvió contenido" });
+    }
+    res.json({ fuente: "claude-code", reporteMarkdown });
+  } catch (e) {
+    console.error("[ia-sidecar] error coherencia:", e?.message);
     res.status(500).json({ error: e?.message || "fallo interno" });
   }
 });

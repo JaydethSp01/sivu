@@ -2,11 +2,13 @@ package co.uempresarial.sivu.informefinalpm.pdf;
 
 import co.uempresarial.sivu.estudiante.domain.Estudiante;
 import co.uempresarial.sivu.informefinalpm.domain.InformeFinalPm;
+import co.uempresarial.sivu.trimestre.pdf.PdfStyles;
 import com.lowagie.text.*;
 import com.lowagie.text.pdf.PdfWriter;
 import org.springframework.stereotype.Component;
 
 import java.io.ByteArrayOutputStream;
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.Locale;
@@ -19,6 +21,8 @@ public class InformeFinalPmPdfGenerator {
 
     private static final DateTimeFormatter FECHA = DateTimeFormatter.ofPattern(
         "dd 'de' MMMM 'de' yyyy", new Locale("es", "CO"));
+
+    private static final BigDecimal NOTA_MINIMA = new BigDecimal("3.0");
 
     public byte[] generar(InformeFinalPm informe) {
         Document doc = new Document(PageSize.LETTER, 60, 60, 60, 60);
@@ -65,6 +69,14 @@ public class InformeFinalPmPdfGenerator {
                 Paragraph nivelP = new Paragraph("NIVEL " + informe.getNivel(), caratulaSub);
                 nivelP.setAlignment(Element.ALIGN_CENTER);
                 doc.add(nivelP);
+            }
+            if (Boolean.TRUE.equals(informe.getAltoImpacto())) {
+                Font impactoFont = FontFactory.getFont(
+                    FontFactory.HELVETICA_BOLD, 13, PdfStyles.ROJO_UE);
+                Paragraph impactoP = new Paragraph("★ PROYECTO DE ALTO IMPACTO ★", impactoFont);
+                impactoP.setAlignment(Element.ALIGN_CENTER);
+                impactoP.setSpacingBefore(8);
+                doc.add(impactoP);
             }
 
             doc.add(spacer(40));
@@ -119,15 +131,12 @@ public class InformeFinalPmPdfGenerator {
             doc.newPage();
             // --- FIN CARÁTULA ---
 
-            // Header institucional GTC-FM-16
-            Paragraph header = new Paragraph(
-                "UNIVERSIDAD EMPRESARIAL\n"
-                + "DIRECCIÓN DE COFORMACIÓN EMPRESARIAL\n"
-                + "Código: GTC-FM-16   Versión: V.01   Fecha: " + LocalDate.now().format(FECHA)
-                + (informe.getNivel() != null ? "   Nivel: " + informe.getNivel() : ""),
-                small);
-            header.setAlignment(Element.ALIGN_CENTER);
-            doc.add(header);
+            // Header institucional GTC-FM-16 — encabezado con marca, código y versión
+            // (PdfStyles, consistencia oficial RNF-01).
+            doc.add(PdfStyles.encabezadoInstitucional(
+                "GTC-FM-16", "V.01", LocalDate.now().format(FECHA),
+                "INFORME FINAL DEL PLAN ESPECIAL DE MEJORA"
+                    + (informe.getNivel() != null ? "\nNivel " + informe.getNivel() : "")));
 
             doc.add(spacer(16));
 
@@ -186,6 +195,24 @@ public class InformeFinalPmPdfGenerator {
                 obs.setAlignment(Element.ALIGN_JUSTIFIED);
                 doc.add(obs);
             }
+
+            // Calificación Final (BI-07 / RF-A04 GTC-FM-16)
+            doc.add(spacer(12));
+            doc.add(seccion("Calificación Final (GTC-FM-16)", h2));
+            doc.add(linea("Nota del Tutor Empresarial:", nota(informe.getNotaTutor()), bold, normal));
+            doc.add(linea("Nota del Profesor (Docente Acompañante):", nota(informe.getNotaProfesor()), bold, normal));
+            doc.add(linea("Nota Promedio Final:",
+                informe.getNotaPromedio() != null
+                    ? nota(informe.getNotaPromedio()) + " / 5.0"
+                    : "— (pendiente de ambas notas)",
+                bold, normal));
+            if (informe.getNotaPromedio() != null) {
+                boolean aprueba = informe.getNotaPromedio().compareTo(NOTA_MINIMA) >= 0;
+                doc.add(linea("Resultado (mín. 3.0):",
+                    aprueba ? "APROBADO" : "NO APROBADO", bold, normal));
+            }
+            doc.add(linea("Proyecto de Alto Impacto:",
+                Boolean.TRUE.equals(informe.getAltoImpacto()) ? "SÍ ★" : "No", bold, normal));
 
             // Firmas
             doc.add(spacer(24));
@@ -246,5 +273,9 @@ public class InformeFinalPmPdfGenerator {
 
     private static String safe(Object o) {
         return o == null ? "" : o.toString();
+    }
+
+    private static String nota(BigDecimal n) {
+        return n == null ? "— (sin calificar)" : n.stripTrailingZeros().toPlainString();
     }
 }
