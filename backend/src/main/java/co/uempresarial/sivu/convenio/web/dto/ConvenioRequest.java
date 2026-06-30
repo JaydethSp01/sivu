@@ -6,11 +6,15 @@ import jakarta.validation.constraints.Size;
 
 import java.time.LocalDate;
 
+/**
+ * Datos para que la Oficina de Coformación cree/edite una práctica directamente:
+ * estudiante, empresa y tutores (académico/empresarial), sin vacante ni postulación.
+ */
 public record ConvenioRequest(
-    @NotNull Long postulacionId,
     @NotNull Long estudianteId,
     @NotNull Long empresaId,
-    @NotNull Long vacanteId,
+    Long tutorAcademicoId,
+    Long tutorEmpresarialId,
     @Size(max = 40) String numeroConvenio,
     @NotNull LocalDate fechaInicio,
     @NotNull LocalDate fechaFin,

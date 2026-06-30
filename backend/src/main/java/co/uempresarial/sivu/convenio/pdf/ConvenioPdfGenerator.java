@@ -6,7 +6,6 @@ import co.uempresarial.sivu.empresa.domain.Empresa;
 import co.uempresarial.sivu.estudiante.domain.Estudiante;
 import co.uempresarial.sivu.trimestre.pdf.PdfStyles;
 import co.uempresarial.sivu.tutor.domain.Tutor;
-import co.uempresarial.sivu.vacante.domain.Vacante;
 import com.lowagie.text.Document;
 import com.lowagie.text.Element;
 import com.lowagie.text.PageSize;
@@ -42,7 +41,6 @@ public class ConvenioPdfGenerator {
     public byte[] generar(Convenio c) {
         Estudiante e = c.getEstudiante();
         Empresa em = c.getEmpresa();
-        Vacante v = c.getVacante();
         Tutor tutorAcad = c.getTutorAcademico();
         Tutor tutorEmp = c.getTutorEmpresarial();
 
@@ -78,9 +76,7 @@ public class ConvenioPdfGenerator {
             datos.setWidthPercentage(100);
             datos.addCell(seccionCell("Datos del convenio", 2));
             datos.addCell(campoCell("N° de convenio", safe(c.getNumeroConvenio())));
-            datos.addCell(campoCell("Vacante / práctica", v != null ? safe(v.getTitulo()) : ""));
-            datos.addCell(campoCell("Modalidad", v != null && v.getModalidad() != null ? v.getModalidad().name() : ""));
-            datos.addCell(campoCell("Área de práctica", v != null && v.getAreaPractica() != null ? v.getAreaPractica().name() : ""));
+            datos.addCell(campoCell("Estado", c.getEstado() != null ? c.getEstado().name() : ""));
             datos.addCell(campoCell("Fecha de inicio", c.getFechaInicio() != null ? c.getFechaInicio().format(FECHA) : ""));
             datos.addCell(campoCell("Fecha de fin", c.getFechaFin() != null ? c.getFechaFin().format(FECHA) : ""));
             datos.addCell(campoCell("Semestre académico", safe(c.getSemestreAcademico())));

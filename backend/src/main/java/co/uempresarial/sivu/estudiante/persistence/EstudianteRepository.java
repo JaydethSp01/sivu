@@ -22,8 +22,8 @@ public interface EstudianteRepository extends JpaRepository<Estudiante, Long> {
 
     /**
      * Listado de estudiantes. Si se pasa {@code empresaId}, solo devuelve estudiantes
-     * que tengan al menos una postulación a una vacante de esa empresa (auto-scope
-     * para usuarios EMPRESA: solo ven sus practicantes/candidatos).
+     * que tengan una práctica (convenio) en esa empresa (auto-scope para usuarios
+     * EMPRESA: solo ven a sus practicantes asignados).
      */
     @Query("""
         SELECT DISTINCT e FROM Estudiante e
@@ -34,8 +34,8 @@ public interface EstudianteRepository extends JpaRepository<Estudiante, Long> {
                OR e.numeroDocumento LIKE CONCAT('%', :q, '%'))
           AND (:estado IS NULL OR e.estado = :estado)
           AND (:empresaId IS NULL OR e.id IN (
-                SELECT p.estudiante.id FROM Postulacion p
-                WHERE p.vacante.empresa.id = :empresaId))
+                SELECT c.estudiante.id FROM Convenio c
+                WHERE c.empresa.id = :empresaId))
         """)
     Page<Estudiante> buscar(@Param("q") String q,
                             @Param("estado") EstadoEstudiante estado,

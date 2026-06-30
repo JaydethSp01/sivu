@@ -12,8 +12,6 @@ public record DocumentoResponse(
     Long id,
     Long estudianteId,
     EstudianteResumen estudiante,
-    Long postulacionId,
-    PostulacionResumen postulacion,
     Long empresaId,
     EmpresaResumen empresa,
     TipoDocumentoSoporte tipo,
@@ -33,7 +31,6 @@ public record DocumentoResponse(
     OffsetDateTime updatedAt
 ) {
     public record EstudianteResumen(Long id, String nombreCompleto) {}
-    public record PostulacionResumen(Long id, String referencia) {}
     public record EmpresaResumen(Long id, String razonSocial) {}
     public record TipoRequisitoResumen(Long id, String codigo, String nombre, AplicaA aplicaA) {}
 }

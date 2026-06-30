@@ -15,34 +15,21 @@ public interface DocumentoRepository extends JpaRepository<Documento, Long> {
 
     List<Documento> findByEstudianteIdOrderByCreatedAtDesc(Long estudianteId);
 
-    List<Documento> findByPostulacionIdOrderByCreatedAtDesc(Long postulacionId);
-
     /**
-     * Listado de documentos. Si {@code empresaId} no es null, devuelve solo:
-     *  - documentos directamente asociados a esa empresa (d.empresa.id),
-     *  - documentos de estudiantes que postularon a vacantes de esa empresa,
-     *  - documentos cuya postulación referencia una vacante de esa empresa.
+     * Listado de documentos. Si {@code empresaId} no es null, devuelve solo
+     * los documentos directamente asociados a esa empresa (RUT, cámara, etc.).
      *
-     * Usa LEFT JOIN explícito en empresa, postulacion y vacante porque las
-     * tres son nullable: navegar d.postulacion.vacante.empresa.id con la
-     * sintaxis implícita generaría INNER JOIN y filtraría todos los
-     * documentos sin postulación o sin empresa asociada.
+     * Usa LEFT JOIN explícito en empresa porque es nullable: navegar
+     * d.empresa.id con la sintaxis implícita generaría INNER JOIN y filtraría
+     * todos los documentos sin empresa asociada.
      */
     @Query("""
         SELECT d FROM Documento d
         LEFT JOIN d.empresa de
-        LEFT JOIN d.postulacion dp
-        LEFT JOIN dp.vacante dpv
-        LEFT JOIN dpv.empresa dpve
         WHERE (:estado IS NULL OR d.estado = :estado)
           AND (:tipo IS NULL OR d.tipo = :tipo)
           AND (:estudianteId IS NULL OR d.estudiante.id = :estudianteId)
-          AND (:empresaId IS NULL
-               OR de.id = :empresaId
-               OR dpve.id = :empresaId
-               OR d.estudiante.id IN (
-                    SELECT p.estudiante.id FROM Postulacion p
-                    WHERE p.vacante.empresa.id = :empresaId))
+          AND (:empresaId IS NULL OR de.id = :empresaId)
         """)
     Page<Documento> buscar(@Param("estado") EstadoDocumento estado,
                            @Param("tipo") TipoDocumentoSoporte tipo,

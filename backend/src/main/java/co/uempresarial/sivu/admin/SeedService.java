@@ -1,7 +1,8 @@
 package co.uempresarial.sivu.admin;
 
-import co.uempresarial.sivu.catalogo.modalidad.domain.ModalidadVinculacion;
-import co.uempresarial.sivu.catalogo.modalidad.persistence.ModalidadVinculacionRepository;
+import co.uempresarial.sivu.convenio.domain.Convenio;
+import co.uempresarial.sivu.convenio.domain.EstadoConvenio;
+import co.uempresarial.sivu.convenio.persistence.ConvenioRepository;
 import co.uempresarial.sivu.empresa.domain.Empresa;
 import co.uempresarial.sivu.empresa.domain.EstadoEmpresa;
 import co.uempresarial.sivu.empresa.persistence.EmpresaRepository;
@@ -12,15 +13,13 @@ import co.uempresarial.sivu.estudiante.persistence.EstudianteRepository;
 import co.uempresarial.sivu.security.domain.Rol;
 import co.uempresarial.sivu.security.domain.Usuario;
 import co.uempresarial.sivu.security.persistence.UsuarioRepository;
+import co.uempresarial.sivu.trimestre.domain.EstadoTrimestre;
+import co.uempresarial.sivu.trimestre.domain.Trimestre;
+import co.uempresarial.sivu.trimestre.persistence.TrimestreRepository;
 import co.uempresarial.sivu.tutor.domain.EstadoTutor;
 import co.uempresarial.sivu.tutor.domain.TipoTutor;
 import co.uempresarial.sivu.tutor.domain.Tutor;
 import co.uempresarial.sivu.tutor.persistence.TutorRepository;
-import co.uempresarial.sivu.vacante.domain.AreaPractica;
-import co.uempresarial.sivu.vacante.domain.EstadoVacante;
-import co.uempresarial.sivu.vacante.domain.Modalidad;
-import co.uempresarial.sivu.vacante.domain.Vacante;
-import co.uempresarial.sivu.vacante.persistence.VacanteRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -34,10 +33,13 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Crea datos demo idempotentes (sólo si las tablas están vacías).
- * Importante: crea primero las entidades de dominio (Estudiantes, Empresas) y luego
- * los Usuarios, **vinculando** `usuario.estudianteId` / `usuario.empresaId` para que
- * la UI sepa a qué entidad pertenece cada cuenta logueada.
+ * Crea datos demo idempotentes (sólo si las tablas están vacías) del flujo de
+ * Coformación v2: usuarios/roles, estudiantes, empresas, tutores (docente
+ * acompañante + tutor empresarial) y UNA práctica asignada (Convenio creado
+ * directamente por la Oficina de Coformación) con su primer Trimestre/corte.
+ *
+ * No siembra vacantes ni postulaciones: en Coformación el estudiante es ASIGNADO
+ * directamente a la práctica, no se postula a ninguna vacante.
  */
 @Service
 @RequiredArgsConstructor
@@ -46,32 +48,34 @@ public class SeedService {
 
     private final EstudianteRepository estudianteRepository;
     private final EmpresaRepository empresaRepository;
-    private final VacanteRepository vacanteRepository;
     private final TutorRepository tutorRepository;
-    private final ModalidadVinculacionRepository modalidadRepository;
+    private final ConvenioRepository convenioRepository;
+    private final TrimestreRepository trimestreRepository;
     private final UsuarioRepository usuarioRepository;
     private final PasswordEncoder passwordEncoder;
 
     @Transactional
     public Map<String, Object> seed() {
-        // El orden importa: dominio primero, después usuarios que referencian sus ids.
+        // El orden importa: dominio primero, después usuarios que referencian sus ids,
+        // y por último la práctica que enlaza estudiante + empresa + tutores.
         int empresas = seedEmpresas();
         int estudiantes = seedEstudiantes();
-        int vacantes = seedVacantes();
         int tutores = seedTutores();
         seedUsuariosVinculados();
+        int practicas = seedPracticaAsignada();
 
         return Map.of(
             "ok", true,
             "estudiantes", estudiantes,
             "empresas", empresas,
-            "vacantes", vacantes,
             "tutores", tutores,
+            "practicas", practicas,
             "usuariosDemo", Map.of(
                 "admin", "admin@uempresarial.edu.co",
                 "coordinador", "coord@uempresarial.edu.co",
                 "estudiante", "kelly@est.uempresarial.edu.co",
                 "empresa", "rrhh@coally.com",
+                "tutor", "cmendoza@uempresarial.edu.co",
                 "mcp_agent", "mcp_agent@sivu.uempresarial.edu.co"),
             "credencialesDocumentadas",
                 "Ver README.md o pantalla de login para las contraseñas demo");
@@ -170,106 +174,7 @@ public class SeedService {
     }
 
     // ---------------------------------------------------------------
-    // Vacantes
-    // ---------------------------------------------------------------
-
-    private int seedVacantes() {
-        if (vacanteRepository.count() > 0) return (int) vacanteRepository.count();
-        var empresas = empresaRepository.findAll();
-        if (empresas.isEmpty()) return 0;
-        Empresa coally = empresas.get(0);
-        Empresa banco = empresas.size() > 1 ? empresas.get(1) : coally;
-        Empresa rappi = empresas.size() > 2 ? empresas.get(2) : coally;
-
-        // Las 3 modalidades vienen sembradas por la migración V4. Las usamos para
-        // asignar a cada vacante demo la modalidad apropiada.
-        ModalidadVinculacion modCCB = modalidadRepository
-            .findByCodigoIgnoreCase("EMPRESA_ALIADA_CCB").orElse(null);
-        ModalidadVinculacion modInternaU = modalidadRepository
-            .findByCodigoIgnoreCase("INTERNA_UNIVERSIDAD").orElse(null);
-
-        vacanteRepository.save(Vacante.builder()
-            .empresa(coally)
-            .titulo("Practicante de Desarrollo Backend Java")
-            .descripcion("Apoyo en desarrollo de microservicios Spring Boot, integraciones REST y CI/CD con GitHub Actions.")
-            .areaPractica(AreaPractica.DESARROLLO_SW)
-            .modalidad(Modalidad.HIBRIDO)
-            .modalidadVinculacion(modCCB)
-            .ciudad("Bogotá")
-            .requisitosKeywords("java, spring, sistemas, postgres, docker")
-            .creditosMinimos((short) 120)
-            .promedioMinimo(new BigDecimal("3.50"))
-            .programasDirigidos("Ingeniería de Sistemas, Ingeniería de Software")
-            .duracionMeses((short) 6)
-            .cuposDisponibles((short) 2)
-            .fechaInicio(LocalDate.now().plusMonths(1))
-            .fechaCierrePostulaciones(LocalDate.now().plusWeeks(3))
-            .estado(EstadoVacante.PUBLICADA)
-            .build());
-
-        vacanteRepository.save(Vacante.builder()
-            .empresa(banco)
-            .titulo("Practicante de Analítica de Datos")
-            .descripcion("Soporte en construcción de dashboards en Tableau, análisis exploratorio y modelos predictivos.")
-            .areaPractica(AreaPractica.ANALISIS_DATOS)
-            .modalidad(Modalidad.PRESENCIAL)
-            .modalidadVinculacion(modCCB)
-            .ciudad("Medellín")
-            .requisitosKeywords("python, sql, tableau, sistemas, industrial, estadistica")
-            .creditosMinimos((short) 100)
-            .promedioMinimo(new BigDecimal("3.80"))
-            .programasDirigidos("Ingeniería de Sistemas, Ingeniería Industrial")
-            .duracionMeses((short) 6)
-            .cuposDisponibles((short) 1)
-            .fechaInicio(LocalDate.now().plusMonths(1))
-            .fechaCierrePostulaciones(LocalDate.now().plusWeeks(4))
-            .estado(EstadoVacante.PUBLICADA)
-            .build());
-
-        // Práctica interna en la U como demo del segundo escenario.
-        vacanteRepository.save(Vacante.builder()
-            .empresa(rappi)
-            .titulo("Practicante en Fábrica de Software de la Universidad")
-            .descripcion("Proyectos internos de transformación digital de la U. Buen plan B cuando no quedas en empresa aliada.")
-            .areaPractica(AreaPractica.DESARROLLO_SW)
-            .modalidad(Modalidad.HIBRIDO)
-            .modalidadVinculacion(modInternaU)
-            .ciudad("Bogotá")
-            .requisitosKeywords("java, react, sistemas, software")
-            .creditosMinimos((short) 100)
-            .promedioMinimo(new BigDecimal("3.30"))
-            .programasDirigidos("Ingeniería de Sistemas, Ingeniería de Software")
-            .duracionMeses((short) 6)
-            .cuposDisponibles((short) 4)
-            .fechaInicio(LocalDate.now().plusMonths(1))
-            .fechaCierrePostulaciones(LocalDate.now().plusWeeks(2))
-            .estado(EstadoVacante.PUBLICADA)
-            .build());
-
-        vacanteRepository.save(Vacante.builder()
-            .empresa(rappi)
-            .titulo("Practicante de Marketing Digital")
-            .descripcion("Gestión de campañas en redes sociales, análisis de métricas y reporte semanal a stakeholders.")
-            .areaPractica(AreaPractica.MARKETING)
-            .modalidad(Modalidad.REMOTO)
-            .modalidadVinculacion(modCCB)
-            .ciudad("Bogotá")
-            .requisitosKeywords("marketing, redes sociales, contenidos, mercadeo, analytics")
-            .creditosMinimos((short) 90)
-            .promedioMinimo(new BigDecimal("3.20"))
-            .programasDirigidos("Mercadeo, Administración de Empresas")
-            .duracionMeses((short) 6)
-            .cuposDisponibles((short) 3)
-            .fechaInicio(LocalDate.now().plusMonths(1))
-            .fechaCierrePostulaciones(LocalDate.now().plusWeeks(2))
-            .estado(EstadoVacante.PUBLICADA)
-            .build());
-
-        return (int) vacanteRepository.count();
-    }
-
-    // ---------------------------------------------------------------
-    // Tutores
+    // Tutores (docente acompañante + tutor empresarial)
     // ---------------------------------------------------------------
 
     private int seedTutores() {
@@ -307,6 +212,60 @@ public class SeedService {
     }
 
     // ---------------------------------------------------------------
+    // Práctica asignada (Convenio directo) + primer Trimestre
+    // ---------------------------------------------------------------
+
+    private int seedPracticaAsignada() {
+        if (convenioRepository.count() > 0) return (int) convenioRepository.count();
+
+        Estudiante kelly = estudianteRepository
+            .findByEmailIgnoreCase("kelly@est.uempresarial.edu.co").orElse(null);
+        Empresa coally = empresaRepository.findByNit("900111222-3").orElse(null);
+        if (kelly == null || coally == null) {
+            log.warn("No se pudo sembrar la práctica demo: falta estudiante o empresa base.");
+            return 0;
+        }
+
+        Tutor docente = tutorRepository.findAll().stream()
+            .filter(t -> t.getTipo() == TipoTutor.ACADEMICO)
+            .findFirst().orElse(null);
+        Tutor tutorEmpresarial = tutorRepository.findAll().stream()
+            .filter(t -> t.getTipo() == TipoTutor.EMPRESARIAL)
+            .findFirst().orElse(null);
+
+        LocalDate inicio = LocalDate.now().withDayOfMonth(1);
+        LocalDate fin = inicio.plusMonths(9);
+
+        Convenio practica = Convenio.builder()
+            .estudiante(kelly)
+            .empresa(coally)
+            .tutorAcademico(docente)
+            .tutorEmpresarial(tutorEmpresarial)
+            .numeroConvenio("CONV-" + inicio.getYear() + "-DEMO1")
+            .fechaInicio(inicio)
+            .fechaFin(fin)
+            .estado(EstadoConvenio.ACTIVO)
+            .semestreAcademico(inicio.getYear() + "-1")
+            .esContinuidad(false)
+            .build();
+        practica = convenioRepository.save(practica);
+
+        // Primer corte/trimestre del proceso de Coformación.
+        trimestreRepository.save(Trimestre.builder()
+            .convenio(practica)
+            .numero((short) 1)
+            .materiaNucleo("Práctica Profesional I")
+            .fechaInicio(inicio)
+            .fechaFin(inicio.plusMonths(3))
+            .estado(EstadoTrimestre.ABIERTO)
+            .build());
+
+        log.info("Práctica demo sembrada: convenio={} estudiante={} empresa={}",
+            practica.getNumeroConvenio(), kelly.getEmail(), coally.getRazonSocial());
+        return (int) convenioRepository.count();
+    }
+
+    // ---------------------------------------------------------------
     // Usuarios (con vínculos a entidades de dominio)
     // ---------------------------------------------------------------
 
@@ -324,6 +283,8 @@ public class SeedService {
             "Kellyn", "Delgado", Set.of(Rol.ESTUDIANTE), kellyId, null);
         crearSiNoExiste("rrhh@coally.com", "Empresa123*",
             "RRHH", "Coally", Set.of(Rol.EMPRESA), null, coallyId);
+        crearSiNoExiste("cmendoza@uempresarial.edu.co", "Tutor123*",
+            "Carlos", "Mendoza", Set.of(Rol.TUTOR), null, null);
         crearSiNoExiste("mcp_agent@sivu.uempresarial.edu.co", "Mcp_Agent123*",
             "Agente", "MCP", Set.of(Rol.MCP_AGENT), null, null);
     }

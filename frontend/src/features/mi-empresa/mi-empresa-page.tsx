@@ -592,15 +592,12 @@ function EstadoAprobacionTab({ empresa, faltantes }: EstadoAprobacionTabProps): 
         <AlertTitle className="text-base">Tu empresa está APROBADA</AlertTitle>
         <AlertDescription>
           <p>
-            Ya puedes publicar vacantes y recibir postulaciones.{" "}
+            Tu empresa está habilitada como coformadora y puede recibir practicantes.{" "}
             {fechaAprob && <span>Aprobada el {fechaAprob}.</span>}
           </p>
           <div className="mt-2 flex gap-2">
-            <Button asChild size="sm">
-              <Link to="/vacantes/new">Publicar vacante</Link>
-            </Button>
             <Button asChild size="sm" variant="outline">
-              <Link to="/postulaciones">Ver postulaciones</Link>
+              <Link to="/convenios">Ver prácticas</Link>
             </Button>
           </div>
         </AlertDescription>

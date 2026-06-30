@@ -1,25 +1,13 @@
 import { NavLink } from "react-router-dom";
 import {
-  BarChart3,
   Building2,
-  BookCopy,
-  Briefcase,
   CalendarClock,
   CalendarPlus,
   CalendarRange,
-  Factory,
   FolderArchive,
-  FileCog,
-  Inbox as InboxIcon,
   FileSignature,
   FileText,
-  FileUser,
-  Inbox,
   LayoutDashboard,
-  ListChecks,
-  Send,
-  Sparkles,
-  Tags,
   UserCog,
   Users,
 } from "lucide-react";
@@ -48,41 +36,21 @@ function labelEstudiantes(roles: Rol[]): string {
     ? "Mis practicantes"
     : "Estudiantes";
 }
-function labelVacantes(roles: Rol[]): string {
-  return roles.includes("EMPRESA") && !roles.includes("ADMIN") && !roles.includes("COORDINADOR")
-    ? "Mis vacantes"
-    : "Vacantes";
-}
 function labelPracticas(roles: Rol[]): string {
   // El estudiante ES quien hace la práctica; la empresa RECIBE practicantes.
   if (roles.includes("ADMIN") || roles.includes("COORDINADOR")) return "Prácticas";
   if (roles.includes("EMPRESA")) return "Convenios";
   return "Mi práctica";
 }
-function labelPostulaciones(roles: Rol[]): string {
-  if (roles.includes("EMPRESA") && !roles.includes("ADMIN") && !roles.includes("COORDINADOR")) {
-    return "Postulaciones recibidas";
-  }
-  if (roles.includes("ESTUDIANTE") && !roles.includes("ADMIN") && !roles.includes("COORDINADOR") && !roles.includes("EMPRESA")) {
-    return "Mis postulaciones";
-  }
-  return "Postulaciones";
-}
-function labelEntrevistas(roles: Rol[]): string {
-  if (roles.includes("ESTUDIANTE") && !roles.includes("ADMIN") && !roles.includes("COORDINADOR") && !roles.includes("EMPRESA")) {
-    return "Mis entrevistas";
-  }
-  return "Entrevistas";
+function labelTutores(roles: Rol[]): string {
+  return roles.includes("EMPRESA") && !roles.includes("ADMIN") && !roles.includes("COORDINADOR")
+    ? "Mis tutores"
+    : "Tutores";
 }
 function labelDocumentos(roles: Rol[]): string {
   return roles.includes("EMPRESA") && !roles.includes("ADMIN") && !roles.includes("COORDINADOR")
     ? "Documentos de mi empresa"
     : "Documentos";
-}
-function labelTutores(roles: Rol[]): string {
-  return roles.includes("EMPRESA") && !roles.includes("ADMIN") && !roles.includes("COORDINADOR")
-    ? "Mis tutores"
-    : "Tutores";
 }
 function labelExpediente(roles: Rol[]): string {
   return roles.includes("ESTUDIANTE") &&
@@ -94,25 +62,12 @@ function labelExpediente(roles: Rol[]): string {
     : "Expediente";
 }
 
-// Solo el Dashboard queda como ítem principal; el resto se agrupa por dominio
-// para que cada rol vea un menú razonable y no una lista plana de 22 items.
 const MAIN_ITEMS: NavItem[] = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard },
 ];
 
 const GROUPS: NavGroup[] = [
-  // 1. Mi perfil — lo que cada rol gestiona sobre SÍ mismo.
-  {
-    label: "Mi perfil",
-    items: [
-      { to: "/mi-hoja-vida", label: "Mi Hoja de Vida", icon: FileUser, roles: ["ESTUDIANTE"] },
-      { to: "/mi-empresa", label: "Mi empresa", icon: Building2, roles: ["EMPRESA"] },
-      { to: "/empresas/proponer", label: "Proponer empresa", icon: Building2, roles: ["ESTUDIANTE"] },
-      { to: "/mis-formularios", label: "Mis formularios", icon: InboxIcon },
-    ],
-  },
-  // 2. Personas — listas que comparten Coformación y Empresa, con etiquetas
-  //    distintas según rol ("Estudiantes" vs "Mis practicantes").
+  // Personas — estudiantes y tutores que intervienen en la práctica.
   {
     label: "Personas",
     items: [
@@ -120,38 +75,25 @@ const GROUPS: NavGroup[] = [
       { to: "/tutores", label: labelTutores, icon: UserCog, roles: ["ADMIN", "COORDINADOR", "EMPRESA", "MCP_AGENT"] },
     ],
   },
-  // 3. Coformación — acciones académicas exclusivas del coordinador.
+  // Empresas — registro de coformadoras y vista propia de la empresa.
   {
-    label: "Coformación",
-    roles: ["ADMIN", "COORDINADOR"],
-    items: [
-      { to: "/hoja-vida/bandeja", label: "Hojas de vida por revisar", icon: Inbox },
-      { to: "/matching", label: "Recomendar candidatos", icon: Sparkles },
-      { to: "/analytics", label: "Analítica institucional", icon: BarChart3 },
-    ],
-  },
-  // 3. Empresas & vacantes — quién contrata y qué buscan.
-  {
-    label: "Empresas & vacantes",
+    label: "Empresas",
     items: [
       { to: "/empresas", label: "Empresas", icon: Building2, roles: ["ADMIN", "COORDINADOR"] },
-      { to: "/vacantes", label: labelVacantes, icon: Briefcase },
-      // Vista compartida ESTUDIANTE/EMPRESA/COORD/ADMIN — la etiqueta cambia por rol.
-      { to: "/postulaciones", label: labelPostulaciones, icon: Send },
-      { to: "/entrevistas", label: labelEntrevistas, icon: CalendarClock },
+      { to: "/mi-empresa", label: "Mi empresa", icon: Building2, roles: ["EMPRESA"] },
     ],
   },
-  // 4. Procesos & soportes — práctica activa, documentos, formularios.
+  // Coformación — la práctica activa y todo su ciclo de seguimiento.
   {
-    label: "Procesos & soportes",
+    label: "Coformación",
     items: [
       { to: "/convenios", label: labelPracticas, icon: FileSignature },
       { to: "/expedientes", label: labelExpediente, icon: FolderArchive, roles: ["ADMIN", "COORDINADOR", "ESTUDIANTE", "EMPRESA", "TUTOR"] },
       { to: "/documentos", label: labelDocumentos, icon: FileText },
     ],
   },
-  // 4b. Agendamiento colaborativo — franjas del docente y reuniones
-  //     estudiante ↔ tutor (RF-C01/C02/C03).
+  // Agendamiento colaborativo — franjas del docente y reuniones
+  // estudiante ↔ tutor (RF-C01/C02/C03).
   {
     label: "Agendamiento",
     items: [
@@ -160,25 +102,11 @@ const GROUPS: NavGroup[] = [
       { to: "/agendamiento/reuniones", label: "Reuniones", icon: CalendarRange, roles: ["ESTUDIANTE", "ADMIN", "COORDINADOR"] },
     ],
   },
-  // 5. Programa interno — plan B académico. Solo coord/admin gestionan; los
-  // estudiantes proponen su solicitud desde el Dashboard, no desde el sidebar.
-  {
-    label: "Programa interno",
-    roles: ["ADMIN", "COORDINADOR"],
-    items: [
-      { to: "/fabrica-soluciones", label: "Cartera de proyectos", icon: Factory },
-      { to: "/programa-interno/solicitudes", label: "Solicitudes recibidas", icon: Inbox },
-    ],
-  },
-  // 6. Administración — solo COORDINADOR/ADMIN gestionan plantillas y catálogos.
+  // Administración — gestión de usuarios del sistema.
   {
     label: "Administración",
-    roles: ["ADMIN", "COORDINADOR"],
+    roles: ["ADMIN"],
     items: [
-      { to: "/plantillas", label: "Plantillas de formularios", icon: FileCog },
-      { to: "/catalogos/modalidades", label: "Modalidades", icon: BookCopy },
-      { to: "/catalogos/tipos-requisito", label: "Tipos de requisito", icon: Tags },
-      { to: "/catalogos/matriz", label: "Matriz de requisitos", icon: ListChecks },
       { to: "/admin/usuarios", label: "Usuarios del sistema", icon: Users, roles: ["ADMIN"] },
     ],
   },

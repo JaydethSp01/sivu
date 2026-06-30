@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { Eye, FileSignature } from "lucide-react";
+import { Eye, FileSignature, Plus } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
 import { format, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
@@ -100,6 +100,14 @@ export function ConveniosListPage(): JSX.Element {
               : "Convenios de práctica firmados entre estudiante, empresa y universidad."
         }
         icon={FileSignature}
+        actions={
+          esCoordOAdmin ? (
+            <Button onClick={() => navigate("/convenios/asignar")}>
+              <Plus className="h-4 w-4" />
+              Asignar práctica
+            </Button>
+          ) : undefined
+        }
       />
       <div className="flex flex-wrap gap-2 items-center">
         <Select value={estado} onValueChange={(v) => { setEstado(v as EstadoConvenio | "ALL"); setPage(0); }}>

@@ -1,5 +1,7 @@
 /// <reference types="cypress" />
 
+export {};
+
 /**
  * SIVU · Estudiantes (administrador).
  *

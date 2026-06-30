@@ -7,7 +7,6 @@ import java.time.LocalDate;
 
 public record DocumentoRequest(
     Long estudianteId,
-    Long postulacionId,
     @NotNull TipoDocumentoSoporte tipo,
     @NotBlank @Size(max = 255) String nombreOriginal,
     @NotBlank @Size(max = 500) String rutaAlmacenamiento,

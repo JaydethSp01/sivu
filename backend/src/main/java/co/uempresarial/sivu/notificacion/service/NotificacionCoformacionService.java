@@ -1,6 +1,6 @@
 package co.uempresarial.sivu.notificacion.service;
 
-import co.uempresarial.sivu.automatizacion.service.NotificacionService;
+import co.uempresarial.sivu.notificacion.service.NotificacionService;
 import co.uempresarial.sivu.notificacion.domain.NotificacionAuditoria;
 import co.uempresarial.sivu.notificacion.domain.TipoEventoNotificacion;
 import co.uempresarial.sivu.notificacion.persistence.NotificacionAuditoriaRepository;

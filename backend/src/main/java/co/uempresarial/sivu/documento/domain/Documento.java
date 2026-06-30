@@ -3,7 +3,6 @@ package co.uempresarial.sivu.documento.domain;
 import co.uempresarial.sivu.catalogo.requisito.domain.TipoRequisitoDocumental;
 import co.uempresarial.sivu.empresa.domain.Empresa;
 import co.uempresarial.sivu.estudiante.domain.Estudiante;
-import co.uempresarial.sivu.postulacion.domain.Postulacion;
 import co.uempresarial.sivu.shared.audit.BaseEntity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Min;
@@ -29,10 +28,6 @@ public class Documento extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "estudiante_id")
     private Estudiante estudiante;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "postulacion_id")
-    private Postulacion postulacion;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 40)

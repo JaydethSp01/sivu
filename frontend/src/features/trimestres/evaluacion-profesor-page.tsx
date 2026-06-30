@@ -19,7 +19,6 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { AbrirPlantillaShortcut } from "@/features/plantillas/abrir-plantilla-shortcut";
 import { api, extractApiMessage } from "@/lib/api";
 import type {
   EvaluacionProfesorRequest,
@@ -198,12 +197,6 @@ export function EvaluacionProfesorPage(): JSX.Element {
           </div>
         </div>
         <div className="flex flex-wrap gap-2">
-          <AbrirPlantillaShortcut
-            tipo="EVAL_PROFESOR"
-            convenioId={Number(convenioId)}
-            trimestreId={Number(trimestreId)}
-            label="Abrir versión configurable"
-          />
           {data && (
             <Button variant="outline" onClick={() => descargar.mutate()} disabled={descargar.isPending}>
               {descargar.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}

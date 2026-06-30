@@ -40,28 +40,6 @@ export interface AuthResponse {
   };
 }
 
-export interface VacanteResponse {
-  id: number;
-  empresaId: number;
-  empresa: { id: number; razonSocial: string };
-  titulo: string;
-  descripcion: string;
-  areaPractica: string;
-  modalidad: string;
-  ciudad: string;
-  requisitosKeywords: string[];
-  creditosMinimos: number;
-  promedioMinimo: number;
-  programasDirigidos: string[];
-  duracionMeses: number;
-  cuposDisponibles: number;
-  fechaInicio: string;
-  fechaCierrePostulaciones: string;
-  estado: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
 export interface EstudianteResponse {
   id: number;
   tipoDocumento: string;
@@ -96,65 +74,14 @@ export interface EmpresaResponse {
   updatedAt: string;
 }
 
-export interface PostulacionResponse {
+export interface ConvenioResponse {
   id: number;
-  estudianteId: number;
-  estudianteNombreCompleto: string;
-  vacanteId: number;
-  vacanteTitulo: string;
-  empresaId: number;
-  empresaRazonSocial: string;
+  estudianteId: number | null;
+  empresaId: number | null;
   estado: string;
-  scoreMatching: number | null;
-  justificacionMatching: string | null;
-  mensajeEstudiante: string | null;
-  observacionesEmpresa: string | null;
-  fechaPostulacion: string;
-  fechaDecision: string | null;
   createdAt: string;
   updatedAt: string;
 }
-
-export interface PostulacionEventoResponse {
-  id: number;
-  postulacionId: number;
-  tipoEvento: string;
-  estadoAnterior: string | null;
-  estadoNuevo: string | null;
-  detalle: string | null;
-  actor: string;
-  ocurridoEn: string;
-}
-
-export interface VerificacionAcademica {
-  cumple: boolean;
-  motivo: string;
-}
-
-export interface MatchingResponse {
-  estudianteId: number;
-  vacanteId: number;
-  score: number;
-  recomendado: boolean;
-  justificacion: string;
-}
-
-export type EstadoPostulacion =
-  | 'POSTULADA'
-  | 'EN_REVISION'
-  | 'PRESELECCIONADA'
-  | 'RECHAZADA'
-  | 'ACEPTADA'
-  | 'RETIRADA';
-
-export const ESTADOS_POSTULACION: readonly EstadoPostulacion[] = [
-  'POSTULADA',
-  'EN_REVISION',
-  'PRESELECCIONADA',
-  'RECHAZADA',
-  'ACEPTADA',
-  'RETIRADA',
-] as const;
 
 /**
  * Error de dominio del cliente — diferente a un AxiosError crudo. Las tools del
@@ -348,14 +275,6 @@ class SivuApiClient {
   // Endpoints específicos. Centralizamos URLs para que las tools sean delgadas.
   // -------------------------------------------------------------------------
 
-  public listarVacantes(params: {
-    estado?: string;
-    page?: number;
-    size?: number;
-  }): Promise<PageResponse<VacanteResponse>> {
-    return this.get<PageResponse<VacanteResponse>>('/vacantes', { params });
-  }
-
   public listarEstudiantes(params: {
     page?: number;
     size?: number;
@@ -370,43 +289,14 @@ class SivuApiClient {
     return this.get<PageResponse<EmpresaResponse>>('/empresas', { params });
   }
 
-  public listarPostulaciones(params: {
-    estado?: EstadoPostulacion;
+  public listarConvenios(params: {
+    estado?: string;
     estudianteId?: number;
-    vacanteId?: number;
+    empresaId?: number;
     page?: number;
     size?: number;
-  }): Promise<PageResponse<PostulacionResponse>> {
-    return this.get<PageResponse<PostulacionResponse>>('/postulaciones', {
-      params,
-    });
-  }
-
-  public obtenerPostulacion(id: number): Promise<PostulacionResponse> {
-    return this.get<PostulacionResponse>(`/postulaciones/${id}`);
-  }
-
-  public historialPostulacion(
-    id: number,
-  ): Promise<PostulacionEventoResponse[]> {
-    return this.get<PostulacionEventoResponse[]>(
-      `/postulaciones/${id}/historial`,
-    );
-  }
-
-  public validarAcademico(estudianteId: number): Promise<VerificacionAcademica> {
-    return this.get<VerificacionAcademica>(
-      `/automatizacion/validar-academico/${estudianteId}`,
-    );
-  }
-
-  public matching(
-    estudianteId: number,
-    vacanteId: number,
-  ): Promise<MatchingResponse> {
-    return this.get<MatchingResponse>('/automatizacion/matching', {
-      params: { estudianteId, vacanteId },
-    });
+  }): Promise<PageResponse<ConvenioResponse>> {
+    return this.get<PageResponse<ConvenioResponse>>('/convenios', { params });
   }
 
   public revisarInformeFinal(informeId: number): Promise<FeedbackInformeIA> {
