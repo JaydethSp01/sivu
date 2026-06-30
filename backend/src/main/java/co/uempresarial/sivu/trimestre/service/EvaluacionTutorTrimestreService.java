@@ -1,5 +1,8 @@
 package co.uempresarial.sivu.trimestre.service;
 
+import co.uempresarial.sivu.convenio.domain.Convenio;
+import co.uempresarial.sivu.estudiante.domain.Estudiante;
+import co.uempresarial.sivu.notificacion.service.NotificacionCoformacionService;
 import co.uempresarial.sivu.security.service.CurrentUserService;
 import co.uempresarial.sivu.shared.exception.BusinessException;
 import co.uempresarial.sivu.shared.exception.ResourceNotFoundException;
@@ -17,6 +20,7 @@ import co.uempresarial.sivu.tutoracceso.domain.PropositoTokenTutor;
 import co.uempresarial.sivu.tutoracceso.service.TokenAccesoTutorService;
 import co.uempresarial.sivu.tutoracceso.web.dto.ValidacionTokenResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,6 +31,7 @@ import java.time.OffsetDateTime;
 @Service
 @RequiredArgsConstructor
 @Transactional
+@Slf4j
 public class EvaluacionTutorTrimestreService {
 
     private final EvaluacionTutorTrimestreRepository repository;
@@ -35,6 +40,7 @@ public class EvaluacionTutorTrimestreService {
     private final CurrentUserService currentUser;
     private final EvaluacionTutorPdfGenerator pdfGenerator;
     private final TokenAccesoTutorService tokenAccesoService;
+    private final NotificacionCoformacionService notificacionCoformacion;
 
     @Transactional(readOnly = true)
     public EvaluacionTutorResponse obtener(Long trimestreId) {
@@ -103,6 +109,8 @@ public class EvaluacionTutorTrimestreService {
                 e.setFirmadoTutor(true);
                 e.setFechaFirmaTutor(now);
                 e.setFirmadoTutorNombre(nombreActor);
+                // RF-D01/D02: el tutor finaliza/firma su evaluación → avisar al estudiante.
+                notificarEvaluacionTutor(e);
             }
             case ESTUDIANTE -> {
                 if (Boolean.TRUE.equals(e.getFirmadoEstudiante())) {
@@ -158,6 +166,8 @@ public class EvaluacionTutorTrimestreService {
 
         if (finalizar) {
             tokenAccesoService.marcarUsado(token);
+            // RF-D01/D02: el tutor externo finaliza su evaluación → avisar al estudiante.
+            notificarEvaluacionTutor(saved);
         }
 
         return new EvaluacionTutorExternoResponse(
@@ -189,6 +199,27 @@ public class EvaluacionTutorTrimestreService {
 
     private static String safe(String s) {
         return s == null ? "" : s;
+    }
+
+    /** RF-D01/D02 — notifica al estudiante que la evaluación del tutor fue registrada/finalizada (graceful). */
+    private void notificarEvaluacionTutor(EvaluacionTutorTrimestre e) {
+        try {
+            Trimestre t = e.getTrimestre();
+            Convenio c = t != null ? t.getConvenio() : null;
+            Estudiante est = c != null ? c.getEstudiante() : null;
+            if (est == null || est.getEmail() == null || est.getEmail().isBlank()) {
+                return;
+            }
+            String corte = "Evaluación del Tutor Empresarial — T" + (t.getNumero() == null ? "" : t.getNumero());
+            String nombre = (safe(est.getNombres()) + " " + safe(est.getApellidos())).trim();
+            notificacionCoformacion.notificarCorteCalificado(
+                est.getEmail(), nombre, corte,
+                e.getNotaPonderada() == null ? "—" : e.getNotaPonderada().toPlainString(),
+                NotificacionCoformacionService.REF_TRIMESTRE, null);
+        } catch (Exception ex) {
+            log.warn("No se pudo notificar la evaluación del tutor del trimestre {}: {}",
+                e.getTrimestre() != null ? e.getTrimestre().getId() : null, ex.getMessage());
+        }
     }
 
     /** Capacidades*0.40 + Actitudes*0.40 + (Desemp*0.10 + ElabPEM*0.05 + SustPEM*0.05). */

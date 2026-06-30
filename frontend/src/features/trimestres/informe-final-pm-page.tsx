@@ -44,7 +44,59 @@ import type {
   FeedbackInformeIA,
   InformeFinalPmRequest,
   InformeFinalPmResponse,
+  InformeFinalSeccionesRequest,
 } from "@/lib/types";
+
+// ----- Editor estructurado de las 12 secciones del Informe Final (GTC-FM-16, RF-A04) -----
+
+type SeccionesValues = InformeFinalSeccionesRequest;
+
+const EMPTY_SECCIONES: SeccionesValues = {
+  resumenEjecutivo: "",
+  contextualizacionEmpresa: "",
+  planteamientoProblema: "",
+  marcoTeorico: "",
+  objetivos: "",
+  diagnostico: "",
+  metodologia: "",
+  justificacion: "",
+  factibilidad: "",
+  resultados: "",
+  conclusiones: "",
+  referenciasApa: "",
+};
+
+const SECCIONES_12: { key: keyof SeccionesValues; label: string }[] = [
+  { key: "resumenEjecutivo", label: "1. Resumen ejecutivo" },
+  { key: "contextualizacionEmpresa", label: "2. Contextualización de la empresa" },
+  { key: "planteamientoProblema", label: "3. Planteamiento del problema" },
+  { key: "marcoTeorico", label: "4. Marco teórico" },
+  { key: "objetivos", label: "5. Objetivos" },
+  { key: "diagnostico", label: "6. Diagnóstico externo/interno" },
+  { key: "metodologia", label: "7. Metodología" },
+  { key: "justificacion", label: "8. Justificación" },
+  { key: "factibilidad", label: "9. Factibilidad" },
+  { key: "resultados", label: "10. Resultados" },
+  { key: "conclusiones", label: "11. Conclusiones" },
+  { key: "referenciasApa", label: "12. Referencias APA 7" },
+];
+
+function toSeccionesForm(i: InformeFinalPmResponse): SeccionesValues {
+  return {
+    resumenEjecutivo: i.resumenEjecutivo ?? "",
+    contextualizacionEmpresa: i.contextualizacionEmpresa ?? "",
+    planteamientoProblema: i.planteamientoProblema ?? "",
+    marcoTeorico: i.marcoTeorico ?? "",
+    objetivos: i.objetivos ?? "",
+    diagnostico: i.diagnostico ?? "",
+    metodologia: i.metodologia ?? "",
+    justificacion: i.justificacion ?? "",
+    factibilidad: i.factibilidad ?? "",
+    resultados: i.resultados ?? "",
+    conclusiones: i.conclusiones ?? "",
+    referenciasApa: i.referenciasApa ?? "",
+  };
+}
 
 interface FormValues {
   resumenEjecutivo: string;
@@ -240,8 +292,11 @@ export function InformeFinalPmPage(): JSX.Element {
   const canNotaTutor = hasRole("ADMIN", "COORDINADOR", "EMPRESA");
   const canNotaProfesor = hasRole("ADMIN", "COORDINADOR");
   const canAltoImpacto = hasRole("ADMIN", "COORDINADOR");
+  // El estudiante edita las 12 secciones; Coordinación/Admin pueden ajustar.
+  const canEditarSecciones = hasRole("ESTUDIANTE", "COORDINADOR", "ADMIN");
 
   const [values, setValues] = useState<FormValues>(EMPTY);
+  const [secciones, setSecciones] = useState<SeccionesValues>(EMPTY_SECCIONES);
   const [rechazoOpen, setRechazoOpen] = useState(false);
   const [observaciones, setObservaciones] = useState("");
   const [notaTutorInput, setNotaTutorInput] = useState("");
@@ -270,12 +325,38 @@ export function InformeFinalPmPage(): JSX.Element {
   });
 
   useEffect(() => {
-    if (informe.data) setValues(toForm(informe.data));
-    if (informe.data === null) setValues(EMPTY);
+    if (informe.data) {
+      setValues(toForm(informe.data));
+      setSecciones(toSeccionesForm(informe.data));
+    }
+    if (informe.data === null) {
+      setValues(EMPTY);
+      setSecciones(EMPTY_SECCIONES);
+    }
   }, [informe.data]);
 
   const set = <K extends keyof FormValues>(field: K, v: FormValues[K]) =>
     setValues((prev) => ({ ...prev, [field]: v }));
+
+  const setSeccion = (field: keyof SeccionesValues, v: string) =>
+    setSecciones((prev) => ({ ...prev, [field]: v }));
+
+  const guardarSecciones = useMutation({
+    mutationFn: async () => {
+      if (!informe.data) throw new Error("Guarda el borrador antes de editar las secciones");
+      const { data } = await api.put<InformeFinalPmResponse>(
+        `/informes-final-pm/${informe.data.id}/secciones`,
+        secciones satisfies InformeFinalSeccionesRequest
+      );
+      return data;
+    },
+    onSuccess: (data) => {
+      toast.success("Informe guardado");
+      qc.setQueryData(["/planes-mejora", pmId, "informe-final"], data);
+      qc.invalidateQueries({ queryKey: ["/planes-mejora", pmId, "informe-final"] });
+    },
+    onError: (e) => toast.error(extractApiMessage(e)),
+  });
 
   const guardar = useMutation({
     mutationFn: async () => {
@@ -818,6 +899,80 @@ export function InformeFinalPmPage(): JSX.Element {
           </CardContent>
         </Card>
       )}
+
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base flex items-center gap-2">
+            <FileText className="h-4 w-4 text-primary" /> Informe (12 secciones)
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-start gap-2 rounded-lg border border-amber-500/30 bg-amber-500/5 p-3 text-sm">
+            <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+            <p className="text-muted-foreground">
+              El informe completo no debe superar las{" "}
+              <span className="font-semibold text-foreground">15 páginas</span> y la{" "}
+              <span className="font-semibold text-foreground">nota mínima de aprobación es 3.0</span>{" "}
+              (escala 0–5). Completa las 12 secciones siguiendo la norma GTC-FM-16 y la
+              estructura APA 7 en las referencias.
+            </p>
+          </div>
+
+          {informe.data ? (
+            <>
+              <div className="space-y-4">
+                {SECCIONES_12.map(({ key, label }) => (
+                  <div key={key}>
+                    <Label htmlFor={`sec-${key}`}>{label}</Label>
+                    <Textarea
+                      id={`sec-${key}`}
+                      className="mt-1 resize-y"
+                      rows={5}
+                      value={secciones[key]}
+                      readOnly={!canEditarSecciones}
+                      disabled={!canEditarSecciones}
+                      onChange={(e) => setSeccion(key, e.target.value)}
+                    />
+                  </div>
+                ))}
+              </div>
+
+              {canEditarSecciones && (
+                <div className="flex flex-wrap items-center justify-end gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => guardarSecciones.mutate()}
+                    disabled={guardarSecciones.isPending}
+                  >
+                    {guardarSecciones.isPending ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Save className="h-4 w-4" />
+                    )}{" "}
+                    Guardar borrador
+                  </Button>
+                  <Button
+                    onClick={() => guardarSecciones.mutate()}
+                    disabled={guardarSecciones.isPending}
+                  >
+                    {guardarSecciones.isPending ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Save className="h-4 w-4" />
+                    )}{" "}
+                    Guardar informe
+                  </Button>
+                </div>
+              )}
+            </>
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              Guarda primero el borrador del informe para habilitar la edición de las 12
+              secciones.
+            </p>
+          )}
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>

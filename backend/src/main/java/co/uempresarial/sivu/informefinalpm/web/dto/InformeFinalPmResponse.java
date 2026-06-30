@@ -17,6 +17,8 @@ public record InformeFinalPmResponse(
     Boolean altoImpacto,
     /** Derivado: notaPromedio ≥ 3.0. {@code null} si aún no hay ambas notas. */
     Boolean cumpleNotaMinima,
+    /** Límite institucional de páginas (informativo, GTC-FM-16). */
+    Integer maxPaginas,
     String resumenEjecutivo,
     String contextualizacion,
     String planteamientoProblema,
@@ -29,6 +31,12 @@ public record InformeFinalPmResponse(
     String factibilidad,
     String conclusiones,
     String anexos,
+    // GAP 3 / RF-A04 #1: las 12 secciones del editor estructurado
+    String contextualizacionEmpresa,
+    String objetivos,
+    String justificacion,
+    String resultados,
+    String referenciasApa,
     Short numeroPaginas,
     EstadoInformeFinalPm estado,
     OffsetDateTime fechaEntrega,

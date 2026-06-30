@@ -174,6 +174,12 @@ public class InformeFinalPmPdfGenerator {
             addSeccion(doc, h2, normal, "Propuesta de Solución", informe.getPropuestaSolucion());
             addSeccion(doc, h2, normal, "Factibilidad", informe.getFactibilidad());
             addSeccion(doc, h2, normal, "Conclusiones", informe.getConclusiones());
+            // GAP 3 / RF-A04 #1: secciones del editor estructurado (se muestran si tienen contenido)
+            addSeccionSiPresente(doc, h2, normal, "Contextualización de la Empresa", informe.getContextualizacionEmpresa());
+            addSeccionSiPresente(doc, h2, normal, "Objetivos", informe.getObjetivos());
+            addSeccionSiPresente(doc, h2, normal, "Justificación", informe.getJustificacion());
+            addSeccionSiPresente(doc, h2, normal, "Resultados", informe.getResultados());
+            addSeccionSiPresente(doc, h2, normal, "Referencias (APA)", informe.getReferenciasApa());
             if (informe.getAnexos() != null && !informe.getAnexos().isBlank()) {
                 addSeccion(doc, h2, normal, "Anexos", informe.getAnexos());
             }
@@ -253,6 +259,13 @@ public class InformeFinalPmPdfGenerator {
         p.setAlignment(Element.ALIGN_JUSTIFIED);
         p.setSpacingAfter(6);
         doc.add(p);
+    }
+
+    private static void addSeccionSiPresente(Document doc, Font h2, Font normal, String titulo, String contenido)
+        throws DocumentException {
+        if (contenido != null && !contenido.isBlank()) {
+            addSeccion(doc, h2, normal, titulo, contenido);
+        }
     }
 
     private static Paragraph firmaLinea(String etiqueta, String nombre, boolean firmado, Font bold, Font normal) {

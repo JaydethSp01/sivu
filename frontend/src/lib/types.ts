@@ -386,6 +386,12 @@ export interface InformeFinalPmResponse {
   conclusiones?: string | null;
   anexos?: string | null;
   numeroPaginas?: number | null;
+  // 12 secciones estructuradas del Informe Final GTC-FM-16 (RF-A04)
+  contextualizacionEmpresa?: string | null;
+  objetivos?: string | null;
+  justificacion?: string | null;
+  resultados?: string | null;
+  referenciasApa?: string | null;
   estado: EstadoInformeFinalPm;
   fechaEntrega?: string | null;
   fechaRevision?: string | null;
@@ -419,6 +425,22 @@ export interface InformeFinalPmRequest {
   conclusiones?: string | null;
   anexos?: string | null;
   numeroPaginas?: number | null;
+}
+
+/** Cuerpo del editor estructurado de las 12 secciones del Informe Final (RF-A04). */
+export interface InformeFinalSeccionesRequest {
+  resumenEjecutivo: string;
+  contextualizacionEmpresa: string;
+  planteamientoProblema: string;
+  marcoTeorico: string;
+  objetivos: string;
+  diagnostico: string;
+  metodologia: string;
+  justificacion: string;
+  factibilidad: string;
+  resultados: string;
+  conclusiones: string;
+  referenciasApa: string;
 }
 
 export interface EntrevistaRequest {

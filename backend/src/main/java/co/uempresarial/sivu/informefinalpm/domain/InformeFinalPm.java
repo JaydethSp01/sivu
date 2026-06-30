@@ -138,4 +138,23 @@ public class InformeFinalPm extends BaseEntity {
     @Column(name = "alto_impacto", nullable = false)
     @Builder.Default
     private Boolean altoImpacto = false;
+
+    // --- GAP 3 / RF-A04 #1: editor estructurado de las 12 secciones del Informe Final ---
+    // (resumenEjecutivo, planteamientoProblema, marcoTeorico, diagnostico, metodologia,
+    //  factibilidad y conclusiones ya existen arriba; aquí se agregan las 5 restantes.)
+
+    @Column(name = "contextualizacion_empresa", columnDefinition = "TEXT")
+    private String contextualizacionEmpresa;
+
+    @Column(columnDefinition = "TEXT")
+    private String objetivos;
+
+    @Column(columnDefinition = "TEXT")
+    private String justificacion;
+
+    @Column(columnDefinition = "TEXT")
+    private String resultados;
+
+    @Column(name = "referencias_apa", columnDefinition = "TEXT")
+    private String referenciasApa;
 }
