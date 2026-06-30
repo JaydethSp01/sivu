@@ -40,6 +40,15 @@ public class Trimestre extends BaseEntity {
     @Column(name = "fecha_fin")
     private LocalDate fechaFin;
 
+    /** Fecha límite de cierre del corte/trimestre (RF-D01 #5). Habilita el recordatorio "5 días antes". */
+    @Column(name = "fecha_cierre")
+    private LocalDate fechaCierre;
+
+    /** Idempotencia del recordatorio de cierre: se marca true cuando ya se notificó el cierre próximo. */
+    @Column(name = "recordatorio_cierre_enviado", nullable = false)
+    @Builder.Default
+    private Boolean recordatorioCierreEnviado = false;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     @Builder.Default

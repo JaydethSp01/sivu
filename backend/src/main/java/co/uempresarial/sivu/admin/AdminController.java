@@ -1,6 +1,7 @@
 package co.uempresarial.sivu.admin;
 
 import co.uempresarial.sivu.agendamiento.service.RecordatorioReunionScheduler;
+import co.uempresarial.sivu.trimestre.service.RecordatorioCierreScheduler;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -20,6 +21,7 @@ public class AdminController {
 
     private final SeedService seedService;
     private final RecordatorioReunionScheduler recordatorioReunionScheduler;
+    private final RecordatorioCierreScheduler recordatorioCierreScheduler;
 
     @PostMapping("/seed")
     @PreAuthorize("hasRole('ADMIN')")
@@ -40,5 +42,17 @@ public class AdminController {
             "revisadas", r.revisadas(),
             "recordadas", r.recordadas(),
             "sinDestinatario", r.sinDestinatario()));
+    }
+
+    @PostMapping("/recordatorios/cierres")
+    @PreAuthorize("hasAnyRole('ADMIN','COORDINADOR')")
+    @Operation(summary = "Forzar el job de recordatorios de cierre de corte (5 días antes) a estudiante y " +
+        "docente cuando los documentos del corte siguen pendientes (RF-D01 #5)")
+    public ResponseEntity<Map<String, Object>> dispararRecordatoriosCierres() {
+        var r = recordatorioCierreScheduler.enviarRecordatoriosCierre();
+        return ResponseEntity.ok(Map.of(
+            "revisados", r.revisados(),
+            "recordados", r.recordados(),
+            "sinPendientes", r.sinPendientes()));
     }
 }

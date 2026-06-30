@@ -12,7 +12,9 @@ import co.uempresarial.sivu.agendamiento.web.dto.AgendamientoRequest;
 import co.uempresarial.sivu.agendamiento.web.dto.AgendamientoResponse;
 import co.uempresarial.sivu.agendamiento.web.dto.ContraofertaRequest;
 import co.uempresarial.sivu.convenio.persistence.ConvenioRepository;
+import co.uempresarial.sivu.estudiante.domain.Estudiante;
 import co.uempresarial.sivu.estudiante.persistence.EstudianteRepository;
+import co.uempresarial.sivu.notificacion.service.NotificacionCoformacionService;
 import co.uempresarial.sivu.shared.exception.BusinessException;
 import co.uempresarial.sivu.shared.exception.ResourceNotFoundException;
 import co.uempresarial.sivu.trimestre.domain.EstadoTrimestre;
@@ -20,6 +22,7 @@ import co.uempresarial.sivu.trimestre.domain.Trimestre;
 import co.uempresarial.sivu.trimestre.persistence.TrimestreRepository;
 import co.uempresarial.sivu.trimestre.service.ActaReunionService;
 import co.uempresarial.sivu.trimestre.web.dto.ActaReunionRequest;
+import co.uempresarial.sivu.tutor.domain.Tutor;
 import co.uempresarial.sivu.tutor.persistence.TutorRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -60,6 +63,9 @@ public class AgendamientoReunionService {
     private final TrimestreRepository trimestreRepository;
     private final ActaReunionService actaReunionService;
     private final AgendamientoMapper mapper;
+    private final NotificacionCoformacionService notificacionCoformacion;
+
+    private static final String REF_AGENDAMIENTO = "AGENDAMIENTO";
 
     /** El estudiante propone una reunión; solo válida si cae dentro de una franja ACTIVA del tutor. */
     public AgendamientoResponse proponer(AgendamientoRequest request) {
@@ -93,7 +99,10 @@ public class AgendamientoReunionService {
             .observaciones(request.observaciones())
             .estado(EstadoAgendamiento.PROPUESTO)
             .build();
-        return mapper.toResponse(repository.save(r));
+        AgendamientoReunion saved = repository.save(r);
+        // RF-D01/D02: el estudiante propone → avisar al docente.
+        notificarDocente(saved, EventoReunion.PROPUESTA, null);
+        return mapper.toResponse(saved);
     }
 
     /** Aceptar una propuesta (o una contraoferta) → CONFIRMADO. */
@@ -101,6 +110,8 @@ public class AgendamientoReunionService {
         AgendamientoReunion r = obtenerEntidad(id);
         exigirEstado(r, CONFIRMABLES, "aceptar");
         confirmarInterno(r);
+        // RF-D01/D02: el docente acepta → avisar al estudiante.
+        notificarEstudiante(r, EventoReunion.CONFIRMADA, null);
         return mapper.toResponse(r);
     }
 
@@ -110,6 +121,9 @@ public class AgendamientoReunionService {
         exigirEstado(r, CONFIRMABLES, "confirmar");
         confirmarInterno(r);
         generarBorradorActa(r);
+        // RF-D01/D02: al confirmar → avisar a ambos (estudiante y docente).
+        notificarEstudiante(r, EventoReunion.CONFIRMADA, null);
+        notificarDocente(r, EventoReunion.CONFIRMADA, null);
         return mapper.toResponse(r);
     }
 
@@ -119,6 +133,8 @@ public class AgendamientoReunionService {
         r.setEstado(EstadoAgendamiento.RECHAZADO);
         anexarObservacion(r, "[Rechazo] ", observaciones);
         liberarFranja(r);
+        // RF-D01/D02: el docente rechaza → avisar al estudiante.
+        notificarEstudiante(r, EventoReunion.CANCELADA, observaciones);
         return mapper.toResponse(r);
     }
 
@@ -139,6 +155,8 @@ public class AgendamientoReunionService {
         r.setEnlace(enlace);
         r.setEstado(EstadoAgendamiento.CONTRAOFERTA);
         anexarObservacion(r, "[Contraoferta] ", request.observaciones());
+        // RF-D01/D02: el docente contraoferta una nueva fecha → avisar al estudiante.
+        notificarEstudiante(r, EventoReunion.PROPUESTA, null);
         return mapper.toResponse(r);
     }
 
@@ -150,6 +168,9 @@ public class AgendamientoReunionService {
         r.setEstado(EstadoAgendamiento.CANCELADO);
         anexarObservacion(r, "[Cancelación] ", observaciones);
         liberarFranja(r);
+        // RF-D01/D02: al cancelar → avisar a ambos (estudiante y docente).
+        notificarEstudiante(r, EventoReunion.CANCELADA, observaciones);
+        notificarDocente(r, EventoReunion.CANCELADA, observaciones);
         return mapper.toResponse(r);
     }
 
@@ -299,6 +320,56 @@ public class AgendamientoReunionService {
         if (modalidad == Modalidad.VIRTUAL && (enlace == null || enlace.isBlank())) {
             throw new BusinessException("La modalidad VIRTUAL requiere un enlace");
         }
+    }
+
+    // ---------- notificaciones automáticas (RF-D01 / RF-D02) — graceful ----------
+
+    private enum EventoReunion { PROPUESTA, CONFIRMADA, CANCELADA }
+
+    /** Notifica al estudiante de la reunión. {@code referenciaId} nulo evita la dedupe multi-destinatario. */
+    private void notificarEstudiante(AgendamientoReunion r, EventoReunion evento, String motivo) {
+        try {
+            Estudiante est = estudianteRepository.findById(r.getEstudianteId()).orElse(null);
+            if (est == null || est.getEmail() == null || est.getEmail().isBlank()) {
+                return;
+            }
+            despachar(evento, est.getEmail(),
+                nombreCompleto(est.getNombres(), est.getApellidos()), r, motivo);
+        } catch (Exception ex) {
+            log.warn("No se pudo notificar al estudiante de la reunión {}: {}", r.getId(), ex.getMessage());
+        }
+    }
+
+    /** Notifica al docente (tutor académico) de la reunión. */
+    private void notificarDocente(AgendamientoReunion r, EventoReunion evento, String motivo) {
+        try {
+            Tutor docente = tutorRepository.findById(r.getTutorId()).orElse(null);
+            if (docente == null || docente.getEmail() == null || docente.getEmail().isBlank()) {
+                return;
+            }
+            despachar(evento, docente.getEmail(),
+                nombreCompleto(docente.getNombres(), docente.getApellidos()), r, motivo);
+        } catch (Exception ex) {
+            log.warn("No se pudo notificar al docente de la reunión {}: {}", r.getId(), ex.getMessage());
+        }
+    }
+
+    private void despachar(EventoReunion evento, String email, String nombre,
+                           AgendamientoReunion r, String motivo) {
+        String fechaHora = "%s %s - %s".formatted(r.getFechaPropuesta(), r.getHoraInicio(), r.getHoraFin());
+        String modalidad = r.getModalidad() != null ? r.getModalidad().name() : "PRESENCIAL";
+        switch (evento) {
+            case PROPUESTA -> notificacionCoformacion.notificarReunionPropuesta(
+                email, nombre, fechaHora, modalidad, REF_AGENDAMIENTO, null);
+            case CONFIRMADA -> notificacionCoformacion.notificarReunionConfirmada(
+                email, nombre, fechaHora, modalidad, REF_AGENDAMIENTO, null);
+            case CANCELADA -> notificacionCoformacion.notificarReunionCancelada(
+                email, nombre, fechaHora, motivo, REF_AGENDAMIENTO, null);
+        }
+    }
+
+    private String nombreCompleto(String nombres, String apellidos) {
+        return "%s %s".formatted(nombres == null ? "" : nombres, apellidos == null ? "" : apellidos).trim();
     }
 
     private void anexarObservacion(AgendamientoReunion r, String prefijo, String texto) {

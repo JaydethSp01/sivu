@@ -1,5 +1,8 @@
 package co.uempresarial.sivu.trimestre.service;
 
+import co.uempresarial.sivu.convenio.domain.Convenio;
+import co.uempresarial.sivu.estudiante.domain.Estudiante;
+import co.uempresarial.sivu.notificacion.service.NotificacionCoformacionService;
 import co.uempresarial.sivu.security.service.CurrentUserService;
 import co.uempresarial.sivu.shared.exception.BusinessException;
 import co.uempresarial.sivu.shared.exception.ResourceNotFoundException;
@@ -12,6 +15,7 @@ import co.uempresarial.sivu.trimestre.web.TrimestreMapper;
 import co.uempresarial.sivu.trimestre.web.dto.EvaluacionProfesorRequest;
 import co.uempresarial.sivu.trimestre.web.dto.EvaluacionProfesorResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,6 +25,7 @@ import java.math.RoundingMode;
 @Service
 @RequiredArgsConstructor
 @Transactional
+@Slf4j
 public class EvaluacionProfesorTrimestreService {
 
     private final EvaluacionProfesorTrimestreRepository repository;
@@ -28,6 +33,7 @@ public class EvaluacionProfesorTrimestreService {
     private final TrimestreMapper mapper;
     private final CurrentUserService currentUser;
     private final co.uempresarial.sivu.trimestre.pdf.EvaluacionProfesorPdfGenerator pdfGenerator;
+    private final NotificacionCoformacionService notificacionCoformacion;
 
     @Transactional(readOnly = true)
     public EvaluacionProfesorResponse obtener(Long trimestreId) {
@@ -106,6 +112,8 @@ public class EvaluacionProfesorTrimestreService {
                 e.setFirmadoProfesor(true);
                 e.setFechaFirmaProfesor(now);
                 e.setFirmadoProfesorNombre(nombreActor);
+                // RF-D01/D02: al firmar el profesor la calificación → avisar al estudiante.
+                notificarCorteCalificado(e);
             }
             case ESTUDIANTE -> {
                 if (Boolean.TRUE.equals(e.getFirmadoEstudiante())) {
@@ -119,6 +127,32 @@ public class EvaluacionProfesorTrimestreService {
                 "La evaluación del profesor solo la firman PROFESOR y ESTUDIANTE");
         }
         return mapper.toResponse(e);
+    }
+
+    /** RF-D01/D02 — notifica al estudiante que su evaluación del profesor fue calificada (graceful). */
+    private void notificarCorteCalificado(EvaluacionProfesorTrimestre e) {
+        try {
+            Trimestre t = e.getTrimestre();
+            Convenio c = t != null ? t.getConvenio() : null;
+            Estudiante est = c != null ? c.getEstudiante() : null;
+            if (est == null || est.getEmail() == null || est.getEmail().isBlank()) {
+                return;
+            }
+            BigDecimal nota = e.getNotaPonderadaC2() != null ? e.getNotaPonderadaC2() : e.getNotaPonderada();
+            String corte = "Evaluación del Profesor — T" + (t.getNumero() == null ? "" : t.getNumero());
+            String nombre = (safe(est.getNombres()) + " " + safe(est.getApellidos())).trim();
+            notificacionCoformacion.notificarCorteCalificado(
+                est.getEmail(), nombre, corte,
+                nota == null ? "—" : nota.toPlainString(),
+                NotificacionCoformacionService.REF_TRIMESTRE, null);
+        } catch (Exception ex) {
+            log.warn("No se pudo notificar el corte calificado del trimestre {}: {}",
+                e.getTrimestre() != null ? e.getTrimestre().getId() : null, ex.getMessage());
+        }
+    }
+
+    private static String safe(String s) {
+        return s == null ? "" : s;
     }
 
     /** Corte 1 — Capacidades*0.10 + Actitudes*0.10 + (Desemp*0.20 + ElabPEM*0.50 + SustPEM*0.10). */

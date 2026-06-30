@@ -4,8 +4,11 @@ import co.uempresarial.sivu.documento.domain.Documento;
 import co.uempresarial.sivu.documento.domain.EstadoDocumento;
 import co.uempresarial.sivu.documento.domain.TipoDocumentoSoporte;
 import co.uempresarial.sivu.documento.persistence.DocumentoRepository;
+import co.uempresarial.sivu.convenio.domain.Convenio;
 import co.uempresarial.sivu.estudiante.domain.Estudiante;
+import co.uempresarial.sivu.notificacion.service.NotificacionCoformacionService;
 import co.uempresarial.sivu.security.domain.Rol;
+import co.uempresarial.sivu.tutor.domain.Tutor;
 import co.uempresarial.sivu.security.domain.Usuario;
 import co.uempresarial.sivu.shared.exception.BusinessException;
 import co.uempresarial.sivu.shared.exception.ResourceNotFoundException;
@@ -44,6 +47,7 @@ public class PlanActividadesService {
     private final DocumentoRepository documentoRepository;
     private final TrimestreMapper mapper;
     private final co.uempresarial.sivu.trimestre.pdf.PlanActividadesPdfGenerator pdfGenerator;
+    private final NotificacionCoformacionService notificacionCoformacion;
 
     @Value("${app.storage.path:./storage/documentos}")
     private String storagePath;
@@ -116,6 +120,8 @@ public class PlanActividadesService {
                 }
                 pa.setFirmadoEstudiante(true);
                 pa.setFechaFirmaEstudiante(ahora);
+                // RF-D01/D02: el estudiante envía/manda el plan a revisión → avisar a docente y tutor.
+                notificarPlanEnviado(pa);
             }
             case TUTOR -> {
                 if (Boolean.TRUE.equals(pa.getFirmadoTutor())) {
@@ -142,8 +148,80 @@ public class PlanActividadesService {
             pa.setEstado(EstadoPlanActividades.APROBADO_PROFESOR);
             // BI-04 / RF-A01: al completar las 3 firmas, archivar el PA en el expediente.
             archivarPdfEnExpediente(pa);
+            // RF-D01/D02: con las 3 firmas (PDF generado) → avisar que el documento quedó firmado.
+            notificarPlanFirmado(pa);
         }
         return mapper.toResponse(pa);
+    }
+
+    // ----- Notificaciones automáticas (RF-D01 / RF-D02) — graceful -----
+
+    /** Avisa a docente (tutor académico) y tutor empresarial que el estudiante envió el plan a revisión. */
+    private void notificarPlanEnviado(PlanActividades pa) {
+        try {
+            Trimestre t = pa.getTrimestre();
+            Convenio c = t != null ? t.getConvenio() : null;
+            if (c == null) return;
+            Estudiante est = c.getEstudiante();
+            Tutor docente = c.getTutorAcademico();
+            Tutor tutorEmp = c.getTutorEmpresarial();
+            // referenciaId nula a propósito: el método notifica a 3 destinatarios y la dedupe
+            // por referencia es por evento; la idempotencia la garantiza el flag de firma del PA.
+            notificacionCoformacion.notificarPlanEnviado(
+                emailDe(est), emailDe(docente), emailDe(tutorEmp),
+                nombreDe(est), "T" + (t.getNumero() == null ? "" : t.getNumero()),
+                NotificacionCoformacionService.REF_TRIMESTRE, null);
+        } catch (Exception ex) {
+            log.warn("No se pudo notificar el envío del PA t{}: {}",
+                pa.getId(), ex.getMessage());
+        }
+    }
+
+    /** Avisa a estudiante, docente y tutor empresarial que el PA quedó firmado por las 3 partes. */
+    private void notificarPlanFirmado(PlanActividades pa) {
+        try {
+            Trimestre t = pa.getTrimestre();
+            Convenio c = t != null ? t.getConvenio() : null;
+            if (c == null) return;
+            Estudiante est = c.getEstudiante();
+            Tutor docente = c.getTutorAcademico();
+            Tutor tutorEmp = c.getTutorEmpresarial();
+            String documento = "Plan de Actividades T" + (t.getNumero() == null ? "" : t.getNumero());
+            if (est != null) {
+                notificacionCoformacion.notificarDocumentoFirmado(
+                    emailDe(est), nombreDe(est), documento,
+                    NotificacionCoformacionService.REF_TRIMESTRE, null);
+            }
+            if (docente != null) {
+                notificacionCoformacion.notificarDocumentoFirmado(
+                    emailDe(docente), nombreDe(docente), documento,
+                    NotificacionCoformacionService.REF_TRIMESTRE, null);
+            }
+            if (tutorEmp != null) {
+                notificacionCoformacion.notificarDocumentoFirmado(
+                    emailDe(tutorEmp), nombreDe(tutorEmp), documento,
+                    NotificacionCoformacionService.REF_TRIMESTRE, null);
+            }
+        } catch (Exception ex) {
+            log.warn("No se pudo notificar la firma del PA t{}: {}",
+                pa.getId(), ex.getMessage());
+        }
+    }
+
+    private static String emailDe(Estudiante e) {
+        return e == null ? null : e.getEmail();
+    }
+
+    private static String emailDe(Tutor t) {
+        return t == null ? null : t.getEmail();
+    }
+
+    private static String nombreDe(Estudiante e) {
+        return e == null ? "" : (nullToEmpty(e.getNombres()) + " " + nullToEmpty(e.getApellidos())).trim();
+    }
+
+    private static String nombreDe(Tutor t) {
+        return t == null ? "" : (nullToEmpty(t.getNombres()) + " " + nullToEmpty(t.getApellidos())).trim();
     }
 
     // ----- Hilo del flujo de aprobación tripartito -----

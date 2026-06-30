@@ -8,6 +8,7 @@ import co.uempresarial.sivu.informefinalpm.web.dto.AltoImpactoRequest;
 import co.uempresarial.sivu.informefinalpm.web.dto.InformeFinalPmRequest;
 import co.uempresarial.sivu.informefinalpm.web.dto.InformeFinalPmResponse;
 import co.uempresarial.sivu.informefinalpm.web.dto.RegistrarNotaRequest;
+import co.uempresarial.sivu.informefinalpm.web.dto.SeccionesInformeRequest;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -43,6 +44,15 @@ public class InformeFinalPmController {
     public ResponseEntity<InformeFinalPmResponse> guardarBorrador(@PathVariable Long planMejoraId,
                                                                   @Valid @RequestBody InformeFinalPmRequest request) {
         return ResponseEntity.ok(service.guardarBorrador(planMejoraId, request));
+    }
+
+    @PutMapping("/api/v1/informes-final-pm/{id}/secciones")
+    @PreAuthorize("hasAnyRole('ESTUDIANTE','COORDINADOR','ADMIN')")
+    @Operation(summary = "Guardar las 12 secciones del editor estructurado del Informe Final (RF-A04 #1). "
+        + "Persiste y devuelve el informe con las 12 secciones; maxPaginas=15 y cumpleNotaMinima son informativos.")
+    public ResponseEntity<InformeFinalPmResponse> actualizarSecciones(
+            @PathVariable Long id, @Valid @RequestBody SeccionesInformeRequest request) {
+        return ResponseEntity.ok(service.actualizarSecciones(id, request));
     }
 
     @PostMapping("/api/v1/informes-final-pm/{id}/entregar")

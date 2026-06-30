@@ -26,7 +26,8 @@ import java.time.OffsetDateTime;
 @Transactional
 public class InformeFinalPmService {
 
-    private static final int PAGINAS_MAX = 15;
+    /** Límite institucional de páginas del Informe Final (informativo, GTC-FM-16). */
+    public static final int PAGINAS_MAX = 15;
 
     /** Nota mínima aprobatoria del Informe Final (escala 0–5). */
     public static final BigDecimal NOTA_MINIMA_APROBACION = new BigDecimal("3.0");
@@ -72,6 +73,31 @@ public class InformeFinalPmService {
         informe.setNumeroPaginas(request.numeroPaginas());
         // No cambiamos estado en guardar — solo en entregar/aprobar/rechazar
         return mapper.toResponse(repository.save(informe));
+    }
+
+    /**
+     * GAP 3 / RF-A04 #1 — Guarda las 12 secciones del editor estructurado del Informe Final.
+     * Persiste y devuelve el informe actualizado (con las 12 secciones en el Response).
+     */
+    public InformeFinalPmResponse actualizarSecciones(
+            Long id, co.uempresarial.sivu.informefinalpm.web.dto.SeccionesInformeRequest req) {
+        InformeFinalPm i = obtenerEntidad(id);
+        if (i.getEstado() == EstadoInformeFinalPm.APROBADO) {
+            throw new BusinessException("El Informe Final ya está APROBADO y no se puede modificar");
+        }
+        i.setResumenEjecutivo(req.resumenEjecutivo());
+        i.setContextualizacionEmpresa(req.contextualizacionEmpresa());
+        i.setPlanteamientoProblema(req.planteamientoProblema());
+        i.setMarcoTeorico(req.marcoTeorico());
+        i.setObjetivos(req.objetivos());
+        i.setDiagnostico(req.diagnostico());
+        i.setMetodologia(req.metodologia());
+        i.setJustificacion(req.justificacion());
+        i.setFactibilidad(req.factibilidad());
+        i.setResultados(req.resultados());
+        i.setConclusiones(req.conclusiones());
+        i.setReferenciasApa(req.referenciasApa());
+        return mapper.toResponse(repository.save(i));
     }
 
     public InformeFinalPmResponse entregar(Long id) {
