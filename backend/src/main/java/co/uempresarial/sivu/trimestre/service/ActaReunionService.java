@@ -1,5 +1,6 @@
 package co.uempresarial.sivu.trimestre.service;
 
+import co.uempresarial.sivu.agendamiento.domain.Modalidad;
 import co.uempresarial.sivu.shared.exception.BusinessException;
 import co.uempresarial.sivu.shared.exception.ResourceNotFoundException;
 import co.uempresarial.sivu.trimestre.domain.*;
@@ -65,6 +66,7 @@ public class ActaReunionService {
             .lugar(request.lugar())
             .asunto(request.asunto())
             .tipoReunion(request.tipoReunion())
+            .modalidad(request.modalidad() != null ? request.modalidad() : Modalidad.PRESENCIAL)
             .asistentesJson(mapper.asistentesToJson(request.asistentes()))
             .observaciones(request.observaciones())
             .build();
@@ -90,6 +92,7 @@ public class ActaReunionService {
                                          String hora,
                                          String lugar,
                                          String asunto,
+                                         Modalidad modalidad,
                                          List<ActaReunionRequest.AsistenteRequest> asistentes,
                                          String observaciones) {
         Trimestre trimestre = trimestreRepository.findById(trimestreId)
@@ -103,6 +106,7 @@ public class ActaReunionService {
             .lugar(lugar)
             .asunto(asunto)
             .tipoReunion(TipoReunion.SEGUIMIENTO)
+            .modalidad(modalidad != null ? modalidad : Modalidad.PRESENCIAL)
             .asistentesJson(mapper.asistentesToJson(asistentes))
             .observaciones(observaciones)
             .build();
@@ -123,6 +127,7 @@ public class ActaReunionService {
         acta.setLugar(request.lugar());
         acta.setAsunto(request.asunto());
         if (request.tipoReunion() != null) acta.setTipoReunion(request.tipoReunion());
+        if (request.modalidad() != null) acta.setModalidad(request.modalidad());
         acta.setAsistentesJson(mapper.asistentesToJson(request.asistentes()));
         acta.setObservaciones(request.observaciones());
         acta.getTemas().clear();

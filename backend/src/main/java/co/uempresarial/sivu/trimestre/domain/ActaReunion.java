@@ -1,5 +1,6 @@
 package co.uempresarial.sivu.trimestre.domain;
 
+import co.uempresarial.sivu.agendamiento.domain.Modalidad;
 import co.uempresarial.sivu.documento.domain.Documento;
 import co.uempresarial.sivu.shared.audit.BaseEntity;
 import jakarta.persistence.*;
@@ -49,6 +50,12 @@ public class ActaReunion extends BaseEntity {
     @Column(name = "tipo_reunion", nullable = false, length = 60)
     @Builder.Default
     private TipoReunion tipoReunion = TipoReunion.SEGUIMIENTO;
+
+    /** Modalidad de la reunión (Virtual/Presencial). En el acta GAC-FM-11 se imprime en la fila "Tipo de reunión". */
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    @Builder.Default
+    private Modalidad modalidad = Modalidad.PRESENCIAL;
 
     /**
      * Momento del proceso de coformación: INICIO, MITAD o CIERRE.

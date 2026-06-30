@@ -64,7 +64,62 @@ const EMPTY_SECCIONES: SeccionesValues = {
   resultados: "",
   conclusiones: "",
   referenciasApa: "",
+  pestelPolitico: "",
+  pestelEconomico: "",
+  pestelSocial: "",
+  pestelTecnologico: "",
+  ventajaCompetitiva: "",
+  internoCapacidadDirectiva: "",
+  internoCapacidadTecnologica: "",
+  internoCapacidadTecnica: "",
+  internoTalentoHumano: "",
+  metodologiaQue: "",
+  metodologiaComo: "",
+  metodologiaCuando: "",
+  metodologiaDonde: "",
+  metodologiaConQuien: "",
 };
+
+// Etiquetas FIJAS del template GTC-FM-16 (van hardcoded; no se guardan en BD).
+// Tabla 1 (PESTEL) — Diagnóstico Externo (§6.1).
+const TABLA1_PESTEL: { key: keyof SeccionesValues; label: string }[] = [
+  { key: "pestelPolitico", label: "Político" },
+  { key: "pestelEconomico", label: "Económico" },
+  { key: "pestelSocial", label: "Social" },
+  { key: "pestelTecnologico", label: "Tecnológico" },
+];
+
+// Tabla 2 — Diagnóstico Interno o del Área Funcional (§6.2).
+const TABLA2_INTERNO: { key: keyof SeccionesValues; label: string }[] = [
+  {
+    key: "internoCapacidadDirectiva",
+    label: "Capacidad directiva (Analiza el liderazgo, motivación, gestión y toma de decisiones)",
+  },
+  {
+    key: "internoCapacidadTecnologica",
+    label:
+      "Capacidad tecnológica (Analiza software, hardware, tecnología avanzada o tecnología obsoleta)",
+  },
+  {
+    key: "internoCapacidadTecnica",
+    label:
+      "Capacidad técnica (Analiza la estructura o ambiente físico y capacidad instalada del área)",
+  },
+  {
+    key: "internoTalentoHumano",
+    label:
+      "Capacidad de talento humano (Analiza ambiente laboral, capacitación y desarrollo personal de los colaboradores, experiencia de servicio)",
+  },
+];
+
+// Tabla 3 — Metodología del Plan de Mejora (§7, 5W).
+const TABLA3_METODOLOGIA: { key: keyof SeccionesValues; label: string }[] = [
+  { key: "metodologiaQue", label: "¿Qué hacer?" },
+  { key: "metodologiaComo", label: "¿Cómo hacerlo?" },
+  { key: "metodologiaCuando", label: "¿Cuándo hacerlo?" },
+  { key: "metodologiaDonde", label: "¿Dónde hacerlo?" },
+  { key: "metodologiaConQuien", label: "¿Con quién hacerlo?" },
+];
 
 const SECCIONES_12: { key: keyof SeccionesValues; label: string }[] = [
   { key: "resumenEjecutivo", label: "1. Resumen ejecutivo" },
@@ -95,6 +150,20 @@ function toSeccionesForm(i: InformeFinalPmResponse): SeccionesValues {
     resultados: i.resultados ?? "",
     conclusiones: i.conclusiones ?? "",
     referenciasApa: i.referenciasApa ?? "",
+    pestelPolitico: i.pestelPolitico ?? "",
+    pestelEconomico: i.pestelEconomico ?? "",
+    pestelSocial: i.pestelSocial ?? "",
+    pestelTecnologico: i.pestelTecnologico ?? "",
+    ventajaCompetitiva: i.ventajaCompetitiva ?? "",
+    internoCapacidadDirectiva: i.internoCapacidadDirectiva ?? "",
+    internoCapacidadTecnologica: i.internoCapacidadTecnologica ?? "",
+    internoCapacidadTecnica: i.internoCapacidadTecnica ?? "",
+    internoTalentoHumano: i.internoTalentoHumano ?? "",
+    metodologiaQue: i.metodologiaQue ?? "",
+    metodologiaComo: i.metodologiaComo ?? "",
+    metodologiaCuando: i.metodologiaCuando ?? "",
+    metodologiaDonde: i.metodologiaDonde ?? "",
+    metodologiaConQuien: i.metodologiaConQuien ?? "",
   };
 }
 
@@ -933,6 +1002,102 @@ export function InformeFinalPmPage(): JSX.Element {
                       disabled={!canEditarSecciones}
                       onChange={(e) => setSeccion(key, e.target.value)}
                     />
+
+                    {/* §6: tablas institucionales GTC-FM-16 (PESTEL externo + interno + ventaja) */}
+                    {key === "diagnostico" && (
+                      <div className="mt-3 space-y-4 rounded-lg border bg-muted/30 p-3">
+                        <div>
+                          <p className="text-sm font-semibold">
+                            6.1 Diagnóstico Externo — Tabla 1 (PESTEL)
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            Análisis del Factor por cada variable externa.
+                          </p>
+                          <div className="mt-2 space-y-2">
+                            {TABLA1_PESTEL.map((f) => (
+                              <div key={f.key}>
+                                <Label htmlFor={`sec-${f.key}`} className="text-xs">
+                                  {f.label}
+                                </Label>
+                                <Textarea
+                                  id={`sec-${f.key}`}
+                                  className="mt-1 resize-y"
+                                  rows={2}
+                                  value={secciones[f.key]}
+                                  readOnly={!canEditarSecciones}
+                                  disabled={!canEditarSecciones}
+                                  onChange={(e) => setSeccion(f.key, e.target.value)}
+                                />
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
+                        <div>
+                          <Label htmlFor="sec-ventajaCompetitiva" className="text-sm font-semibold">
+                            6.1.1 Diagnóstico de la Ventaja Competitiva
+                          </Label>
+                          <Textarea
+                            id="sec-ventajaCompetitiva"
+                            className="mt-1 resize-y"
+                            rows={3}
+                            value={secciones.ventajaCompetitiva}
+                            readOnly={!canEditarSecciones}
+                            disabled={!canEditarSecciones}
+                            onChange={(e) => setSeccion("ventajaCompetitiva", e.target.value)}
+                          />
+                        </div>
+
+                        <div>
+                          <p className="text-sm font-semibold">
+                            6.2 Diagnóstico Interno o del Área Funcional — Tabla 2
+                          </p>
+                          <div className="mt-2 space-y-2">
+                            {TABLA2_INTERNO.map((f) => (
+                              <div key={f.key}>
+                                <Label htmlFor={`sec-${f.key}`} className="text-xs">
+                                  {f.label}
+                                </Label>
+                                <Textarea
+                                  id={`sec-${f.key}`}
+                                  className="mt-1 resize-y"
+                                  rows={2}
+                                  value={secciones[f.key]}
+                                  readOnly={!canEditarSecciones}
+                                  disabled={!canEditarSecciones}
+                                  onChange={(e) => setSeccion(f.key, e.target.value)}
+                                />
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* §7: Tabla 3 — Metodología del Plan de Mejora (5W) */}
+                    {key === "metodologia" && (
+                      <div className="mt-3 space-y-2 rounded-lg border bg-muted/30 p-3">
+                        <p className="text-sm font-semibold">
+                          Tabla 3 — Metodología del Plan de Mejora
+                        </p>
+                        {TABLA3_METODOLOGIA.map((f) => (
+                          <div key={f.key}>
+                            <Label htmlFor={`sec-${f.key}`} className="text-xs">
+                              {f.label}
+                            </Label>
+                            <Textarea
+                              id={`sec-${f.key}`}
+                              className="mt-1 resize-y"
+                              rows={2}
+                              value={secciones[f.key]}
+                              readOnly={!canEditarSecciones}
+                              disabled={!canEditarSecciones}
+                              onChange={(e) => setSeccion(f.key, e.target.value)}
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>

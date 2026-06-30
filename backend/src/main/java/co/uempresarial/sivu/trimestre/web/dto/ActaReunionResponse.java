@@ -1,5 +1,6 @@
 package co.uempresarial.sivu.trimestre.web.dto;
 
+import co.uempresarial.sivu.agendamiento.domain.Modalidad;
 import co.uempresarial.sivu.trimestre.domain.TipoReunion;
 
 import java.time.LocalDate;
@@ -15,6 +16,7 @@ public record ActaReunionResponse(
     String lugar,
     String asunto,
     TipoReunion tipoReunion,
+    Modalidad modalidad,
     List<Asistente> asistentes,
     String observaciones,
     boolean firmadoEstudiante,

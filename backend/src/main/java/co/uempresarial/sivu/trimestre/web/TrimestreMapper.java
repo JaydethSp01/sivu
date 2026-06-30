@@ -83,6 +83,7 @@ public class TrimestreMapper {
             a.getLugar(),
             a.getAsunto(),
             a.getTipoReunion(),
+            a.getModalidad(),
             asistentes,
             a.getObservaciones(),
             Boolean.TRUE.equals(a.getFirmadoEstudiante()),

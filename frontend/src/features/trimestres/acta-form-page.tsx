@@ -33,6 +33,7 @@ export function ActaFormPage(): JSX.Element {
   const [lugar, setLugar] = useState<string>("");
   const [asunto, setAsunto] = useState<string>("");
   const [tipo, setTipo] = useState<TipoReunion>("SEGUIMIENTO");
+  const [modalidad, setModalidad] = useState<"VIRTUAL" | "PRESENCIAL">("PRESENCIAL");
   const [observaciones, setObservaciones] = useState("");
   const [asistentes, setAsistentes] = useState<ActaAsistente[]>([]);
   const [temas, setTemas] = useState<ActaTema[]>([]);
@@ -52,6 +53,7 @@ export function ActaFormPage(): JSX.Element {
       setLugar(d.lugar ?? "");
       setAsunto(d.asunto ?? "");
       setTipo(d.tipoReunion);
+      setModalidad(d.modalidad ?? "PRESENCIAL");
       setObservaciones(d.observaciones ?? "");
       setAsistentes(d.asistentes.map((a) => ({ ...a })));
       setTemas(d.temas.map((t) => ({ ...t })));
@@ -67,6 +69,7 @@ export function ActaFormPage(): JSX.Element {
         lugar: lugar || null,
         asunto: asunto || null,
         tipoReunion: tipo,
+        modalidad,
         asistentes,
         observaciones: observaciones || null,
         temas: temas.map((t, i) => ({ ...t, orden: t.orden ?? i })),
@@ -136,6 +139,16 @@ export function ActaFormPage(): JSX.Element {
                   {(Object.keys(TIPO_REUNION_LABELS) as TipoReunion[]).map((k) => (
                     <SelectItem key={k} value={k}>{TIPO_REUNION_LABELS[k]}</SelectItem>
                   ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1">
+              <Label>Modalidad</Label>
+              <Select value={modalidad} onValueChange={(v) => setModalidad(v as "VIRTUAL" | "PRESENCIAL")}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="PRESENCIAL">Presencial</SelectItem>
+                  <SelectItem value="VIRTUAL">Virtual</SelectItem>
                 </SelectContent>
               </Select>
             </div>

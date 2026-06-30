@@ -236,6 +236,7 @@ public class AgendamientoReunionService {
                 hora,
                 lugar,
                 asunto,
+                r.getModalidad(),
                 construirAsistentes(r),
                 observaciones);
 

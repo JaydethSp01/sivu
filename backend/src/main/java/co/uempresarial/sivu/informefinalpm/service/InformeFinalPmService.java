@@ -97,6 +97,21 @@ public class InformeFinalPmService {
         i.setResultados(req.resultados());
         i.setConclusiones(req.conclusiones());
         i.setReferenciasApa(req.referenciasApa());
+        // Fidelidad estructural GTC-FM-16 — tablas de las secciones 6 y 7
+        i.setPestelPolitico(req.pestelPolitico());
+        i.setPestelEconomico(req.pestelEconomico());
+        i.setPestelSocial(req.pestelSocial());
+        i.setPestelTecnologico(req.pestelTecnologico());
+        i.setVentajaCompetitiva(req.ventajaCompetitiva());
+        i.setInternoCapacidadDirectiva(req.internoCapacidadDirectiva());
+        i.setInternoCapacidadTecnologica(req.internoCapacidadTecnologica());
+        i.setInternoCapacidadTecnica(req.internoCapacidadTecnica());
+        i.setInternoTalentoHumano(req.internoTalentoHumano());
+        i.setMetodologiaQue(req.metodologiaQue());
+        i.setMetodologiaComo(req.metodologiaComo());
+        i.setMetodologiaCuando(req.metodologiaCuando());
+        i.setMetodologiaDonde(req.metodologiaDonde());
+        i.setMetodologiaConQuien(req.metodologiaConQuien());
         return mapper.toResponse(repository.save(i));
     }
 
