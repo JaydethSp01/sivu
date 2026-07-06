@@ -73,4 +73,5 @@ data/
 .mongo-atlas.env
 *.atlas.env
 .neon*.env
+.supabase*.env
 .render*.env

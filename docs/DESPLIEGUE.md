@@ -19,7 +19,7 @@ Cómo está montado el ambiente productivo y cómo replicarlo. Todo en **tiers g
                                        JDBC (sslmode=require)        Spring Data Mongo
                                                          ▼               ▼
                                               ┌──────────────┐   ┌──────────────────┐
-                                              │ Neon         │   │ MongoDB Atlas    │
+                                              │ Supabase     │   │ MongoDB Atlas    │
                                               │ PostgreSQL   │   │ (usuarios/auth)  │
                                               └──────────────┘   └──────────────────┘
         ┌──────────────────────────┐
@@ -34,7 +34,7 @@ Cómo está montado el ambiente productivo y cómo replicarlo. Todo en **tiers g
 | Frontend | **Vercel** | Sitio estático (build de Vite). Deployment protection **desactivada**. |
 | Backend | **Render** (free, Docker) | `backend/Dockerfile`. Cold start ~2 min cuando idle. |
 | IA sidecar | **Render** (free, Docker) | `ia-sidecar/Dockerfile`. |
-| PostgreSQL | **Neon** | Las 21 migraciones Flyway corren solas al arrancar el backend. |
+| PostgreSQL | **Supabase** | Pooler JDBC + `sslmode=require`. Flyway (21 migraciones) corre al arrancar el backend. |
 | MongoDB | **Mongo Atlas** (M0 free) | Solo la colección `usuarios`. Network Access: `0.0.0.0/0`. |
 | Repo | **GitHub** (público) | Render free clona repos públicos sin OAuth. |
 | Keep-alive | **cron-job.org** | Ping cada 5 min al `/actuator/health` para evitar el cold start. |
@@ -47,14 +47,16 @@ Cómo está montado el ambiente productivo y cómo replicarlo. Todo en **tiers g
 |---|---|
 | `SPRING_PROFILES_ACTIVE` | `docker` |
 | `SERVER_PORT` | *(no se setea)* — Render inyecta `PORT`; el app lo lee con `server.port=${PORT:8080}` |
-| `SPRING_DATASOURCE_URL` | `jdbc:postgresql://<host-neon>/<db>?sslmode=require` |
-| `SPRING_DATASOURCE_USERNAME` / `_PASSWORD` | del connection string de Neon |
+| `SPRING_DATASOURCE_URL` | `jdbc:postgresql://<region>.pooler.supabase.com:5432/postgres?sslmode=require` |
+| `SPRING_DATASOURCE_USERNAME` | `postgres.<project-ref>` (formato del pooler de Supabase) |
+| `SPRING_DATASOURCE_PASSWORD` | contraseña de la BD en **Project Settings → Database** |
 | `SPRING_DATA_MONGODB_URI` | `mongodb+srv://<user>:<pass>@<cluster>/sivu_users?retryWrites=true&w=majority` |
 | `JWT_SECRET` | **≥ 64 caracteres** (HS512 lo exige) |
 | `IA_SIDECAR_URL` | `https://sivu-ia-sidecar.onrender.com` |
 | `MANAGEMENT_HEALTH_MAIL_ENABLED` | `false` |
 | `MANAGEMENT_HEALTH_MONGO_ENABLED` | `false` |
 | `APP_MAIL_ENABLED` | `false` (no hay SMTP en prod) |
+| `APP_MAIL_FROM` | `no-reply@sivu.uempresarial.edu.co` |
 
 **IA sidecar**: `CLAUDE_CODE_OAUTH_TOKEN` (de `claude setup-token`) y `PORT=8090`.
 
@@ -65,7 +67,11 @@ Cómo está montado el ambiente productivo y cómo replicarlo. Todo en **tiers g
 ## Pasos para desplegar desde cero
 
 1. **GitHub** — push del repo (público para Render free).
-2. **Neon** — crear proyecto Postgres → tomar el connection string → partirlo en URL JDBC + user + pass.
+2. **Supabase** — crear proyecto → **Project Settings → Database → Connection string**
+   (modo *URI*, pooler *Session* en puerto 5432) → convertir a JDBC:
+   - **URL:** `jdbc:postgresql://<region>.pooler.supabase.com:5432/postgres?sslmode=require`
+   - **User:** `postgres.<project-ref>` (no uses solo `postgres` con el pooler)
+   - **Password:** la de la BD del proyecto (reseteable en el panel)
 3. **Mongo Atlas** — crear cluster M0, un *database user*, Network Access `0.0.0.0/0`, tomar la URI.
 4. **Render backend** — `New Web Service` desde el repo, Docker, `rootDir=backend`,
    `dockerfilePath=./Dockerfile`, `dockerContext=.`, plan free, healthCheck `/actuator/health`, +
@@ -76,7 +82,7 @@ Cómo está montado el ambiente productivo y cómo replicarlo. Todo en **tiers g
 7. **Keep-alive** — cron-job.org pingeando `/actuator/health` cada 5 min.
 
 > Las credenciales se manejan vía API; nunca se commitean. El `.gitignore` cubre `.env*`,
-> `.mongo-atlas.env`, `.neon*.env`, `.render*.env`.
+> `.mongo-atlas.env`, `.supabase*.env`, `.render*.env`.
 
 ---
 
@@ -111,6 +117,11 @@ Estos nos costaron tiempo; documentados para que no se repitan:
 8. **Cold start (Render free).** El servicio se duerme tras 15 min idle. Un ping cada 5 min
    (cron-job.org) lo mantiene caliente. Para always-on real sin trucos: Render Starter ($7/mes).
 
+9. **Supabase pooler + username.** Con el pooler de Supabase el usuario JDBC no es `postgres` sino
+   `postgres.<project-ref>`. Si la auth falla en Render pero DBeaver conecta (o viceversa), revisa
+   que estés usando el mismo modo (pooler vs direct) y el user correcto. Al resetear la contraseña
+   en Supabase hay que actualizar `SPRING_DATASOURCE_PASSWORD` en Render.
+
 ---
 
 ## Sembrar datos de demo en producción
@@ -127,6 +138,7 @@ Crea un ciclo de práctica completo (idempotente) para que la demo no muestre pa
 
 - **Render free**: cold start ~2 min, 512 MB RAM, 750 h/mes por workspace.
 - **Atlas M0**: latencia de ~25-30 s en la primera conexión, almacenamiento limitado.
-- **Neon free**: el branch se suspende por inactividad (re-activa solo, agrega latencia al primer query).
+- **Supabase free**: 500 MB de BD, límites de conexiones del pooler; el proyecto puede pausarse tras
+  inactividad prolongada (re-activa solo, agrega latencia al primer query).
 
 Para una demostración en vivo: **abrir el sitio 2-3 min antes** y/o tener el keep-alive corriendo.

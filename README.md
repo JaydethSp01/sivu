@@ -133,7 +133,7 @@ Además: PDF de Hoja de Vida y de Convenio. Las firmas llevan **sello de tiempo*
 | **IA** | **`@anthropic-ai/claude-agent-sdk`** vía sidecar Node (usa el plan Claude Code, **sin API key**) |
 | **MCP** | Node · TypeScript · `@modelcontextprotocol/sdk` (9 tools) |
 | **Email local** | MailHog (SMTP + UI 8025) |
-| **Despliegue** | Docker · Render (backend + sidecar) · Vercel (frontend) · Neon (PG) · Mongo Atlas |
+| **Despliegue** | Docker · Render (backend + sidecar) · Vercel (frontend) · Supabase (PG) · Mongo Atlas |
 | **Calidad** | JUnit 5 · Mockito · ESLint flat config · SonarCloud · JaCoCo |
 | **CI/CD** | GitHub Actions |
 
@@ -194,7 +194,7 @@ sivu/
 │   └── seed-demo-lifecycle.py   Siembra un ciclo de práctica COMPLETO vía API
 ├── docs/
 │   ├── PARA-EL-EQUIPO.md     ← guía de onboarding para compañeros
-│   ├── DESPLIEGUE.md         ← receta de deploy (Render+Vercel+Neon+Atlas) + gotchas
+│   ├── DESPLIEGUE.md         ← receta de deploy (Render+Vercel+Supabase+Atlas) + gotchas
 │   ├── REVISION_COFORMACION.md   revisión del sistema para la oficina
 │   ├── auditoria-*.md        auditorías (arquitectura, BD, frontend, UX/UI)
 │   ├── arquitectura/ diagramas/ scrum/ capturas/
@@ -292,7 +292,7 @@ devuelve el análisis, y Claude le suma su revisión cualitativa. Setup en
 ## Despliegue en la nube
 
 Arquitectura productiva: **Vercel** (frontend) + **Render** (backend + IA sidecar) +
-**Neon** (PostgreSQL) + **Mongo Atlas** (usuarios). La receta completa, las variables de entorno
+**Supabase** (PostgreSQL) + **Mongo Atlas** (usuarios). La receta completa, las variables de entorno
 y los **gotchas resueltos** (puerto $PORT, JWT ≥64 chars, health de mail/mongo, rewrite SPA, etc.)
 están en **[`docs/DESPLIEGUE.md`](./docs/DESPLIEGUE.md)**.
 
