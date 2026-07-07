@@ -6,7 +6,7 @@
 // offline básico para la pantalla de login y el shell. No es un offline-first
 // completo (los datos vienen del backend cuando hay red).
 
-const CACHE_NAME = "sivu-shell-v1";
+const CACHE_NAME = "sivu-shell-v2";
 const APP_SHELL = [
   "/",
   "/index.html",
@@ -47,13 +47,29 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Para assets estáticos: cache-first.
+  // JS/CSS versionados de Vite: NETWORK-FIRST para no servir chunks obsoletos
+  // tras un redeploy (cae a caché solo si no hay red).
+  if (/\.(js|css)$/.test(url.pathname)) {
+    event.respondWith(
+      fetch(req)
+        .then((resp) => {
+          if (resp.ok && url.origin === self.location.origin) {
+            const copy = resp.clone();
+            caches.open(CACHE_NAME).then((c) => c.put(req, copy));
+          }
+          return resp;
+        })
+        .catch(() => caches.match(req))
+    );
+    return;
+  }
+
+  // Resto de assets estáticos (imágenes, fuentes): cache-first.
   event.respondWith(
     caches.match(req).then((cached) => {
       if (cached) return cached;
       return fetch(req)
         .then((resp) => {
-          // Solo cachear respuestas OK del mismo origen.
           if (resp.ok && url.origin === self.location.origin) {
             const copy = resp.clone();
             caches.open(CACHE_NAME).then((c) => c.put(req, copy));
