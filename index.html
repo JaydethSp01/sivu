@@ -481,13 +481,13 @@ const dots=document.getElementById('dots');
 slides.forEach((_,k)=>{const b=document.createElement('button');b.onclick=()=>go(k);dots.appendChild(b);});
 const dEls=[...dots.children];
 const prev=document.getElementById('prev'),next=document.getElementById('next');
-const count=document.getElementById('count'),top=document.getElementById('top');
+const count=document.getElementById('count'),barEl=document.getElementById('top');
 function go(k){
   i=Math.max(0,Math.min(N-1,k));
   deck.style.transform='translateX(-'+(i*100)+'vw)';
   dEls.forEach((d,x)=>d.classList.toggle('on',x===i));
   count.innerHTML='<b>'+String(i+1).padStart(2,'0')+'</b> / '+String(N).padStart(2,'0');
-  top.style.width=((i+1)/N*100)+'%';
+  barEl.style.width=((i+1)/N*100)+'%';
   prev.disabled=i===0;next.disabled=i===N-1;
   slides[i].scrollTop=0;
 }
