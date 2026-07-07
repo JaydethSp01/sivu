@@ -89,8 +89,8 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: |
           mvn -B -ntp sonar:sonar \
-            -Dsonar.projectKey=sivu \
-            -Dsonar.organization=uempresarial \
+            -Dsonar.projectKey=jaydethsp01_sivu \
+            -Dsonar.organization=jaydethsp01 \
             -Dsonar.host.url=https://sonarcloud.io \
             -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
 
