@@ -72,6 +72,10 @@ h3{font-size:clamp(17px,2.3vw,23px);font-weight:600;margin:20px 0 6px}
 .card .lbl{font:700 11px/1 var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--blue2);display:block;margin-bottom:8px}
 .pill{display:inline-block;font:600 11.5px/1 var(--mono);padding:5px 9px;border-radius:6px;border:1px solid var(--line);background:var(--panel2);color:var(--muted);margin:4px 5px 0 0}
 .pill.b{color:var(--blue2)}.pill.g{color:var(--green)}.pill.a{color:var(--amber)}
+.techlist{display:flex;flex-direction:column;gap:6px;margin-top:2px}
+.tw{font:500 12px/1.4 var(--mono);color:var(--muted);display:flex;gap:8px}
+.tw b{font-weight:700;flex:0 0 auto;min-width:112px;color:var(--ink)}
+.techlist.g .tw b{color:var(--green)}.techlist.b .tw b{color:var(--blue2)}.techlist.a .tw b{color:var(--amber)}
 
 /* CODE panel — con líneas reales (white-space:pre) */
 .code{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#0b0e15;margin-top:16px;box-shadow:0 24px 60px -34px rgba(0,0,0,.8)}
@@ -266,15 +270,50 @@ body.anim .slide.is-active .stage.gate{animation:pulse 2.6s ease-in-out infinite
   <div class="owner all"><span class="d"></span>Todo el equipo</div>
   <div class="tag">02 — Tecnología</div>
   <h2>El stack</h2>
+  <p class="lead">Cada tecnología cumple un rol concreto en la solución:</p>
   <div class="grid g3">
-    <div class="card"><span class="lbl" style="color:var(--green)">Frontend · Bryam</span><span class="pill g">React 18</span><span class="pill g">Vite</span><span class="pill g">TypeScript</span><span class="pill g">Tailwind</span><span class="pill g">shadcn/ui</span><span class="pill g">TanStack Query</span><span class="pill g">PWA</span></div>
-    <div class="card"><span class="lbl">Backend · Jaydeth</span><span class="pill b">Spring Boot 3</span><span class="pill b">Java 21</span><span class="pill b">Spring Security</span><span class="pill b">JWT</span><span class="pill b">OpenPDF</span><span class="pill b">Swagger</span><span class="pill b">MCP</span><span class="pill b">IA</span></div>
-    <div class="card"><span class="lbl" style="color:var(--amber)">Base de datos · Daniel</span><span class="pill a">PostgreSQL 16</span><span class="pill a">Flyway</span><span class="pill a">Supabase</span><span class="pill a">MongoDB 7</span><span class="pill a">Atlas</span></div>
+    <div class="card"><span class="lbl" style="color:var(--green)">Frontend · Bryam</span>
+      <div class="techlist g">
+        <div class="tw"><b>React 18</b> interfaz por componentes</div>
+        <div class="tw"><b>Vite</b> bundler y dev-server rápido</div>
+        <div class="tw"><b>TypeScript</b> tipado estático</div>
+        <div class="tw"><b>Tailwind + shadcn</b> estilos y componentes UI</div>
+        <div class="tw"><b>TanStack Query</b> datos y caché de la API</div>
+        <div class="tw"><b>PWA</b> instalable y responsive</div>
+      </div></div>
+    <div class="card"><span class="lbl">Backend · Jaydeth</span>
+      <div class="techlist b">
+        <div class="tw"><b>Spring Boot · Java 21</b> API REST</div>
+        <div class="tw"><b>Spring Security + JWT</b> auth y roles</div>
+        <div class="tw"><b>OpenPDF</b> genera los PDF oficiales</div>
+        <div class="tw"><b>Swagger</b> documenta la API</div>
+        <div class="tw"><b>MCP</b> consulta el sistema hablando</div>
+        <div class="tw"><b>IA</b> revisa Plan e Informe</div>
+      </div></div>
+    <div class="card"><span class="lbl" style="color:var(--amber)">Base de datos · Daniel</span>
+      <div class="techlist a">
+        <div class="tw"><b>PostgreSQL 16</b> dominio (relacional)</div>
+        <div class="tw"><b>Flyway</b> versiona el esquema</div>
+        <div class="tw"><b>Supabase</b> Postgres en producción</div>
+        <div class="tw"><b>MongoDB 7</b> usuarios (no relacional)</div>
+        <div class="tw"><b>Atlas</b> Mongo en producción</div>
+      </div></div>
   </div>
   <h3>Infraestructura y calidad</h3>
   <div class="grid g2">
-    <div class="card"><span class="lbl">Contenedores y despliegue</span><span class="pill">Docker</span><span class="pill">docker-compose</span><span class="pill">GHCR</span><span class="pill">GitHub Actions</span><span class="pill">Render</span><span class="pill">Vercel</span></div>
-    <div class="card"><span class="lbl">Pruebas y calidad</span><span class="pill">JUnit</span><span class="pill">Newman</span><span class="pill">Cypress</span><span class="pill">k6</span><span class="pill">SonarCloud</span><span class="pill">JaCoCo</span></div>
+    <div class="card"><span class="lbl">Contenedores y despliegue</span>
+      <div class="techlist">
+        <div class="tw"><b>Docker + compose</b> empaqueta cada servicio</div>
+        <div class="tw"><b>GHCR</b> registro de imágenes</div>
+        <div class="tw"><b>GitHub Actions</b> pipeline CI/CD</div>
+        <div class="tw"><b>Render · Vercel</b> corren backend · frontend</div>
+      </div></div>
+    <div class="card"><span class="lbl">Pruebas y calidad</span>
+      <div class="techlist">
+        <div class="tw"><b>JUnit</b> unitarias · <b style="min-width:0">Newman</b> API/contrato</div>
+        <div class="tw"><b>Cypress</b> E2E · <b style="min-width:0">k6</b> rendimiento</div>
+        <div class="tw"><b>SonarCloud</b> calidad · <b style="min-width:0">JaCoCo</b> cobertura</div>
+      </div></div>
   </div>
 </div></section>
 
