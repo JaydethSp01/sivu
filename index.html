@@ -320,6 +320,42 @@ body.anim .slide.is-active .stage.gate{animation:pulse 2.6s ease-in-out infinite
   </div>
 </div></section>
 
+<!-- 5 · ARQUITECTURA -->
+<section class="slide"><div class="inner">
+  <div class="owner all"><span class="d"></span>Todo el equipo</div>
+  <div class="tag">03 — Arquitectura global</div>
+  <h2>Cómo se conecta todo</h2>
+  <div class="arch">
+    <div class="node"><div class="t">Usuario</div><div class="s">navegador / móvil</div></div>
+    <div class="conn" data-l="HTTPS"></div>
+    <div class="node fe"><div class="t">Frontend · React SPA</div><div class="s">Vercel · sivu-platform.vercel.app</div></div>
+    <div class="conn" data-l="REST /api/v1 · JWT"></div>
+    <div class="node be"><div class="t">Backend · Spring Boot</div><div class="s">Render (Docker) · Swagger · Flyway</div></div>
+    <div class="conn" data-l="persiste · integra"></div>
+    <div class="row3">
+      <div class="node db"><div class="t">PostgreSQL</div><div class="s">Supabase · dominio</div></div>
+      <div class="node db"><div class="t">MongoDB</div><div class="s">Atlas · usuarios</div></div>
+      <div class="node be"><div class="t">IA Sidecar</div><div class="s">Render · Claude Code</div></div>
+      <div class="node be"><div class="t">MCP Server</div><div class="s">Claude ↔ API</div></div>
+    </div>
+  </div>
+  <p class="lead" style="margin-top:18px;text-align:center">El navegador consume una API REST con JWT. El backend orquesta la lógica, las dos bases de datos, los PDF, la IA y el MCP. Cada push a <span class="mono">master</span> que pasa las pruebas se despliega solo.</p>
+</div></section>
+
+<!-- 6 · FLUJO PETICIÓN -->
+<section class="slide"><div class="inner">
+  <div class="tag">03 — Arquitectura global</div>
+  <h2>Una petición, paso a paso</h2>
+  <p class="lead">Ejemplo real: el estudiante envía su Plan de Actividades (GAC-FM-10).</p>
+  <div class="flow">
+    <div class="step"><div class="num">1</div><div><h4>El estudiante llena el formulario <span class="who fe">Front</span></h4><p>React valida los datos y envía la petición al backend con el token de sesión.</p></div></div>
+    <div class="step"><div class="num">2</div><div><h4>El backend autoriza y guarda <span class="who be">Back</span></h4><p>Valida el token JWT, comprueba el rol con <span class="mono">@PreAuthorize</span> y aplica las reglas; persiste en PostgreSQL.</p></div></div>
+    <div class="step"><div class="num">3</div><div><h4>Los datos quedan relacionados <span class="who db">BD</span></h4><p>El plan y sus objetivos y meses cuelgan del trimestre del convenio (integridad por llaves foráneas).</p></div></div>
+    <div class="step"><div class="num">4</div><div><h4>Notifica y, al firmar los 3, genera el PDF <span class="who be">Back</span></h4><p>Avisa a docente y tutor. Cuando los tres firman, OpenPDF genera el PDF oficial y lo guarda en el expediente.</p></div></div>
+    <div class="step"><div class="num">5</div><div><h4>El estudiante ve el estado al instante <span class="who fe">Front</span></h4><p>TanStack Query refresca el expediente con el nuevo estado y el PDF descargable.</p></div></div>
+  </div>
+</div></section>
+
 <!-- 4b · BD A FONDO — TABLAS -->
 <section class="slide"><div class="inner">
   <div class="owner all"><span class="d"></span>Base de datos · Daniel</div>
@@ -363,42 +399,6 @@ body.anim .slide.is-active .stage.gate{animation:pulse 2.6s ease-in-out infinite
     </div>
   </div>
   <div class="legend"><span>FK e integridad en Postgres · <b>Flyway V1…V33</b> versiona cada cambio · el <b>ER</b> se navega en DBeaver</span></div>
-</div></section>
-
-<!-- 5 · ARQUITECTURA -->
-<section class="slide"><div class="inner">
-  <div class="owner all"><span class="d"></span>Todo el equipo</div>
-  <div class="tag">03 — Arquitectura global</div>
-  <h2>Cómo se conecta todo</h2>
-  <div class="arch">
-    <div class="node"><div class="t">Usuario</div><div class="s">navegador / móvil</div></div>
-    <div class="conn" data-l="HTTPS"></div>
-    <div class="node fe"><div class="t">Frontend · React SPA</div><div class="s">Vercel · sivu-platform.vercel.app</div></div>
-    <div class="conn" data-l="REST /api/v1 · JWT"></div>
-    <div class="node be"><div class="t">Backend · Spring Boot</div><div class="s">Render (Docker) · Swagger · Flyway</div></div>
-    <div class="conn" data-l="persiste · integra"></div>
-    <div class="row3">
-      <div class="node db"><div class="t">PostgreSQL</div><div class="s">Supabase · dominio</div></div>
-      <div class="node db"><div class="t">MongoDB</div><div class="s">Atlas · usuarios</div></div>
-      <div class="node be"><div class="t">IA Sidecar</div><div class="s">Render · Claude Code</div></div>
-      <div class="node be"><div class="t">MCP Server</div><div class="s">Claude ↔ API</div></div>
-    </div>
-  </div>
-  <p class="lead" style="margin-top:18px;text-align:center">El navegador consume una API REST con JWT. El backend orquesta la lógica, las dos bases de datos, los PDF, la IA y el MCP. Cada push a <span class="mono">master</span> que pasa las pruebas se despliega solo.</p>
-</div></section>
-
-<!-- 6 · FLUJO PETICIÓN -->
-<section class="slide"><div class="inner">
-  <div class="tag">03 — Arquitectura global</div>
-  <h2>Una petición, paso a paso</h2>
-  <p class="lead">Ejemplo real: el estudiante envía su Plan de Actividades (GAC-FM-10).</p>
-  <div class="flow">
-    <div class="step"><div class="num">1</div><div><h4>El estudiante llena el formulario <span class="who fe">Front</span></h4><p>React valida los datos y envía la petición al backend con el token de sesión.</p></div></div>
-    <div class="step"><div class="num">2</div><div><h4>El backend autoriza y guarda <span class="who be">Back</span></h4><p>Valida el token JWT, comprueba el rol con <span class="mono">@PreAuthorize</span> y aplica las reglas; persiste en PostgreSQL.</p></div></div>
-    <div class="step"><div class="num">3</div><div><h4>Los datos quedan relacionados <span class="who db">BD</span></h4><p>El plan y sus objetivos y meses cuelgan del trimestre del convenio (integridad por llaves foráneas).</p></div></div>
-    <div class="step"><div class="num">4</div><div><h4>Notifica y, al firmar los 3, genera el PDF <span class="who be">Back</span></h4><p>Avisa a docente y tutor. Cuando los tres firman, OpenPDF genera el PDF oficial y lo guarda en el expediente.</p></div></div>
-    <div class="step"><div class="num">5</div><div><h4>El estudiante ve el estado al instante <span class="who fe">Front</span></h4><p>TanStack Query refresca el expediente con el nuevo estado y el PDF descargable.</p></div></div>
-  </div>
 </div></section>
 
 <!-- 7 · DANIEL — dos paradigmas -->
