@@ -1,0 +1,21 @@
+name: Keep-alive prod
+
+# Evita el "cold start" de Render free (que duerme tras ~15 min de inactividad)
+# haciendo ping periódico a los health-checks del backend y del IA sidecar.
+on:
+  schedule:
+    - cron: "*/10 * * * *"   # cada 10 minutos
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping backend + IA sidecar
+        run: |
+          for url in \
+            "https://sivu-backend.onrender.com/actuator/health" \
+            "https://sivu-ia-sidecar.onrender.com/health"; do
+            code=$(curl -fsS --max-time 90 -o /dev/null -w '%{http_code}' "$url" || echo "000")
+            echo "$url -> $code"
+          done
