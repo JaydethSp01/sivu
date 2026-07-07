@@ -106,45 +106,53 @@ export function AsignarPracticaPage(): JSX.Element {
         />
       </div>
 
-      <Card className="max-w-2xl">
+      <Card className="max-w-3xl">
         <CardHeader>
           <CardTitle>Datos de la práctica</CardTitle>
           <CardDescription>
             El tutor empresarial se filtra por la empresa seleccionada.
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-1">
-            <Label>Estudiante</Label>
-            <Combobox
-              items={estudiantes.data ?? []}
-              value={estudianteId}
-              onChange={setEstudianteId}
-              placeholder="Selecciona estudiante"
-              searchPlaceholder="Buscar estudiante..."
-              getKey={(e) => e.id}
-              getLabel={(e) => `${e.nombres} ${e.apellidos}`}
-              getSecondary={(e) => `${e.numeroDocumento} · ${e.programaAcademico}`}
-            />
+        <CardContent className="space-y-6">
+          {/* Vinculación */}
+          <div className="space-y-3">
+            <p className="text-xs font-semibold uppercase tracking-wide text-primary">Vinculación</p>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-1">
+                <Label>Estudiante</Label>
+                <Combobox
+                  items={estudiantes.data ?? []}
+                  value={estudianteId}
+                  onChange={setEstudianteId}
+                  placeholder="Selecciona estudiante"
+                  searchPlaceholder="Buscar por nombre o documento..."
+                  getKey={(e) => e.id}
+                  getLabel={(e) => `${e.nombres} ${e.apellidos}`}
+                  getSecondary={(e) => `${e.numeroDocumento} · ${e.programaAcademico}`}
+                />
+              </div>
+              <div className="space-y-1">
+                <Label>Empresa</Label>
+                <Combobox
+                  items={empresas.data ?? []}
+                  value={empresaId}
+                  onChange={(v) => {
+                    setEmpresaId(v);
+                    setTutorEmpresarialId(null);
+                  }}
+                  placeholder="Selecciona empresa"
+                  searchPlaceholder="Buscar empresa..."
+                  getKey={(e) => e.id}
+                  getLabel={(e) => e.razonSocial}
+                  getSecondary={(e) => `${e.nit} · ${e.ciudad}`}
+                />
+              </div>
+            </div>
           </div>
 
-          <div className="space-y-1">
-            <Label>Empresa</Label>
-            <Combobox
-              items={empresas.data ?? []}
-              value={empresaId}
-              onChange={(v) => {
-                setEmpresaId(v);
-                setTutorEmpresarialId(null);
-              }}
-              placeholder="Selecciona empresa"
-              searchPlaceholder="Buscar empresa..."
-              getKey={(e) => e.id}
-              getLabel={(e) => e.razonSocial}
-              getSecondary={(e) => `${e.nit} · ${e.ciudad}`}
-            />
-          </div>
-
+          {/* Tutores */}
+          <div className="space-y-3">
+            <p className="text-xs font-semibold uppercase tracking-wide text-primary">Tutores de acompañamiento</p>
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-1">
               <Label>Tutor académico</Label>
@@ -176,28 +184,33 @@ export function AsignarPracticaPage(): JSX.Element {
               />
             </div>
           </div>
+          </div>
 
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-1">
-              <Label>Fecha de inicio</Label>
-              <Input
-                type="date"
-                value={fechaInicio}
-                onChange={(e) => setFechaInicio(e.target.value)}
-              />
-            </div>
-            <div className="space-y-1">
-              <Label>Fecha de fin</Label>
-              <Input
-                type="date"
-                value={fechaFin}
-                min={fechaInicio || undefined}
-                onChange={(e) => setFechaFin(e.target.value)}
-              />
+          {/* Vigencia */}
+          <div className="space-y-3">
+            <p className="text-xs font-semibold uppercase tracking-wide text-primary">Vigencia de la práctica</p>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-1">
+                <Label>Fecha de inicio</Label>
+                <Input
+                  type="date"
+                  value={fechaInicio}
+                  onChange={(e) => setFechaInicio(e.target.value)}
+                />
+              </div>
+              <div className="space-y-1">
+                <Label>Fecha de fin</Label>
+                <Input
+                  type="date"
+                  value={fechaFin}
+                  min={fechaInicio || undefined}
+                  onChange={(e) => setFechaFin(e.target.value)}
+                />
+              </div>
             </div>
           </div>
 
-          <div className="flex justify-end gap-2 pt-2">
+          <div className="flex justify-end gap-2 border-t border-border/60 pt-4">
             <Button variant="outline" onClick={() => navigate("/convenios")}>
               Cancelar
             </Button>

@@ -38,10 +38,12 @@ import { EmptyState } from "@/components/empty-state";
 import { api, extractApiMessage } from "@/lib/api";
 import { useAuthStore } from "@/lib/auth-store";
 import type {
+  Estudiante,
   ExpedienteResponse,
   ExpedienteResumenCohorte,
   ExpedienteSeccionDocumento,
   ExpedienteTrimestre,
+  PageResponse,
 } from "@/lib/types";
 
 /* --------------------------------------------------------------------------
@@ -645,7 +647,8 @@ export function ExpedientesIndexPage(): JSX.Element {
   const esEstudiantePuro =
     hasRole("ESTUDIANTE") && !hasRole("ADMIN", "COORDINADOR", "DOCENTE", "TUTOR");
 
-  const [estudianteId, setEstudianteId] = useState("");
+  const [documento, setDocumento] = useState("");
+  const [buscando, setBuscando] = useState(false);
   const [cohorteInput, setCohorteInput] = useState("");
   const [cohorteId, setCohorteId] = useState<number | null>(null);
 
@@ -654,13 +657,31 @@ export function ExpedientesIndexPage(): JSX.Element {
     return <Navigate to={`/expedientes/${usuario.estudianteId}`} replace />;
   }
 
-  const buscarEstudiante = (): void => {
-    const id = Number(estudianteId.trim());
-    if (!Number.isInteger(id) || id <= 0) {
-      toast.error("Ingresa un ID de estudiante válido.");
+  // Busca por NÚMERO DE DOCUMENTO (no por id interno): resuelve el estudiante
+  // vía /estudiantes?q=... y abre su expediente.
+  const buscarEstudiante = async (): Promise<void> => {
+    const doc = documento.trim();
+    if (!doc) {
+      toast.error("Ingresa el número de documento del estudiante.");
       return;
     }
-    navigate(`/expedientes/${id}`);
+    setBuscando(true);
+    try {
+      const { data } = await api.get<PageResponse<Estudiante>>("/estudiantes", {
+        params: { q: doc, page: 0, size: 10 },
+      });
+      const lista = data.content ?? [];
+      const match = lista.find((e) => e.numeroDocumento === doc) ?? lista[0];
+      if (!match) {
+        toast.error(`No se encontró un estudiante con el documento "${doc}".`);
+        return;
+      }
+      navigate(`/expedientes/${match.id}`);
+    } catch (err) {
+      toast.error(extractApiMessage(err));
+    } finally {
+      setBuscando(false);
+    }
   };
 
   const buscarCohorte = (): void => {
@@ -683,29 +704,29 @@ export function ExpedientesIndexPage(): JSX.Element {
       <Card>
         <CardHeader>
           <CardTitle className="text-base">Buscar por estudiante</CardTitle>
-          <CardDescription>Abre el expediente de un estudiante por su identificador.</CardDescription>
+          <CardDescription>Abre el expediente de un estudiante por su número de documento.</CardDescription>
         </CardHeader>
         <CardContent>
           <form
             className="flex flex-wrap items-end gap-3"
             onSubmit={(e) => {
               e.preventDefault();
-              buscarEstudiante();
+              void buscarEstudiante();
             }}
           >
             <div className="space-y-1">
-              <Label htmlFor="estudianteId">ID de estudiante</Label>
+              <Label htmlFor="documento">Número de documento</Label>
               <Input
-                id="estudianteId"
+                id="documento"
                 inputMode="numeric"
-                placeholder="Ej: 42"
-                value={estudianteId}
-                onChange={(e) => setEstudianteId(e.target.value)}
-                className="w-40"
+                placeholder="Ej: 1032456789"
+                value={documento}
+                onChange={(e) => setDocumento(e.target.value)}
+                className="w-56"
               />
             </div>
-            <Button type="submit">
-              <Search className="h-4 w-4" />
+            <Button type="submit" disabled={buscando}>
+              {buscando ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
               Ver expediente
             </Button>
           </form>
