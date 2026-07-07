@@ -285,12 +285,13 @@ body.anim .slide.is-active .stage.gate{animation:pulse 2.6s ease-in-out infinite
       </div></div>
     <div class="card"><span class="lbl">Backend · Jaydeth</span>
       <div class="techlist b">
-        <div class="tw"><b>Spring Boot · Java 21</b> API REST</div>
+        <div class="tw"><b>Spring Boot 3 · Java 21</b> API REST</div>
+        <div class="tw"><b>Spring Data JPA</b> ORM (Hibernate) → Postgres</div>
+        <div class="tw"><b>Spring Data MongoDB</b> ODM → usuarios</div>
         <div class="tw"><b>Spring Security + JWT</b> auth y roles</div>
-        <div class="tw"><b>OpenPDF</b> genera los PDF oficiales</div>
-        <div class="tw"><b>Swagger</b> documenta la API</div>
-        <div class="tw"><b>MCP</b> consulta el sistema hablando</div>
-        <div class="tw"><b>IA</b> revisa Plan e Informe</div>
+        <div class="tw"><b>Bean Validation</b> valida cada request</div>
+        <div class="tw"><b>Flyway</b> migra el esquema · <b style="min-width:0">OpenPDF</b> PDFs</div>
+        <div class="tw"><b>Swagger</b> documenta · <b style="min-width:0">MCP</b> habla · <b style="min-width:0">IA</b> revisa</div>
       </div></div>
     <div class="card"><span class="lbl" style="color:var(--amber)">Base de datos · Daniel</span>
       <div class="techlist a">
@@ -317,6 +318,51 @@ body.anim .slide.is-active .stage.gate{animation:pulse 2.6s ease-in-out infinite
         <div class="tw"><b>SonarCloud</b> calidad · <b style="min-width:0">JaCoCo</b> cobertura</div>
       </div></div>
   </div>
+</div></section>
+
+<!-- 4b · BD A FONDO — TABLAS -->
+<section class="slide"><div class="inner">
+  <div class="owner all"><span class="d"></span>Base de datos · Daniel</div>
+  <div class="tag">◨ Modelo de datos</div>
+  <h2>El modelo: 27 tablas + 1 colección</h2>
+  <p class="lead"><b>Persistencia políglota:</b> el dominio va en <b>PostgreSQL</b> (relacional, con llaves foráneas e integridad referencial); los <b>usuarios</b> van en <b>MongoDB</b> (documento flexible). Dos motores, una sola app.</p>
+  <div class="grid g3">
+    <div class="card"><span class="lbl" style="color:var(--amber)">Personas y empresas</span>
+      <div class="techlist a" style="gap:3px">
+        <div class="tw mono">estudiantes · tutores · empresas</div>
+        <div class="tw mono">cohorte · cohorte_estudiante</div>
+      </div></div>
+    <div class="card"><span class="lbl" style="color:var(--amber)">Vinculación</span>
+      <div class="techlist a" style="gap:3px">
+        <div class="tw mono">convenios · modalidad_vinculacion</div>
+        <div class="tw mono">requisito_modalidad</div>
+        <div class="tw mono">tipo_requisito_documental</div>
+        <div class="tw mono">documentos · token_acceso_tutor</div>
+      </div></div>
+    <div class="card"><span class="lbl" style="color:var(--amber)">Agendamiento y avisos</span>
+      <div class="techlist a" style="gap:3px">
+        <div class="tw mono">disponibilidad_docente</div>
+        <div class="tw mono">agendamiento_reunion</div>
+        <div class="tw mono">notificacion_auditoria</div>
+      </div></div>
+  </div>
+  <div class="grid g2" style="margin-top:12px">
+    <div class="card" style="border-color:#33477e"><span class="lbl" style="color:var(--blue2)">Ciclo de Coformación (el corazón)</span>
+      <div class="techlist" style="gap:3px">
+        <div class="tw mono">trimestre</div>
+        <div class="tw mono">plan_actividades <span class="cm">+ _mes · _objetivo · _comentario</span></div>
+        <div class="tw mono">acta_reunion <span class="cm">+ acta_tema</span></div>
+        <div class="tw mono">evaluacion_tutor_trimestre · evaluacion_profesor_trimestre</div>
+        <div class="tw mono">plan_mejora · informe_final_pm · calificacion_consolidada</div>
+      </div></div>
+    <div class="card" style="border-color:#1f4a2c"><span class="lbl" style="color:var(--green)">MongoDB · no relacional</span>
+      <div class="techlist" style="gap:3px">
+        <div class="tw mono">usuarios <span class="cm">— email, passwordHash (BCrypt), roles[]</span></div>
+      </div>
+      <p class="muted" style="margin-top:8px;font-size:12px">Se separa del dominio: los usuarios cambian de forma (roles, tokens) sin tocar el esquema relacional.</p>
+    </div>
+  </div>
+  <div class="legend"><span>FK e integridad en Postgres · <b>Flyway V1…V33</b> versiona cada cambio · el <b>ER</b> se navega en DBeaver</span></div>
 </div></section>
 
 <!-- 5 · ARQUITECTURA -->
@@ -521,7 +567,7 @@ body.anim .slide.is-active .stage.gate{animation:pulse 2.6s ease-in-out infinite
   <h2>CI/CD del backend, a fondo</h2>
   <div class="flow">
     <div class="step"><div class="num">1</div><div><h4>Build + test <span class="who be">carpeta backend/</span></h4><p>Levanta <b>Postgres 16 + Mongo 7 reales</b> y corre <span class="mono">mvn clean verify</span>: compila y ejecuta las <b>21 pruebas JUnit</b> (Jwt · Auth · Estudiante · Evaluación) + cobertura JaCoCo.</p></div></div>
-    <div class="step"><div class="num">2</div><div><h4>Calidad + contrato</h4><p><span class="mono">mvn sonar:sonar</span> → SonarCloud. En paralelo, <b>Newman</b> corre la colección Postman (login, 401, CRUD, 422…) contra el backend levantado.</p></div></div>
+    <div class="step"><div class="num">2</div><div><h4>Calidad + contrato</h4><p><span class="mono">mvn sonar:sonar</span> sube el análisis a <b>SonarCloud</b> (bugs, vulnerabilidades, code smells) con la cobertura de <b>JaCoCo</b>. En paralelo, <b>Newman</b> corre la colección Postman (login, 401, CRUD, 422…) contra el backend levantado.</p></div></div>
     <div class="step"><div class="num">3</div><div><h4>Empaqueta en Docker → GHCR</h4><p><span class="mono">build-push-action</span> con context <span class="mono">./backend</span> (Dockerfile multi-stage) publica <span class="mono">ghcr.io/jaydethsp01/sivu/backend</span>.</p></div></div>
     <div class="step"><div class="num">4</div><div><h4>Despliega a Render</h4><p>La CD llama la <b>Deploy API de Render</b> por <span class="mono">curl</span> → redespliega el backend <b>y el IA sidecar</b>.</p></div></div>
   </div>
@@ -620,7 +666,7 @@ body.anim .slide.is-active .stage.gate{animation:pulse 2.6s ease-in-out infinite
         <li><b>JUnit — 21 unitarias</b> (mín. 6): <span class="mono">JwtServiceTest</span> (genera/valida el token), <span class="mono">AuthServiceTest</span> (login·refresh·registro·401), <span class="mono">EstudianteServiceTest</span> (CRUD + email/documento duplicado), <span class="mono">EvaluacionServiceTest</span> (reglas de nota).</li>
         <li><b>JaCoCo</b> — mide la cobertura del código; el reporte se sube como artefacto.</li>
         <li><b>Newman</b> — corre la colección Postman contra el backend real: login por rol, <b>401</b> inválido, CRUD estudiantes (<b>201/204</b>), <b>422</b> duplicado, convenios y Coformación v2.</li>
-        <li><b>SonarCloud</b> — bugs, code smells y duplicación (quality gate).</li>
+        <li><b>SonarCloud</b> — análisis estático en cada push: bugs, vulnerabilidades, code smells y duplicación, con la cobertura de JaCoCo.</li>
       </ul></div>
     <div class="box norel"><div class="t">🟢 Frontend · Bryam</div>
       <ul>
@@ -631,7 +677,16 @@ body.anim .slide.is-active .stage.gate{animation:pulse 2.6s ease-in-out infinite
         <li><span class="mono">03-coformacion</span> — crea la práctica, consulta el expediente y las disponibilidades.</li>
       </ul></div>
   </div>
-  <div class="grid g2" style="margin-top:12px">
+  <div class="grid g3" style="margin-top:12px">
+    <div class="card" style="border-color:#33477e"><span class="lbl" style="color:var(--blue2)">◉ SonarCloud · calidad en vivo</span>
+      <div class="techlist" style="gap:3px">
+        <div class="tw"><b style="color:var(--blue2)">12.678</b> líneas analizadas</div>
+        <div class="tw"><b style="color:var(--blue2)">Bugs</b> defectos que romperían en runtime</div>
+        <div class="tw"><b style="color:var(--blue2)">Vulnerabilidades</b> riesgos de seguridad</div>
+        <div class="tw"><b style="color:var(--blue2)">Code smells</b> deuda técnica / mantenibilidad</div>
+      </div>
+      <p class="muted" style="margin-top:6px;font-size:11px">sonarcloud.io → proyecto jaydethsp01_sivu</p>
+    </div>
     <div class="card"><span class="lbl">k6 · rendimiento <span class="muted" style="text-transform:none">— equipo</span></span><p>Simula <b>carga concurrente de login</b> y mide latencia y tasa de error del backend.</p></div>
     <div class="card"><span class="lbl" style="color:var(--amber)">Flyway · modelo <span class="muted" style="text-transform:none">— Daniel</span></span><p>Las <b>33 migraciones</b> se aplican y validan sobre una BD fresca al arrancar el backend en CI.</p></div>
   </div>
