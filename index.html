@@ -112,13 +112,17 @@ h3{font-size:clamp(17px,2.3vw,23px);font-weight:600;margin:20px 0 6px}
 .vs2 .box.rel .t{color:var(--amber)}.vs2 .box.norel .t{color:var(--green)}
 .vs2 .box ul{margin:0;padding-left:18px;color:var(--muted);font-size:13.5px}.vs2 .box li{margin:5px 0}
 
-.arch{margin-top:16px;display:flex;flex-direction:column;align-items:center}
-.node{border:1px solid var(--line);border-radius:11px;padding:11px 17px;background:var(--panel);text-align:center;min-width:200px}
-.node .t{font:700 12.5px/1.2 var(--mono);color:var(--ink)}.node .s{font:500 11px/1.4 var(--mono);color:var(--muted);margin-top:3px}
-.node.fe{border-color:#1f4a2c}.node.be{border-color:#2c3a63}.node.db{border-color:#4a3f1f}
-.conn{width:2px;height:20px;background:linear-gradient(var(--blue),transparent);position:relative}
-.conn::after{content:attr(data-l);position:absolute;left:9px;top:2px;font:600 10px/1 var(--mono);color:var(--dim);white-space:nowrap}
-.row3{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin-top:20px}.row3 .node{min-width:158px}
+.arch{margin-top:18px;display:flex;flex-direction:column;align-items:center}
+.node{border:1px solid var(--line);border-radius:12px;padding:13px 20px;background:linear-gradient(180deg,var(--panel),#0e121b);text-align:center;min-width:230px;box-shadow:0 10px 28px -18px rgba(0,0,0,.7)}
+.node .t{font:700 13px/1.2 var(--mono);color:var(--ink)}.node .s{font:500 11px/1.4 var(--mono);color:var(--muted);margin-top:4px}
+.node.fe{border-color:#2b5c3a;box-shadow:0 10px 28px -18px rgba(63,185,80,.35)}
+.node.be{border-color:#33477e;box-shadow:0 10px 28px -18px rgba(91,124,250,.4)}
+.node.db{border-color:#5a4c26;box-shadow:0 10px 28px -18px rgba(227,179,65,.3)}
+.conn{width:2px;height:38px;background:linear-gradient(var(--blue),var(--blue2));position:relative;margin:3px 0}
+.conn::before{content:"▼";position:absolute;bottom:-5px;left:-5px;color:var(--blue2);font-size:12px}
+.conn::after{content:attr(data-l);position:absolute;left:14px;top:50%;transform:translateY(-50%);font:600 10.5px/1 var(--mono);color:var(--blue2);white-space:nowrap;background:var(--panel);border:1px solid #2c3a63;padding:5px 10px;border-radius:7px}
+.conn.plain::after{display:none}
+.row3{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin-top:8px}.row3 .node{min-width:168px}
 
 .pipe{display:flex;gap:0;margin-top:16px;flex-wrap:wrap}
 .stage{flex:1;min-width:128px;border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:11px;text-align:center;margin:5px;position:relative}
@@ -248,7 +252,7 @@ h3{font-size:clamp(17px,2.3vw,23px);font-weight:600;margin:20px 0 6px}
     <div class="node fe"><div class="t">Frontend · React SPA</div><div class="s">Vercel · sivu-platform.vercel.app</div></div>
     <div class="conn" data-l="REST /api/v1 · JWT"></div>
     <div class="node be"><div class="t">Backend · Spring Boot</div><div class="s">Render (Docker) · Swagger · Flyway</div></div>
-    <div class="conn"></div>
+    <div class="conn" data-l="persiste · integra"></div>
     <div class="row3">
       <div class="node db"><div class="t">PostgreSQL</div><div class="s">Supabase · dominio</div></div>
       <div class="node db"><div class="t">MongoDB</div><div class="s">Atlas · usuarios</div></div>
@@ -362,20 +366,29 @@ h3{font-size:clamp(17px,2.3vw,23px);font-weight:600;margin:20px 0 6px}
   <div class="tag">05 — El motor</div>
   <h2>Backend organizado por features</h2>
   <p class="lead">Cada dominio es una carpeta con sus 4 capas — <span class="mono k">web → service → domain → persistence</span> — así el código es fácil de ubicar y probar.</p>
-  <div class="tree"><span class="cm"># backend/ · Spring Boot 3 · Java 21</span>
-<span class="fd">backend/</span>
-└─ <span class="fd">src/main/java/co/uempresarial/sivu/</span>
-   ├─ <span class="hi">estudiante/</span>              <span class="cm">← un módulo = una feature</span>
-   │  ├─ <span class="fd">web/</span>                 <span class="cm">controladores REST + DTOs</span>
-   │  ├─ <span class="fd">service/</span>             <span class="cm">reglas de negocio</span>
-   │  ├─ <span class="fd">domain/</span>              <span class="cm">entidades JPA</span>
-   │  └─ <span class="fd">persistence/</span>         <span class="cm">repositorios</span>
-   ├─ <span class="hi">convenio/</span>  <span class="hi">trimestre/</span>  <span class="hi">agendamiento/</span>  <span class="hi">expediente/</span>
-   ├─ <span class="hi">informefinalpm/</span>  <span class="hi">calificacion/</span>  <span class="hi">notificacion/</span>
-   ├─ <span class="hi">security/</span>               <span class="cm">JWT · @PreAuthorize · roles</span>
-   ├─ <span class="hi">ia/</span>  <span class="hi">tutoracceso/</span>  <span class="hi">catalogo/</span>  <span class="hi">shared/</span>
-   └─ <span class="fdot">SivuApplication.java</span></div>
-  <div class="legend"><span><b>Flyway</b> aplica el esquema (V1…V33) al arrancar</span><span><b>Dockerfile</b> multi-stage en la raíz</span></div>
+  <div class="tree" style="font-size:11.5px;line-height:1.7"><span class="cm"># backend/  ·  Spring Boot 3 · Java 21 · 20 módulos</span>
+<span class="fd">src/main/java/co/uempresarial/sivu/</span>
+├─ <span class="hi">estudiante/</span>                     <span class="cm">← ejemplo de un módulo completo</span>
+│  ├─ <span class="fd">web/</span>  <span class="fdot">EstudianteController.java</span>   <span class="cm">endpoints REST</span>
+│  │       <span class="fdot">EstudianteMapper.java</span>       <span class="cm">entidad ↔ DTO</span>
+│  │       <span class="fd">dto/</span> EstudianteRequest · EstudianteResponse
+│  ├─ <span class="fd">service/</span>  <span class="fdot">EstudianteService.java</span>   <span class="cm">reglas de negocio</span>
+│  ├─ <span class="fd">domain/</span>   <span class="fdot">Estudiante.java</span> · EstadoEstudiante · TipoDocumento
+│  └─ <span class="fd">persistence/</span> <span class="fdot">EstudianteRepository.java</span>
+├─ <span class="hi">trimestre/</span>                      <span class="cm">← el corazón de Coformación (los 5 docs)</span>
+│  ├─ <span class="fd">domain/</span>  PlanActividades · ActaReunion · EvaluacionProfesorTrimestre
+│  │          EvaluacionTutorTrimestre · PlanMejora · Trimestre
+│  ├─ <span class="fd">web/</span>  PlanActividadesController · ActaReunionController · …
+│  ├─ <span class="fd">service/</span>  ActaReunionService · CorteCalculoService …
+│  └─ <span class="fd">pdf/</span>  PlanActividadesPdfGenerator · ActaReunionPdfGenerator …
+├─ <span class="hi">convenio/</span> <span class="hi">agendamiento/</span> <span class="hi">expediente/</span> <span class="hi">informefinalpm/</span> <span class="hi">calificacion/</span>
+├─ <span class="hi">notificacion/</span> <span class="hi">tutoracceso/</span> <span class="hi">ia/</span> <span class="hi">empresa/</span> <span class="hi">tutor/</span> <span class="hi">cohorte/</span> <span class="hi">catalogo/</span>
+├─ <span class="hi">documento/</span> <span class="hi">evaluacion/</span> <span class="hi">admin/</span> <span class="hi">config/</span> <span class="hi">shared/</span>
+├─ <span class="hi">security/</span>  <span class="cm">JWT · JwtAuthenticationFilter · @PreAuthorize · Rol</span>
+└─ <span class="fdot">SivuApplication.java</span>
+<span class="fd">src/main/resources/db/migration/</span>  <span class="cm">Flyway V1…V33</span>
+<span class="fdot">Dockerfile</span>  <span class="cm">multi-stage (build jar → runtime)</span></div>
+  <div class="legend"><span>Cada módulo repite el patrón <b>web · service · domain · persistence</b></span></div>
 </div></section>
 
 <!-- 11 · JAYDETH — IA + MCP (mejorado) -->
@@ -397,57 +410,57 @@ h3{font-size:clamp(17px,2.3vw,23px);font-weight:600;margin:20px 0 6px}
   <p class="lead" style="margin-top:14px">El enunciado pide elegir <b>IA (7) o MCP (8)</b> — implementamos <b>MCP</b> y además dejamos la IA como complemento.</p>
 </div></section>
 
-<!-- 12 · JAYDETH — CI/CD: qué pasa cuando haces push (CORE) -->
+<!-- 12 · CI/CD — nuestro flujo de trabajo (EL NÚCLEO) -->
 <section class="slide"><div class="inner">
-  <div class="owner be"><span class="d"></span>Jaydeth Simarra · CI/CD — núcleo de la materia</div>
-  <div class="tag">05 — Despliegue continuo (1/2)</div>
-  <h2>¿Qué pasa cuando haces <span class="mono" style="font-family:var(--serif)">git push</span>?</h2>
-  <p class="lead">Un solo evento —el push a <span class="mono">master</span>— dispara todo el pipeline. Nadie despliega a mano.</p>
+  <div class="owner be"><span class="d"></span>Jaydeth Simarra · CI/CD — el núcleo de la materia</div>
+  <div class="tag">05 — Despliegue continuo · cómo lo usamos</div>
+  <h2>Nuestro flujo: del commit a producción, solo</h2>
+  <p class="lead">Trabajamos en <b>ramas</b>. La <b>CI</b> valida cada Pull Request y, al mergear a <span class="mono">master</span>, la <b>CD</b> despliega sola — nadie sube nada a mano.</p>
+  <div class="pipe" style="margin-top:16px">
+    <div class="stage"><div class="n">1 · Rama</div><div class="x">feature/…</div></div>
+    <div class="stage"><div class="n">2 · Pull Request</div><div class="x">CI corre 5 jobs y los valida</div></div>
+    <div class="stage gate"><div class="n">3 · Merge a master</div><div class="x">solo si CI en verde</div></div>
+    <div class="stage gate"><div class="n">4 · CD despliega</div><div class="x">Render + Vercel · automático</div></div>
+    <div class="stage"><div class="n">5 · Producción</div><div class="x">en vivo</div></div>
+  </div>
   <div class="code">
     <div class="h"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i>.github/workflows/ci.yml</div>
 <pre><span class="kw">on</span>:
-  <span class="at">push</span>:
-    <span class="at">branches</span>: [ master, main, develop ]   <span class="cm"># cada push dispara el pipeline</span>
-  <span class="at">pull_request</span>:                        <span class="cm"># y también valida cada Pull Request</span>
-    <span class="at">branches</span>: [ master ]
-<span class="kw">concurrency</span>:
-  <span class="at">cancel-in-progress</span>: <span class="nm">true</span>            <span class="cm"># si subes otro commit, cancela el run viejo</span></pre>
+  <span class="at">push</span>:         { <span class="at">branches</span>: [ master ] }   <span class="cm"># merge a master → CI + CD (despliega)</span>
+  <span class="at">pull_request</span>: { <span class="at">branches</span>: [ master ] }   <span class="cm"># cada PR → solo CI (valida, NO despliega)</span>
+<span class="kw">concurrency</span>: { <span class="at">cancel-in-progress</span>: <span class="nm">true</span> }  <span class="cm"># si subes otro commit, cancela el run viejo</span></pre>
   </div>
-  <div class="flow" style="margin-top:14px">
-    <div class="step"><div class="num">1</div><div><h4>Push → arrancan 5 jobs en paralelo</h4><p><span class="mono">backend</span> · <span class="mono">frontend</span> · <span class="mono">mcp</span> · <span class="mono">api-contract (Newman)</span> · <span class="mono">e2e (Cypress)</span>.</p></div></div>
-    <div class="step"><div class="num">2</div><div><h4>Compuerta — todos deben pasar</h4><p>El job de despliegue tiene <span class="mono">needs: [backend, frontend, mcp, api-contract, e2e]</span>. Si uno falla, <b>no despliega</b>.</p></div></div>
-    <div class="step"><div class="num">3</div><div><h4>Docker → imágenes a GHCR</h4><p>Se construyen y publican <span class="mono">backend</span>, <span class="mono">frontend</span> y <span class="mono">mcp</span> en <span class="mono">ghcr.io/jaydethsp01/sivu/*</span>.</p></div></div>
-    <div class="step"><div class="num">4</div><div><h4>Deploy automático a producción</h4><p>Solo en <span class="mono">master</span>: Render redespliega backend + sidecar y Vercel publica el frontend.</p></div></div>
+  <div class="grid g2" style="margin-top:14px">
+    <div class="card"><span class="lbl">La compuerta — el corazón del CD</span><p>El deploy tiene <span class="mono">needs: [backend, frontend, mcp, api-contract, e2e]</span>. Si <b>un solo</b> job falla, <b>no despliega</b>: producción nunca recibe código roto.</p></div>
+    <div class="card"><span class="lbl">Dos disparadores</span><p><b>PR</b> → solo CI (build + pruebas). <b>Push a master</b> → CI + Docker→GHCR + CD (Render + Vercel).</p></div>
   </div>
 </div></section>
 
-<!-- 13 · JAYDETH — CI/CD el pipeline en código (CORE) -->
+<!-- 13 · CI/CD del BACKEND a fondo -->
 <section class="slide"><div class="inner">
-  <div class="owner be"><span class="d"></span>Jaydeth Simarra · CI/CD — el pipeline en código</div>
-  <div class="tag">05 — Despliegue continuo (2/2)</div>
-  <h2>El pipeline, en código real</h2>
-  <div class="code">
-    <div class="h"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i>ci.yml · jobs</div>
-<pre><span class="kw">jobs</span>:
-  <span class="fn">backend</span>:                              <span class="cm"># build + pruebas + calidad</span>
-    <span class="at">services</span>: { postgres:16, mongo:7 }   <span class="cm"># BD reales para los tests de integración</span>
-    <span class="at">steps</span>:
-      - <span class="at">run</span>: mvn -B clean verify         <span class="cm"># compila + 21 tests JUnit + JaCoCo</span>
-      - <span class="at">run</span>: mvn sonar:sonar             <span class="cm"># calidad → SonarCloud</span>
-
-  <span class="fn">frontend</span>:
-    <span class="at">steps</span>:
-      - <span class="at">run</span>: npm install --legacy-peer-deps
-      - <span class="at">run</span>: npm run build              <span class="cm"># tsc (tipos) + Vite (bundle)</span>
-
-  <span class="fn">deploy</span>:                               <span class="cm"># CD — solo si TODO lo anterior pasó</span>
-    <span class="at">needs</span>: [ backend, frontend, mcp, api-contract, e2e ]
-    <span class="at">if</span>: github.ref == <span class="st">'refs/heads/master'</span>
-    <span class="at">steps</span>:
-      - <span class="at">run</span>: curl -X POST .../services/$RENDER_BACKEND_ID/deploys   <span class="cm"># backend → Render</span>
-      - <span class="at">run</span>: vercel deploy --prod                            <span class="cm"># frontend → Vercel</span></pre>
+  <div class="owner be"><span class="d"></span>Jaydeth Simarra · CI/CD del Backend</div>
+  <div class="tag">05 — Despliegue continuo · backend</div>
+  <h2>CI/CD del backend, a fondo</h2>
+  <div class="flow">
+    <div class="step"><div class="num">1</div><div><h4>Build + test <span class="who be">carpeta backend/</span></h4><p>Levanta <b>Postgres 16 + Mongo 7 reales</b> como servicios y corre <span class="mono">mvn clean verify</span>: compila, 21 tests JUnit y cobertura JaCoCo.</p></div></div>
+    <div class="step"><div class="num">2</div><div><h4>Calidad + contrato</h4><p><span class="mono">mvn sonar:sonar</span> → SonarCloud. En paralelo, <b>Newman</b> corre la colección Postman contra el backend levantado.</p></div></div>
+    <div class="step"><div class="num">3</div><div><h4>Empaqueta en Docker → GHCR</h4><p><span class="mono">build-push-action</span> con context <span class="mono">./backend</span> (Dockerfile multi-stage) publica <span class="mono">ghcr.io/jaydethsp01/sivu/backend</span>.</p></div></div>
+    <div class="step"><div class="num">4</div><div><h4>Despliega a Render</h4><p>La CD llama la <b>Deploy API de Render</b> por <span class="mono">curl</span> → redespliega el backend <b>y el IA sidecar</b>.</p></div></div>
   </div>
-  <div class="pl" style="margin-top:14px"><b>Dockerfile · backend</b><b>Dockerfile · frontend</b><b>Dockerfile · mcp-server</b><b>Dockerfile · ia-sidecar</b><b>docker-compose.yml</b></div>
+  <div class="code">
+    <div class="h"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i>ci.yml · backend + deploy</div>
+<pre><span class="fn">backend</span>:
+  <span class="at">services</span>: { postgres:16, mongo:7 }        <span class="cm"># BD reales para los tests de integración</span>
+  <span class="at">steps</span>:
+    - <span class="at">working-directory</span>: <span class="st">backend</span>
+      <span class="at">run</span>: mvn -B clean verify             <span class="cm"># compila + 21 JUnit + JaCoCo</span>
+    - <span class="at">working-directory</span>: <span class="st">backend</span>
+      <span class="at">run</span>: mvn sonar:sonar                 <span class="cm"># SonarCloud</span>
+
+<span class="fn">deploy</span>:                                     <span class="cm"># solo en master, tras la compuerta</span>
+  <span class="at">run</span>: curl -X POST …/services/$RENDER_BACKEND_ID/deploys   <span class="cm"># backend → Render</span>
+  <span class="at">run</span>: curl -X POST …/services/$RENDER_SIDECAR_ID/deploys   <span class="cm"># IA sidecar → Render</span></pre>
+  </div>
 </div></section>
 
 <!-- 14 · BRYAM — frontend estructura (tree fixed) -->
@@ -456,19 +469,22 @@ h3{font-size:clamp(17px,2.3vw,23px);font-weight:600;margin:20px 0 6px}
   <div class="tag">06 — La experiencia</div>
   <h2>Frontend organizado por features</h2>
   <p class="lead">Una SPA en React con la <b>misma organización por features</b> que el backend. Cada rol ve solo lo suyo.</p>
-  <div class="tree"><span class="cm"># frontend/ · React 18 · Vite · TypeScript</span>
-<span class="fd">frontend/</span>
-└─ <span class="fd">src/</span>
-   ├─ <span class="hi">features/</span>                 <span class="cm">← una carpeta por flujo</span>
-   │  ├─ <span class="fd">auth/</span>                <span class="cm">login, registro</span>
-   │  ├─ <span class="fd">expedientes/</span>         <span class="cm">expediente digital</span>
-   │  ├─ <span class="fd">trimestres/</span>          <span class="cm">plan · actas · evaluaciones · informe</span>
-   │  ├─ <span class="fd">agendamiento/</span>        <span class="cm">calendario y reuniones</span>
-   │  └─ <span class="fd">dashboard/</span>  <span class="fd">estudiantes/</span>  <span class="fd">tutores/</span> …
-   ├─ <span class="hi">components/</span>               <span class="cm">UI compartida (shadcn/ui)</span>
-   ├─ <span class="hi">lib/</span>                     <span class="cm">api · sesión JWT · tipos</span>
-   └─ <span class="hi">hooks/</span></div>
-  <div class="legend"><span><b>TanStack Query</b> sincroniza con la API</span><span><b>Zustand</b> guarda la sesión JWT</span><span><b>PWA</b> instalable y responsive</span></div>
+  <div class="tree" style="font-size:11.5px;line-height:1.7"><span class="cm"># frontend/  ·  React 18 · Vite · TypeScript estricto</span>
+<span class="fd">src/</span>
+├─ <span class="hi">features/</span>                       <span class="cm">← una carpeta por flujo</span>
+│  ├─ <span class="fd">auth/</span>          <span class="fdot">login-page.tsx</span> · <span class="fdot">register-page.tsx</span>
+│  ├─ <span class="fd">expedientes/</span>   <span class="fdot">expediente-page.tsx</span>
+│  ├─ <span class="fd">trimestres/</span>    <span class="fdot">plan-actividades-page.tsx</span> · <span class="fdot">acta-form-page.tsx</span>
+│  │                 evaluacion-profesor-page · evaluacion-tutor-page
+│  │                 informe-final-pm-page · planes-mejora-page
+│  ├─ <span class="fd">agendamiento/</span>  disponibilidad-page · proponer-reunion · bandeja-reuniones
+│  ├─ <span class="fd">estudiantes/</span> <span class="fd">tutores/</span> <span class="fd">empresas/</span> <span class="fd">convenios/</span> <span class="fd">dashboard/</span> <span class="fd">mi-empresa/</span>
+├─ <span class="hi">components/</span>                     <span class="cm">UI compartida (shadcn/ui)</span>
+├─ <span class="hi">lib/</span>   <span class="fdot">api.ts</span> · <span class="fdot">auth-store.ts</span> · <span class="fdot">types.ts</span> · query-client · utils
+├─ <span class="hi">hooks/</span>  <span class="hi">pages/</span>
+└─ <span class="fdot">App.tsx</span>  <span class="fdot">main.tsx</span>   <span class="cm">rutas protegidas por rol (RoleGuard)</span>
+<span class="fdot">Dockerfile</span>  ·  <span class="fdot">vercel.json</span>   <span class="cm">SPA rewrite</span></div>
+  <div class="legend"><span><b>TanStack Query</b> sincroniza con la API</span><span><b>Zustand</b> guarda la sesión JWT</span><span><b>PWA</b> responsive</span></div>
 </div></section>
 
 <!-- 15 · BRYAM — consume backend + ci/cd front -->
@@ -483,15 +499,38 @@ h3{font-size:clamp(17px,2.3vw,23px);font-weight:600;margin:20px 0 6px}
     <div class="conn" data-l="GET/POST /api/v1 · Bearer"></div>
     <div class="node be"><div class="t">Backend Spring Boot</div><div class="s">valida rol → el front solo pinta lo autorizado</div></div>
   </div>
-  <h3>CI/CD del frontend</h3>
-  <div class="grid g3">
-    <div class="card"><span class="lbl" style="color:var(--green)">Build</span><p>Compila tipos + Vite en cada push. Falla si hay error de tipos.</p></div>
-    <div class="card"><span class="lbl" style="color:var(--green)">Cypress E2E</span><p>Prueba la app compilada contra el backend real (auth, estudiantes, coformación).</p></div>
-    <div class="card"><span class="lbl" style="color:var(--green)">Deploy Vercel</span><p>Publica en <span class="mono">sivu-platform.vercel.app</span> apuntando al backend de Render.</p></div>
+  <p class="lead" style="margin-top:16px">Un <b>interceptor de Axios</b> añade el <span class="mono">Bearer JWT</span> a cada llamada; <b>TanStack Query</b> cachea la respuesta y la invalida al mutar, así el expediente se refresca solo.</p>
+</div></section>
+
+<!-- 16 · BRYAM — CI/CD del FRONTEND a fondo -->
+<section class="slide"><div class="inner">
+  <div class="owner fe"><span class="d"></span>Bryam Villalba · CI/CD del Frontend</div>
+  <div class="tag">06 — Despliegue continuo · frontend</div>
+  <h2>CI/CD del frontend, a fondo</h2>
+  <div class="flow">
+    <div class="step"><div class="num">1</div><div><h4>Build <span class="who fe">carpeta frontend/</span></h4><p><span class="mono">npm install --legacy-peer-deps</span> + <span class="mono">npm run build</span> → <b>tsc</b> chequea los tipos y <b>Vite</b> genera el <span class="mono">dist/</span>. Falla si hay un error de tipos.</p></div></div>
+    <div class="step"><div class="num">2</div><div><h4>E2E contra el stack REAL <span class="who fe">Cypress</span></h4><p>El job <b>levanta el jar del backend</b> (<span class="mono">java -jar</span>) y sirve el <span class="mono">dist</span>; luego <span class="mono">cypress run</span> prueba auth, estudiantes y coformación contra todo corriendo de verdad.</p></div></div>
+    <div class="step"><div class="num">3</div><div><h4>Empaqueta en Docker → GHCR</h4><p><span class="mono">build-push-action</span> con context <span class="mono">./frontend</span> publica <span class="mono">ghcr.io/jaydethsp01/sivu/frontend</span>.</p></div></div>
+    <div class="step"><div class="num">4</div><div><h4>Despliega a Vercel</h4><p>Construye con <span class="mono">VITE_API_BASE_URL</span> al backend de Render, hace <span class="mono">vercel deploy --prod</span> y fija el alias <span class="mono">sivu-platform.vercel.app</span>.</p></div></div>
+  </div>
+  <div class="code">
+    <div class="h"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i>ci.yml · frontend + e2e + deploy</div>
+<pre><span class="fn">frontend</span>:
+  <span class="at">working-directory</span>: <span class="st">frontend</span>
+  <span class="at">run</span>: npm install --legacy-peer-deps  &amp;&amp;  npm run build   <span class="cm"># tsc + Vite → dist/</span>
+
+<span class="fn">e2e</span>:                                        <span class="cm"># prueba contra el stack real</span>
+  <span class="at">run</span>: java -jar backend/target/sivu-backend.jar &amp;   <span class="cm"># levanta el backend</span>
+  <span class="at">working-directory</span>: <span class="st">tests/cypress</span>
+  <span class="at">run</span>: npx cypress run --browser chrome
+
+<span class="fn">deploy</span>:  <span class="at">working-directory</span>: <span class="st">frontend</span>          <span class="cm"># solo en master</span>
+  <span class="at">env</span>: { VITE_API_BASE_URL: <span class="st">https://sivu-backend.onrender.com/api/v1</span> }
+  <span class="at">run</span>: npx vercel deploy dist --prod  &amp;&amp;  vercel alias set … sivu-platform.vercel.app</pre>
   </div>
 </div></section>
 
-<!-- 16 · PRUEBAS -->
+<!-- 17 · PRUEBAS -->
 <section class="slide"><div class="inner">
   <div class="owner all"><span class="d"></span>Todo el equipo</div>
   <div class="tag">Calidad</div>
@@ -511,8 +550,7 @@ h3{font-size:clamp(17px,2.3vw,23px);font-weight:600;margin:20px 0 6px}
 <section class="slide"><div class="inner closing">
   <div class="tag" style="justify-content:center">Gracias</div>
   <h1>SIVU en producción.</h1>
-  <p class="lead" style="margin:14px auto 0">Coformación sin papeleo — funcional, integrado y desplegado de forma continua.</p>
-  <div class="score"><span>Materia <b>9/9</b> ✔</span><span>Coformación v2 <b>12/12</b> ✔</span></div>
+  <p class="lead" style="margin:14px auto 26px">Coformación sin papeleo — funcional, integrado y desplegado de forma continua.</p>
   <div class="links">
     <a href="https://sivu-platform.vercel.app"><span class="l">App en producción</span><span class="v">sivu-platform.vercel.app</span></a>
     <a href="https://sivu-backend.onrender.com/swagger-ui.html"><span class="l">API · Swagger</span><span class="v">sivu-backend.onrender.com/swagger-ui.html</span></a>
