@@ -26,7 +26,7 @@ public class AgendamientoReunionController {
 
     @GetMapping("/{id}")
     @PreAuthorize("isAuthenticated()")
-    @Operation(summary = "Obtener una reunión agendada por ID")
+    @Operation(summary = "Obtener una reunión agendada por ID hola")
     public ResponseEntity<AgendamientoResponse> obtener(@PathVariable Long id) {
         return ResponseEntity.ok(service.obtener(id));
     }
