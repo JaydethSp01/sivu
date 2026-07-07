@@ -111,9 +111,10 @@ h3{font-size:clamp(17px,2.3vw,23px);font-weight:600;margin:20px 0 6px}
 .vs2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:18px}
 @media(max-width:820px){.vs2{grid-template-columns:1fr}}
 .vs2 .box{border:1px solid var(--line);border-radius:14px;padding:16px;background:var(--panel)}
-.vs2 .box.rel{border-color:#4a3f1f}.vs2 .box.norel{border-color:#1f4a2c}
+.vs2 .box.rel{border-color:#4a3f1f}.vs2 .box.norel{border-color:#1f4a2c}.vs2 .box.be{border-color:#33477e}
 .vs2 .box .t{font:700 12px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;margin-bottom:10px}
-.vs2 .box.rel .t{color:var(--amber)}.vs2 .box.norel .t{color:var(--green)}
+.vs2 .box.rel .t{color:var(--amber)}.vs2 .box.norel .t{color:var(--green)}.vs2 .box.be .t{color:var(--blue2)}
+.vs2 .box li b{color:var(--ink)} .vs2 .box li .mono{color:var(--muted)}
 .vs2 .box ul{margin:0;padding-left:18px;color:var(--muted);font-size:13.5px}.vs2 .box li{margin:5px 0}
 
 .arch{margin-top:18px;display:flex;flex-direction:column;align-items:center}
@@ -518,8 +519,8 @@ body.anim .slide.is-active .stage.gate{animation:pulse 2.6s ease-in-out infinite
   <div class="tag">05 — Despliegue continuo · backend</div>
   <h2>CI/CD del backend, a fondo</h2>
   <div class="flow">
-    <div class="step"><div class="num">1</div><div><h4>Build + test <span class="who be">carpeta backend/</span></h4><p>Levanta <b>Postgres 16 + Mongo 7 reales</b> como servicios y corre <span class="mono">mvn clean verify</span>: compila, 21 tests JUnit y cobertura JaCoCo.</p></div></div>
-    <div class="step"><div class="num">2</div><div><h4>Calidad + contrato</h4><p><span class="mono">mvn sonar:sonar</span> → SonarCloud. En paralelo, <b>Newman</b> corre la colección Postman contra el backend levantado.</p></div></div>
+    <div class="step"><div class="num">1</div><div><h4>Build + test <span class="who be">carpeta backend/</span></h4><p>Levanta <b>Postgres 16 + Mongo 7 reales</b> y corre <span class="mono">mvn clean verify</span>: compila y ejecuta las <b>21 pruebas JUnit</b> (Jwt · Auth · Estudiante · Evaluación) + cobertura JaCoCo.</p></div></div>
+    <div class="step"><div class="num">2</div><div><h4>Calidad + contrato</h4><p><span class="mono">mvn sonar:sonar</span> → SonarCloud. En paralelo, <b>Newman</b> corre la colección Postman (login, 401, CRUD, 422…) contra el backend levantado.</p></div></div>
     <div class="step"><div class="num">3</div><div><h4>Empaqueta en Docker → GHCR</h4><p><span class="mono">build-push-action</span> con context <span class="mono">./backend</span> (Dockerfile multi-stage) publica <span class="mono">ghcr.io/jaydethsp01/sivu/backend</span>.</p></div></div>
     <div class="step"><div class="num">4</div><div><h4>Despliega a Render</h4><p>La CD llama la <b>Deploy API de Render</b> por <span class="mono">curl</span> → redespliega el backend <b>y el IA sidecar</b>.</p></div></div>
   </div>
@@ -585,7 +586,7 @@ body.anim .slide.is-active .stage.gate{animation:pulse 2.6s ease-in-out infinite
   <h2>CI/CD del frontend, a fondo</h2>
   <div class="flow">
     <div class="step"><div class="num">1</div><div><h4>Build <span class="who fe">carpeta frontend/</span></h4><p><span class="mono">npm install --legacy-peer-deps</span> + <span class="mono">npm run build</span> → <b>tsc</b> chequea los tipos y <b>Vite</b> genera el <span class="mono">dist/</span>. Falla si hay un error de tipos.</p></div></div>
-    <div class="step"><div class="num">2</div><div><h4>E2E contra el stack REAL <span class="who fe">Cypress</span></h4><p>El job <b>levanta el jar del backend</b> (<span class="mono">java -jar</span>) y sirve el <span class="mono">dist</span>; luego <span class="mono">cypress run</span> prueba auth, estudiantes y coformación contra todo corriendo de verdad.</p></div></div>
+    <div class="step"><div class="num">2</div><div><h4>E2E contra el stack REAL <span class="who fe">Cypress</span></h4><p>El job <b>levanta el jar del backend</b> (<span class="mono">java -jar</span>) y sirve el <span class="mono">dist</span>; luego <span class="mono">cypress run</span> valida 3 flujos de verdad: <span class="mono">01-auth</span>, <span class="mono">02-estudiantes</span>, <span class="mono">03-coformacion</span>.</p></div></div>
     <div class="step"><div class="num">3</div><div><h4>Empaqueta en Docker → GHCR</h4><p><span class="mono">build-push-action</span> con context <span class="mono">./frontend</span> publica <span class="mono">ghcr.io/jaydethsp01/sivu/frontend</span>.</p></div></div>
     <div class="step"><div class="num">4</div><div><h4>Despliega a Vercel</h4><p>Construye con <span class="mono">VITE_API_BASE_URL</span> al backend de Render, hace <span class="mono">vercel deploy --prod</span> y fija el alias <span class="mono">sivu-platform.vercel.app</span>.</p></div></div>
   </div>
@@ -610,16 +611,29 @@ body.anim .slide.is-active .stage.gate{animation:pulse 2.6s ease-in-out infinite
 <section class="slide"><div class="inner">
   <div class="owner all"><span class="d"></span>Todo el equipo</div>
   <div class="tag">Calidad</div>
-  <h2>Pruebas — quién cubre qué</h2>
-  <table class="tbl">
-    <tr><th>Tipo</th><th>Herramienta</th><th>Alcance</th><th>Responsable</th></tr>
-    <tr><td>Unitarias</td><td class="mono">JUnit + Mockito</td><td>21 tests (mínimo exigido: 6) <span class="chk">✔</span></td><td style="color:var(--blue2);font-weight:700">Backend</td></tr>
-    <tr><td>API / contrato</td><td class="mono">Newman + Postman</td><td>Colección contra backend real <span class="chk">✔</span></td><td style="color:var(--blue2);font-weight:700">Backend</td></tr>
-    <tr><td>Calidad</td><td class="mono">SonarCloud + JaCoCo</td><td>Job en el pipeline <span class="chk">✔</span></td><td style="color:var(--blue2);font-weight:700">Backend</td></tr>
-    <tr><td>Funcionales E2E</td><td class="mono">Cypress</td><td>3 flujos: auth · estudiantes · coformación <span class="chk">✔</span></td><td style="color:var(--green);font-weight:700">Frontend</td></tr>
-    <tr><td>Rendimiento</td><td class="mono">k6</td><td>Carga de login y endpoints <span class="chk">✔</span></td><td class="muted">Equipo</td></tr>
-    <tr><td>Modelo / migraciones</td><td class="mono">Flyway</td><td>33 migraciones validadas en BD fresca <span class="chk">✔</span></td><td style="color:var(--amber);font-weight:700">BD</td></tr>
-  </table>
+  <h2>Las pruebas que corren en cada push</h2>
+  <p class="lead">Cinco tipos de prueba se ejecutan en el pipeline. Si <b>una sola</b> falla, la compuerta no despliega.</p>
+  <div class="vs2">
+    <div class="box be"><div class="t">🔵 Backend · Jaydeth</div>
+      <ul>
+        <li><b>JUnit — 21 unitarias</b> (mín. 6): <span class="mono">JwtServiceTest</span> (genera/valida el token), <span class="mono">AuthServiceTest</span> (login·refresh·registro·401), <span class="mono">EstudianteServiceTest</span> (CRUD + email/documento duplicado), <span class="mono">EvaluacionServiceTest</span> (reglas de nota).</li>
+        <li><b>JaCoCo</b> — mide la cobertura del código; el reporte se sube como artefacto.</li>
+        <li><b>Newman</b> — corre la colección Postman contra el backend real: login por rol, <b>401</b> inválido, CRUD estudiantes (<b>201/204</b>), <b>422</b> duplicado, convenios y Coformación v2.</li>
+        <li><b>SonarCloud</b> — bugs, code smells y duplicación (quality gate).</li>
+      </ul></div>
+    <div class="box norel"><div class="t">🟢 Frontend · Bryam</div>
+      <ul>
+        <li><b>tsc</b> — chequeo de tipos en el build; falla si hay un error de tipo.</li>
+        <li><b>Cypress E2E</b> — en Chrome, contra el <b>stack real</b> (levanta el jar del backend y sirve el dist):</li>
+        <li><span class="mono">01-auth</span> — login, rechaza credenciales (401), ruta protegida redirige a /login.</li>
+        <li><span class="mono">02-estudiantes</span> — lista con el seed (Kelly), crea (201), obtiene, elimina (204).</li>
+        <li><span class="mono">03-coformacion</span> — crea la práctica, consulta el expediente y las disponibilidades.</li>
+      </ul></div>
+  </div>
+  <div class="grid g2" style="margin-top:12px">
+    <div class="card"><span class="lbl">k6 · rendimiento <span class="muted" style="text-transform:none">— equipo</span></span><p>Simula <b>carga concurrente de login</b> y mide latencia y tasa de error del backend.</p></div>
+    <div class="card"><span class="lbl" style="color:var(--amber)">Flyway · modelo <span class="muted" style="text-transform:none">— Daniel</span></span><p>Las <b>33 migraciones</b> se aplican y validan sobre una BD fresca al arrancar el backend en CI.</p></div>
+  </div>
 </div></section>
 
 <!-- 17 · CIERRE -->
