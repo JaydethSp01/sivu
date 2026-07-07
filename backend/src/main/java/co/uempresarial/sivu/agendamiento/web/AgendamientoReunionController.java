@@ -24,6 +24,12 @@ public class AgendamientoReunionController {
 
     private final AgendamientoReunionService service;
 
+    @GetMapping("/hola-mundo")
+    @Operation(summary = "Endpoint de prueba: devuelve un saludo Hola Mundo")
+    public ResponseEntity<String> holaMundo() {
+        return ResponseEntity.ok("Hola Mundo");
+    }
+
     @GetMapping("/{id}")
     @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Obtener una reunión agendada por ID hola")
