@@ -1,6 +1,7 @@
 import { Component, type ErrorInfo, type ReactNode } from "react";
 import { AlertTriangle, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { isChunkLoadError, reloadOnStaleChunk } from "@/lib/stale-chunk";
 
 interface Props {
   children: ReactNode;
@@ -28,6 +29,11 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, info: ErrorInfo): void {
+    // Chunk obsoleto tras un redeploy → recargar en vez de mostrar el error.
+    if (isChunkLoadError(error)) {
+      reloadOnStaleChunk();
+      return;
+    }
     // En prod aquí iría Sentry/etc. Por ahora basta con consola.
     console.error("[ErrorBoundary] render error:", error, info.componentStack);
   }

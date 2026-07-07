@@ -2,7 +2,17 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { App } from "./App";
 import { ErrorBoundary } from "./components/error-boundary";
+import { isChunkLoadError, reloadOnStaleChunk } from "./lib/stale-chunk";
 import "./index.css";
+
+// Recuperación automática ante chunks obsoletos tras un redeploy (SPA + code-split).
+window.addEventListener("vite:preloadError", (e) => {
+  e.preventDefault();
+  reloadOnStaleChunk();
+});
+window.addEventListener("unhandledrejection", (e) => {
+  if (isChunkLoadError(e.reason)) reloadOnStaleChunk();
+});
 
 const rootEl = document.getElementById("root");
 if (!rootEl) throw new Error("No se encontró #root");
