@@ -56,18 +56,36 @@ export function LoginPage(): JSX.Element {
     applyTheme(theme);
   }, [theme]);
 
+  // Pre-calienta el backend en cuanto se abre el login (Render free "duerme" tras
+  // ~15 min de inactividad; esto lo despierta antes de que el usuario haga login).
+  useEffect(() => {
+    const base = import.meta.env.VITE_API_BASE_URL as string | undefined;
+    if (!base) return;
+    const health = base.replace(/\/api\/v1\/?$/, "") + "/actuator/health";
+    fetch(health, { mode: "no-cors" }).catch(() => {});
+  }, []);
+
   const form = useForm<LoginValues>({
     resolver: zodResolver(schema),
     defaultValues: { email: "", password: "" },
   });
 
   const onSubmit = async (values: LoginValues) => {
+    // Si el backend está "dormido" (Render free), la 1ª petición tarda; avisamos.
+    const waking = setTimeout(
+      () => toast.loading("Despertando el servidor, un momento…", { id: "waking" }),
+      3500,
+    );
     try {
       const { data } = await api.post<AuthResponse>("/auth/login", values);
+      clearTimeout(waking);
+      toast.dismiss("waking");
       setSession(data);
       toast.success(`Hola, ${data.usuario.nombres}`);
       navigate("/", { replace: true });
     } catch (err) {
+      clearTimeout(waking);
+      toast.dismiss("waking");
       toast.error(extractApiMessage(err));
     }
   };
