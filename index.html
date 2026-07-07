@@ -515,6 +515,33 @@ body.anim .slide.is-active .stage.gate{animation:pulse 2.6s ease-in-out infinite
   <div class="legend"><span>Cada módulo repite el patrón <b>web · service · domain · persistence</b></span></div>
 </div></section>
 
+<!-- 10b · JAYDETH — backend a fondo: flujo por capas -->
+<section class="slide"><div class="inner">
+  <div class="owner be"><span class="d"></span>Backend · Jaydeth</div>
+  <div class="tag">◆ Backend a fondo</div>
+  <h2>Una petición por las capas</h2>
+  <p class="lead">Cada request cruza las mismas capas, en orden. La lógica vive en el <b>service</b>; el <b>controller</b> solo recibe y responde.</p>
+  <div class="flow">
+    <div class="step"><div class="num">1</div><div><h4>JwtAuthenticationFilter <span class="who be">Back</span></h4><p>Intercepta el request, valida el token (firma <b>HS512</b> + expiración) y carga el usuario en el <span class="mono">SecurityContext</span>. Sin sesión: <b>STATELESS</b>.</p></div></div>
+    <div class="step"><div class="num">2</div><div><h4>@PreAuthorize · rol <span class="who be">Back</span></h4><p>Con <span class="mono">@EnableMethodSecurity</span>, Spring valida el <b>rol</b> antes de entrar al método. Un DOCENTE no alcanza un endpoint de COORDINADOR.</p></div></div>
+    <div class="step"><div class="num">3</div><div><h4>Controller (web) <span class="who be">Back</span></h4><p>Recibe el DTO y lo valida con <b>Bean Validation</b> (<span class="mono">@Valid</span>). No tiene lógica: delega en el service.</p></div></div>
+    <div class="step"><div class="num">4</div><div><h4>Service · @Transactional <span class="who be">Back</span></h4><p>Reglas de negocio (nota <b>25/25/50</b>, firmas, estados). Todo en una transacción: se guarda completo o se revierte.</p></div></div>
+    <div class="step"><div class="num">5</div><div><h4>Repository → BD <span class="who db">BD</span></h4><p>Spring Data genera la consulta. <b>JPA/Hibernate</b> → PostgreSQL; <b>MongoRepository</b> → MongoDB.</p></div></div>
+    <div class="step"><div class="num">6</div><div><h4>Mapper → DTO · errores <span class="who be">Back</span></h4><p>La entidad nunca sale cruda: se devuelve un <b>DTO</b>. El <span class="mono">GlobalExceptionHandler</span> traduce fallas a <b>400·401·403·404·409·422·500</b>.</p></div></div>
+  </div>
+  <div class="code" style="margin-top:14px">
+    <div class="h"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i>persistencia políglota — una app, dos motores</div>
+<pre><span class="cm">// Dominio académico → PostgreSQL (ORM: Spring Data JPA · Hibernate · Flyway)</span>
+<span class="fn">@Entity</span> <span class="fn">@Table</span>(name=<span class="st">"estudiantes"</span>) <span class="kw">class</span> Estudiante { <span class="fn">@Id</span> Long id; String numeroDocumento; … }
+<span class="kw">interface</span> EstudianteRepository <span class="kw">extends</span> JpaRepository&lt;Estudiante, Long&gt; { }
+
+<span class="cm">// Usuarios → MongoDB (ODM: Spring Data MongoDB)</span>
+<span class="fn">@Document</span>(collection=<span class="st">"usuarios"</span>) <span class="kw">class</span> Usuario { <span class="fn">@Id</span> String id; Set&lt;Rol&gt; roles; String passwordHash; }
+<span class="kw">interface</span> UsuarioRepository <span class="kw">extends</span> MongoRepository&lt;Usuario, String&gt; { }</pre>
+  </div>
+  <div class="legend"><span><b>Persistencia políglota:</b> Hibernate mapea objeto↔<b>tabla</b>; Spring Data Mongo mapea objeto↔<b>documento</b> — en la misma app.</span></div>
+</div></section>
+
 <!-- 11 · JAYDETH — IA + MCP (mejorado) -->
 <section class="slide"><div class="inner">
   <div class="owner be"><span class="d"></span>Jaydeth Simarra · IA + MCP</div>
